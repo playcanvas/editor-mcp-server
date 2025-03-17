@@ -1,0 +1,25 @@
+{
+    "manifest_version": 3,
+    "name": "Script Runner",
+    "description": "A simple Chrome extension to run scripts in page context.",
+    "version": "1.0",
+    "permissions": [
+      "activeTab"
+    ],
+    "background": {
+      "service_worker": "background.js"
+    },
+    "action": {
+        "default_popup": "popup.html"
+      },
+    "host_permissions": [
+      "http://playcanvas.com/*",
+      "https://playcanvas.com/*"
+    ],
+    "content_scripts": [
+      {
+        "matches": ["<all_urls>"],
+        "js": ["content.js"]
+      }
+    ]
+  }
