@@ -2,6 +2,10 @@
 
 A MCP Server for the PlayCanvas Editor
 
+## Installation
+
+Run `npm install` to install all dependencies
+
 ## Tools Overview
 
 #### `create_entity`
