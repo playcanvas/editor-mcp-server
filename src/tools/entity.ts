@@ -8,11 +8,16 @@ export const register = (server: McpServer, wss: WSS) => {
         'create_entity',
         'Create a new entity',
         {
-            name: z.string()
+            name: z.string().optional(),
+            enabled: z.boolean().optional(),
+            position: z.array(z.number()).length(3).optional(),
+            rotation: z.array(z.number()).length(3).optional(),
+            scale: z.array(z.number()).length(3).optional(),
+            tags: z.array(z.string()).optional()
         },
-        async ({ name }) => {
+        async (options) => {
             try {
-                const res = await wss.send('entity:create', name);
+                const res = await wss.send('entity:create', options);
                 return {
                     content: [{
                         type: 'text',
