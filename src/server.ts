@@ -57,12 +57,7 @@ class WSS {
         });
     }
 }
-
 const wss = new WSS(52000);
-setInterval(() => {
-    const now = Date.now();
-    wss.send('ping').then(() => console.log('Ping', Date.now() - now)).catch(() => console.log('Ping failed'));
-}, 1000);
 
 // Create an MCP server
 const server = new McpServer({
@@ -291,3 +286,9 @@ server.tool(
 // Start receiving messages on stdin and sending messages on stdout
 const transport = new StdioServerTransport();
 await server.connect(transport);
+
+// Ping Extension
+setInterval(() => {
+    const now = Date.now();
+    wss.send('ping').then(() => console.log('Ping', Date.now() - now)).catch(() => console.log('Ping failed'));
+}, 1000);
