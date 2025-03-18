@@ -10,7 +10,7 @@ class WSC {
     /**
      * @param {string} address - The address to connect to.
      */
-    _connect(address) {
+    _connect(address, retryTimeout = 3000) {
         this._ws = new WebSocket(address);
         this._ws.onopen = () => {
             console.log('[WSC] Connected to:', address);
@@ -26,7 +26,7 @@ class WSC {
         };
         this._ws.onclose = () => {
             console.log('[WSC] Disconnected from:', address);
-            setTimeout(() => this._connect(address), 1000);
+            setTimeout(() => this._connect(address), retryTimeout);
         };
     }
 

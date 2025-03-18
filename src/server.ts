@@ -1,67 +1,14 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import { WebSocketServer, type WebSocket } from 'ws';
 import { z } from 'zod';
 
-const log = (...args: any[]) => {
-    // console.log(...args);
-};
+import { WSS } from './wss.ts';
 
 // Create a WebSocket server
-class WSS {
-    private _server: WebSocketServer;
-
-    private _socket?: WebSocket;
-
-    private _callbacks = new Map();
-
-    private _id = 0;
-
-    constructor(port: number) {
-        this._server = new WebSocketServer({ port });
-        this._waitForSocket();
-    }
-
-    private _waitForSocket() {
-        this._server.on('connection', (ws) => {
-            if (this._socket) {
-                return;
-            }
-            log('[WSS] Connected');
-            ws.on('message', (data) => {
-                try {
-                    const { id, res } = JSON.parse(data.toString());
-                    if (this._callbacks.has(id)) {
-                        this._callbacks.get(id)(res);
-                        this._callbacks.delete(id);
-                    }
-                } catch (e) {
-                    console.error('[WSS]', e);
-                }
-            });
-            ws.on('close', () => {
-                log('[WSS] Disconnected');
-                this._socket = undefined;
-                this._waitForSocket();
-            });
-
-            this._socket = ws;
-        });
-    }
-
-    send(name: string, ...args: any[]) {
-        return new Promise((resolve, reject) => {
-            const id = this._id++;
-            this._callbacks.set(id, resolve);
-            if (!this._socket) {
-                reject(new Error('No socket'));
-                return;
-            }
-            this._socket?.send(JSON.stringify({ id, name, args }));
-        });
-    }
-}
 const wss = new WSS(52000);
+setInterval(() => {
+    wss.send('ping').catch(() => {});
+}, 1000);
 
 // Create an MCP server
 const server = new McpServer({
@@ -290,9 +237,3 @@ server.tool(
 // Start receiving messages on stdin and sending messages on stdout
 const transport = new StdioServerTransport();
 await server.connect(transport);
-
-// Ping Extension
-setInterval(() => {
-    const now = Date.now();
-    wss.send('ping').then(() => log(`Ping: ${Date.now() - now}ms`)).catch(() => log('Ping failed'));
-}, 1000);
