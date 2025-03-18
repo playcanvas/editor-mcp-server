@@ -109,7 +109,7 @@ wsc.method('entity:scale:set', (id, scale) => {
     wsc.log(`Set entity(${id}) scale: ${JSON.stringify(scale)}`);
     return scale;
 });
-wsc.method('entity:component:add', (id, name, fields) => {
+wsc.method('entity:component:add', (id, name, fields = {}) => {
     const entity = window.editor.api.globals.entities.get(id);
     if (!entity) {
         return undefined;
@@ -134,6 +134,18 @@ wsc.method('entity:component:property:set', (id, name, prop, value) => {
     entity.set(`components.${name}.${prop}`, value);
     wsc.log(`Set component(${name}) property(${prop}) of entity(${id}) to: ${JSON.stringify(value)}`);
     return value;
+});
+wsc.method('entity:component:script:add', (id, scriptName) => {
+    const entity = window.editor.api.globals.entities.get(id);
+    if (!entity) {
+        return undefined;
+    }
+    if (!entity.get(`components.${name}`)) {
+        return undefined;
+    }
+    window.editor.api.globals.scripts.addScript([entity], scriptName);
+    wsc.log(`Added script(${scriptName}) to component(script) of entity(${id})`);
+    return true;
 });
 
 // assets

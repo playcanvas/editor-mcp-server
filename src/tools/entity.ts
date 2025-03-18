@@ -194,4 +194,59 @@ export const register = (server: McpServer, wss: WSS) => {
             }
         }
     );
+
+    server.tool(
+        'create_script_component',
+        'Create a script component on an entity',
+        {
+            id: z.string()
+        },
+        async ({ id }) => {
+            try {
+                const res = await wss.send('entity:component:add', id, 'script');
+                return {
+                    content: [{
+                        type: 'text',
+                        text: `Created script component: ${JSON.stringify(res)}`
+                    }]
+                };
+            } catch (err: any) {
+                return {
+                    content: [{
+                        type: 'text',
+                        text: `Failed to create script component: ${err.message}`
+                    }],
+                    isError: true
+                };
+            }
+        }
+    );
+
+    server.tool(
+        'add_script_component_script',
+        'Add a script to a script component',
+        {
+            id: z.string(),
+            scriptName: z.number()
+        },
+        async ({ id, scriptName }) => {
+            try {
+                const res = await wss.send('entity:component:script:add', id, scriptName);
+                return {
+                    content: [{
+                        type: 'text',
+                        text: `Added script on script component ${id}: ${JSON.stringify(res)}`
+                    }]
+                };
+            } catch (err: any) {
+                return {
+                    content: [{
+                        type: 'text',
+                        text: `Failed to add script on script component ${id}: ${err.message}`
+                    }],
+                    isError: true
+                };
+            }
+        }
+    );
 };
