@@ -1,25 +1,17 @@
 {
     "manifest_version": 3,
-    "name": "Script Runner",
-    "description": "A simple Chrome extension to run scripts in page context.",
+    "name": "PlayCanvas Editor Interface",
+    "description": "This extension allows you to interact with the PlayCanvas Editor",
     "version": "1.0",
-    "permissions": [
-      "activeTab"
-    ],
-    "background": {
-      "service_worker": "background.js"
-    },
+    "permissions": ["activeTab"],
     "action": {
         "default_popup": "popup.html"
-      },
-    "host_permissions": [
-      "http://playcanvas.com/*",
-      "https://playcanvas.com/*"
-    ],
+    },
+    "host_permissions": ["http://playcanvas.com/*", "https://playcanvas.com/*"],
     "content_scripts": [
-      {
-        "matches": ["<all_urls>"],
-        "js": ["content.js"]
-      }
+        {
+            "matches": ["<all_urls>"],
+            "js": ["content.js"]
+        }
     ]
-  }
+}

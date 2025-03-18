@@ -1,6 +1,34 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
+// import { WebSocketServer } from 'ws';
+
+// Create a WebSocket server
+// let id = 0;
+// const handlers = [];
+// const wss = new WebSocketServer({ port: 52000 });
+// const socket = new Promise((resolve) => {
+//     wss.on('connection', (ws) => {
+//         resolve(ws);
+//     });
+//     wss.on('message', (message) => {
+//         try {
+//             const { i, name, args } = JSON.parse(message);
+//             const res = handlers[name]?.(...args);
+//             ws.send(JSON.stringify({ i, res }));
+//         } catch (e) {
+//             console.error('[server.mjs] Error:', e);
+//         }
+//     });
+// });
+// const send = (name, ...args) => {
+//     return new Promise(async (resolve) => {
+//         const ws = await socket;
+//         const i = id++;
+//         handlers[i] = resolve;
+//         ws.send(JSON.stringify({ i, name, args }));
+//     });
+// };
 
 // Create an MCP server
 const server = new McpServer({
@@ -14,7 +42,7 @@ server.tool(
     {
         name: z.string()
     },
-    async ({ name }) => {
+    ({ name }) => {
         return {
             content: [{
                 type: 'text',
@@ -35,7 +63,7 @@ server.tool(
             z: z.number()
         })
     },
-    async ({ id, position }) => {
+    ({ id, position }) => {
         return {
             content: [{
                 type: 'text',
@@ -53,7 +81,7 @@ server.tool(
         name: z.string(),
         type: z.string().optional().default('box')
     },
-    async ({ id, name, type }) => {
+    ({ id, name, type }) => {
         return {
             content: [{
                 type: 'text',
@@ -74,7 +102,7 @@ server.tool(
         id: z.number(),
         materialId: z.number()
     },
-    async ({ id, materialId }) => {
+    ({ id, materialId }) => {
         return {
             content: [{
                 type: 'text',
@@ -90,7 +118,7 @@ server.tool(
     {
         name: z.string()
     },
-    async ({ name }) => {
+    ({ name }) => {
         return {
             content: [{
                 type: 'text',
@@ -111,7 +139,7 @@ server.tool(
             b: z.number()
         })
     },
-    async ({ id, color }) => {
+    ({ id, color }) => {
         return {
             content: [{
                 type: 'text',
@@ -124,3 +152,5 @@ server.tool(
 // Start receiving messages on stdin and sending messages on stdout
 const transport = new StdioServerTransport();
 await server.connect(transport);
+
+// send('connected', true);

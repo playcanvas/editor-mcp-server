@@ -1,11 +1,20 @@
 {
-  "name": "mcp-test",
-  "module": "index.ts",
+  "name": "mcp-editor",
+  "module": "src/server.ts",
   "type": "module",
-  "devDependencies": {
-    "@types/bun": "latest"
+  "scripts": {
+    "start": "tsx src/server.ts",
+    "debug": "npx @modelcontextprotocol/inspector tsx src/server.ts",
+    "agent": "tsx src/agent.ts",
+    "lint": "eslint src"
   },
-  "peerDependencies": {
+  "devDependencies": {
+    "@playcanvas/eslint-config": "^2.0.9",
+    "@typescript-eslint/parser": "^8.26.1",
+    "dotenv": "^16.4.7",
+    "eslint": "^9.22.0",
+    "globals": "^16.0.0",
+    "tsx": "^4.19.3",
     "typescript": "^5.8.2"
   },
   "dependencies": {
