@@ -98,6 +98,33 @@ server.tool(
 );
 
 server.tool(
+    'delete_entity',
+    'Delete an entity',
+    {
+        id: z.string()
+    },
+    async ({ id }) => {
+        try {
+            const res = await wss.send('entity:delete', id);
+            return {
+                content: [{
+                    type: 'text',
+                    text: `Deleted entity ${id}: ${JSON.stringify(res)}`
+                }]
+            };
+        } catch (err: any) {
+            return {
+                content: [{
+                    type: 'text',
+                    text: `Failed to delete entity ${id}: ${err.message}`
+                }],
+                isError: true
+            };
+        }
+    }
+);
+
+server.tool(
     'list_entities',
     'List all entities',
     {},
@@ -131,11 +158,11 @@ server.tool(
     },
     async ({ id, position }) => {
         try {
-            const data = await wss.send('entity:position:set', id, position);
+            const res = await wss.send('entity:position:set', id, position);
             return {
                 content: [{
                     type: 'text',
-                    text: `Set position of entity ${id} to ${JSON.stringify(data)}`
+                    text: `Set position of entity ${id} to ${JSON.stringify(res)}`
                 }]
             };
         } catch (err: any) {
@@ -143,6 +170,34 @@ server.tool(
                 content: [{
                     type: 'text',
                     text: `Failed to set position of entity ${id}: ${err.message}`
+                }],
+                isError: true
+            };
+        }
+    }
+);
+
+server.tool(
+    'set_entity_scale',
+    'Set the scale of an entity',
+    {
+        id: z.string(),
+        scale: z.array(z.number()).length(3)
+    },
+    async ({ id, scale }) => {
+        try {
+            const res = await wss.send('entity:scale:set', id, scale);
+            return {
+                content: [{
+                    type: 'text',
+                    text: `Set scale of entity ${id} to ${JSON.stringify(res)}`
+                }]
+            };
+        } catch (err: any) {
+            return {
+                content: [{
+                    type: 'text',
+                    text: `Failed to set scale of entity ${id}: ${err.message}`
                 }],
                 isError: true
             };
@@ -160,11 +215,11 @@ server.tool(
     },
     async ({ id, name, type }) => {
         try {
-            const data = await wss.send('entity:component:add', id, name, { type });
+            const res = await wss.send('entity:component:add', id, name, { type });
             return {
                 content: [{
                     type: 'text',
-                    text: `Created ${name} component: ${JSON.stringify(data)}`
+                    text: `Created ${name} component: ${JSON.stringify(res)}`
                 }]
             };
         } catch (err: any) {

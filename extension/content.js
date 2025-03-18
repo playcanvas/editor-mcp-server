@@ -56,6 +56,14 @@ wsc.method('entity:create', (name) => {
     }
     return entity.json();
 });
+wsc.method('entity:delete', (id) => {
+    const entity = window.editor.api.globals.entities.get(id);
+    if (!entity) {
+        return undefined;
+    }
+    window.editor.api.globals.entities.delete(entity);
+    return true;
+});
 wsc.method('entity:list', () => {
     return window.editor.api.globals.entities.list().map(entity => entity.json());
 });
@@ -66,6 +74,14 @@ wsc.method('entity:position:set', (id, position) => {
     }
     entity.set('position', position);
     return position;
+});
+wsc.method('entity:scale:set', (id, scale) => {
+    const entity = window.editor.api.globals.entities.get(id);
+    if (!entity) {
+        return undefined;
+    }
+    entity.set('scale', scale);
+    return scale;
 });
 wsc.method('entity:component:add', (id, name, fields) => {
     const entity = window.editor.api.globals.entities.get(id);
