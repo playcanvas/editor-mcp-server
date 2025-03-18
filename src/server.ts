@@ -1,34 +1,68 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { WebSocketServer, type WebSocket } from 'ws';
 import { z } from 'zod';
-// import { WebSocketServer } from 'ws';
 
 // Create a WebSocket server
-// let id = 0;
-// const handlers = [];
-// const wss = new WebSocketServer({ port: 52000 });
-// const socket = new Promise((resolve) => {
-//     wss.on('connection', (ws) => {
-//         resolve(ws);
-//     });
-//     wss.on('message', (message) => {
-//         try {
-//             const { i, name, args } = JSON.parse(message);
-//             const res = handlers[name]?.(...args);
-//             ws.send(JSON.stringify({ i, res }));
-//         } catch (e) {
-//             console.error('[server.mjs] Error:', e);
-//         }
-//     });
-// });
-// const send = (name, ...args) => {
-//     return new Promise(async (resolve) => {
-//         const ws = await socket;
-//         const i = id++;
-//         handlers[i] = resolve;
-//         ws.send(JSON.stringify({ i, name, args }));
-//     });
-// };
+class WSS {
+    private _server: WebSocketServer;
+
+    private _socket?: WebSocket;
+
+    private _callbacks = new Map();
+
+    private _id = 0;
+
+    constructor(port: number) {
+        this._server = new WebSocketServer({ port });
+        this._waitForSocket();
+    }
+
+    private _waitForSocket() {
+        this._server.on('connection', (ws) => {
+            if (this._socket) {
+                return;
+            }
+            console.log('[WSS] Connected');
+            ws.on('message', (data) => {
+                try {
+                    const { id, res } = JSON.parse(data.toString());
+                    if (this._callbacks.has(id)) {
+                        this._callbacks.get(id)(res);
+                        this._callbacks.delete(id);
+                    }
+                } catch (e) {
+                    console.error('[WSS]', e);
+                }
+            });
+            ws.on('close', () => {
+                console.log('[WSS] Disconnected');
+                this._socket = undefined;
+                this._waitForSocket();
+            });
+
+            this._socket = ws;
+        });
+    }
+
+    send(name: string, ...args: any[]) {
+        return new Promise((resolve, reject) => {
+            const id = this._id++;
+            this._callbacks.set(id, resolve);
+            if (!this._socket) {
+                reject(new Error('No socket'));
+                return;
+            }
+            this._socket?.send(JSON.stringify({ id, name, args }));
+        });
+    }
+}
+
+const wss = new WSS(52000);
+setInterval(() => {
+    const now = Date.now();
+    wss.send('ping').then(() => console.log('Ping', Date.now() - now)).catch(() => console.log('Ping failed'));
+}, 1000);
 
 // Create an MCP server
 const server = new McpServer({
@@ -42,13 +76,76 @@ server.tool(
     {
         name: z.string()
     },
-    ({ name }) => {
-        return {
-            content: [{
-                type: 'text',
-                text: `Created entity ${name}: ${JSON.stringify({ id: 1 })}`
-            }]
-        };
+    async ({ name }) => {
+        try {
+            const res = await wss.send('entity:create', name);
+            return {
+                content: [{
+                    type: 'text',
+                    text: `Created entity: ${JSON.stringify(res)}`
+                }]
+            };
+        } catch (err: any) {
+            return {
+                content: [{
+                    type: 'text',
+                    text: `Failed to create entity: ${err.message}`
+                }],
+                isError: true
+            };
+        }
+    }
+);
+
+server.tool(
+    'delete_entity',
+    'Delete an entity',
+    {
+        id: z.string()
+    },
+    async ({ id }) => {
+        try {
+            const res = await wss.send('entity:delete', id);
+            return {
+                content: [{
+                    type: 'text',
+                    text: `Deleted entity ${id}: ${JSON.stringify(res)}`
+                }]
+            };
+        } catch (err: any) {
+            return {
+                content: [{
+                    type: 'text',
+                    text: `Failed to delete entity ${id}: ${err.message}`
+                }],
+                isError: true
+            };
+        }
+    }
+);
+
+server.tool(
+    'list_entities',
+    'List all entities',
+    {},
+    async () => {
+        try {
+            const res = await wss.send('entity:list');
+            return {
+                content: [{
+                    type: 'text',
+                    text: `Entities: ${JSON.stringify(res)}`
+                }]
+            };
+        } catch (err: any) {
+            return {
+                content: [{
+                    type: 'text',
+                    text: `Failed to list entities: ${err.message}`
+                }],
+                isError: true
+            };
+        }
     }
 );
 
@@ -56,20 +153,55 @@ server.tool(
     'set_entity_position',
     'Set the position of an entity',
     {
-        id: z.number(),
-        position: z.object({
-            x: z.number(),
-            y: z.number(),
-            z: z.number()
-        })
+        id: z.string(),
+        position: z.array(z.number()).length(3)
     },
-    ({ id, position }) => {
-        return {
-            content: [{
-                type: 'text',
-                text: `Set position of entity ${id} to ${JSON.stringify(position)}`
-            }]
-        };
+    async ({ id, position }) => {
+        try {
+            const res = await wss.send('entity:position:set', id, position);
+            return {
+                content: [{
+                    type: 'text',
+                    text: `Set position of entity ${id} to ${JSON.stringify(res)}`
+                }]
+            };
+        } catch (err: any) {
+            return {
+                content: [{
+                    type: 'text',
+                    text: `Failed to set position of entity ${id}: ${err.message}`
+                }],
+                isError: true
+            };
+        }
+    }
+);
+
+server.tool(
+    'set_entity_scale',
+    'Set the scale of an entity',
+    {
+        id: z.string(),
+        scale: z.array(z.number()).length(3)
+    },
+    async ({ id, scale }) => {
+        try {
+            const res = await wss.send('entity:scale:set', id, scale);
+            return {
+                content: [{
+                    type: 'text',
+                    text: `Set scale of entity ${id} to ${JSON.stringify(res)}`
+                }]
+            };
+        } catch (err: any) {
+            return {
+                content: [{
+                    type: 'text',
+                    text: `Failed to set scale of entity ${id}: ${err.message}`
+                }],
+                isError: true
+            };
+        }
     }
 );
 
@@ -77,80 +209,85 @@ server.tool(
     'create_component',
     'Create a new component on an entity',
     {
-        id: z.number(),
-        name: z.string(),
-        type: z.string().optional().default('box')
+        id: z.string(),
+        name: z.enum(['render']),
+        type: z.enum(['box', 'capsule', 'sphere', 'cylinder', 'cone', 'plane'])
     },
-    ({ id, name, type }) => {
-        return {
-            content: [{
-                type: 'text',
-                text: `Created component ${name} of type ${type} on entity ${id}: ${JSON.stringify({
-                    id,
-                    name,
-                    type
-                })}`
-            }]
-        };
+    async ({ id, name, type }) => {
+        try {
+            const res = await wss.send('entity:component:add', id, name, { type });
+            return {
+                content: [{
+                    type: 'text',
+                    text: `Created ${name} component: ${JSON.stringify(res)}`
+                }]
+            };
+        } catch (err: any) {
+            return {
+                content: [{
+                    type: 'text',
+                    text: `Failed to create ${name} component: ${err.message}`
+                }],
+                isError: true
+            };
+        }
     }
 );
 
-server.tool(
-    'set_render_component_material',
-    'Set the material on a render component',
-    {
-        id: z.number(),
-        materialId: z.number()
-    },
-    ({ id, materialId }) => {
-        return {
-            content: [{
-                type: 'text',
-                text: `Set material ${materialId} on render component ${id}`
-            }]
-        };
-    }
-);
+// server.tool(
+//     'set_render_component_material',
+//     'Set the material on a render component',
+//     {
+//         id: z.number(),
+//         materialId: z.number()
+//     },
+//     ({ id, materialId }) => {
+//         return {
+//             content: [{
+//                 type: 'text',
+//                 text: `Set material ${materialId} on render component ${id}`
+//             }]
+//         };
+//     }
+// );
 
-server.tool(
-    'create_material',
-    'Create a new material',
-    {
-        name: z.string()
-    },
-    ({ name }) => {
-        return {
-            content: [{
-                type: 'text',
-                text: `Created material ${name}: ${JSON.stringify({ id: 1 })}`
-            }]
-        };
-    }
-);
+// server.tool(
+//     'create_material',
+//     'Create a new material',
+//     {
+//         name: z.string()
+//     },
+//     ({ name }) => {
+//         return {
+//             content: [{
+//                 type: 'text',
+//                 text: `Created material ${name}: ${JSON.stringify({ id: 1 })}`
+//             }]
+//         };
+//     }
+// );
 
-server.tool(
-    'set_material_diffuse',
-    'Set diffuse property on a material',
-    {
-        id: z.number(),
-        color: z.object({
-            r: z.number(),
-            g: z.number(),
-            b: z.number()
-        })
-    },
-    ({ id, color }) => {
-        return {
-            content: [{
-                type: 'text',
-                text: `Set diffuse color of material ${id} to ${JSON.stringify(color)}`
-            }]
-        };
-    }
-);
+// server.tool(
+//     'set_material_diffuse',
+//     'Set diffuse property on a material',
+//     {
+//         id: z.number(),
+//         color: z.object({
+//             r: z.number(),
+//             g: z.number(),
+//             b: z.number()
+//         })
+//     },
+//     ({ id, color }) => {
+//         return {
+//             content: [{
+//                 type: 'text',
+//                 text: `Set diffuse color of material ${id} to ${JSON.stringify(color)}`
+//             }]
+//         };
+//     }
+// );
 
 // Start receiving messages on stdin and sending messages on stdout
 const transport = new StdioServerTransport();
 await server.connect(transport);
-
-// send('connected', true);
