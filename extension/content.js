@@ -1,6 +1,3 @@
-const log = msg => console.log(`%c[WSC] ${msg}`, 'color:#f60');
-const error = msg => console.error(`%c[WSC] ${msg}`, 'color:#f60');
-
 class WSC {
     _ws;
 
@@ -16,7 +13,7 @@ class WSC {
     _connect(address, retryTimeout = 3000) {
         this._ws = new WebSocket(address);
         this._ws.onopen = () => {
-            log(`Connected to: ${address}`);
+            this.log(`Connected to: ${address}`);
         };
         this._ws.onmessage = async (event) => {
             try {
@@ -24,13 +21,27 @@ class WSC {
                 const res = await this._methods.get(name)?.(...args);
                 this._ws.send(JSON.stringify({ id, res }));
             } catch (e) {
-                error(e);
+                wsc.error(e);
             }
         };
         this._ws.onclose = () => {
-            log(`Disconnected from: ${address}`);
+            this.log(`Disconnected from: ${address}`);
             setTimeout(() => this._connect(address), retryTimeout);
         };
+    }
+
+    /**
+     * @param {string} msg - The message to log.
+     */
+    log(msg) {
+        console.log(`%c[WSC] ${msg}`, 'color:#f60');
+    }
+
+    /**
+     * @param {string} msg - The error message to log.
+     */
+    error(msg) {
+        console.wsc.error(`%c[WSC] ${msg}`, 'color:#f60');
     }
 
     /**
@@ -39,7 +50,7 @@ class WSC {
      */
     method(name, fn) {
         if (this._methods.get(name)) {
-            error(`Method already exists: ${name}`);
+            this.error(`Method already exists: ${name}`);
             return;
         }
         this._methods.set(name, fn);
@@ -65,7 +76,7 @@ wsc.method('entity:create', (name) => {
     if (!entity) {
         return undefined;
     }
-    log(`Created entity(${entity.get('resource_id')})`);
+    wsc.log(`Created entity(${entity.get('resource_id')})`);
     return entity.json();
 });
 wsc.method('entity:delete', (id) => {
@@ -74,7 +85,7 @@ wsc.method('entity:delete', (id) => {
         return undefined;
     }
     window.editor.api.globals.entities.delete(entity);
-    log(`Deleted entity(${id})`);
+    wsc.log(`Deleted entity(${id})`);
     return true;
 });
 wsc.method('entity:list', () => {
@@ -86,7 +97,7 @@ wsc.method('entity:position:set', (id, position) => {
         return undefined;
     }
     entity.set('position', position);
-    log(`Set entity(${id}) position: ${JSON.stringify(position)}`);
+    wsc.log(`Set entity(${id}) position: ${JSON.stringify(position)}`);
     return position;
 });
 wsc.method('entity:scale:set', (id, scale) => {
@@ -95,7 +106,7 @@ wsc.method('entity:scale:set', (id, scale) => {
         return undefined;
     }
     entity.set('scale', scale);
-    log(`Set entity(${id}) scale: ${JSON.stringify(scale)}`);
+    wsc.log(`Set entity(${id}) scale: ${JSON.stringify(scale)}`);
     return scale;
 });
 wsc.method('entity:component:add', (id, name, fields) => {
@@ -109,7 +120,7 @@ wsc.method('entity:component:add', (id, name, fields) => {
     const data = window.editor.schema.components.getDefaultData(name);
     Object.assign(data, fields);
     entity.set(`components.${name}`, data);
-    log(`Added component(${name}) to entity(${id})`);
+    wsc.log(`Added component(${name}) to entity(${id})`);
     return data;
 });
 wsc.method('entity:component:property:set', (id, name, prop, value) => {
@@ -121,7 +132,7 @@ wsc.method('entity:component:property:set', (id, name, prop, value) => {
         return undefined;
     }
     entity.set(`components.${name}.${prop}`, value);
-    log(`Set component(${name}) property(${prop}) of entity(${id}) to: ${JSON.stringify(value)}`);
+    wsc.log(`Set component(${name}) property(${prop}) of entity(${id}) to: ${JSON.stringify(value)}`);
     return value;
 });
 
@@ -135,13 +146,16 @@ wsc.method('asset:create', async (type, name, data) => {
         case 'texture':
             asset = await window.editor.api.globals.assets.createTexture({ name, data });
             break;
+        case 'script':
+            asset = await window.editor.api.globals.assets.createScript({ filename: name, data });
+            break;
         default:
             return undefined;
     }
     if (!asset) {
         return undefined;
     }
-    log(`Created asset(${asset.get('id')})`);
+    wsc.log(`Created asset(${asset.get('id')})`);
     return asset.json();
 });
 wsc.method('asset:delete', (id) => {
@@ -150,7 +164,7 @@ wsc.method('asset:delete', (id) => {
         return undefined;
     }
     window.editor.api.globals.assets.delete(asset);
-    log(`Deleted asset(${id})`);
+    wsc.log(`Deleted asset(${id})`);
     return true;
 });
 wsc.method('asset:list', () => {
@@ -162,6 +176,6 @@ wsc.method('asset:property:set', (id, prop, value) => {
         return undefined;
     }
     asset.set(`data.${prop}`, value);
-    log(`Set asset(${id}) property(${prop}) to: ${JSON.stringify(value)}`);
+    wsc.log(`Set asset(${id}) property(${prop}) to: ${JSON.stringify(value)}`);
     return value;
 });
