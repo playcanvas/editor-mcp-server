@@ -179,3 +179,32 @@ wsc.method('asset:property:set', (id, prop, value) => {
     wsc.log(`Set asset(${id}) property(${prop}) to: ${JSON.stringify(value)}`);
     return value;
 });
+wsc.method('asset:script:content:set', async (id, content) => {
+    const asset = window.editor.api.globals.assets.get(id);
+    if (!asset) {
+        return undefined;
+    }
+
+    const form = new FormData();
+    form.append('filename', asset.get('file.filename'));
+    form.append('file', new Blob([content], { type: 'text/plain' }), asset.get('file.filename'));
+    form.append('branchId', window.config.self.branch.id);
+
+    try {
+        const res = await fetch(`/api/assets/${id}`, {
+            method: 'PUT',
+            body: form,
+            headers: {
+                Authorization: `Bearer ${window.editor.api.globals.accessToken}`
+            }
+        });
+        const data = await res.json();
+        if (data.error) {
+            return undefined;
+        }
+        wsc.log(`Set asset(${id}) script content`);
+        return data;
+    } catch (e) {
+        return undefined;
+    }
+});

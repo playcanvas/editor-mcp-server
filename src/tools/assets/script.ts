@@ -5,25 +5,25 @@ import { type WSS } from '../../wss.ts';
 
 export const register = (server: McpServer, wss: WSS) => {
     server.tool(
-        'create_material',
-        'Create a new material',
+        'create_script',
+        'Create a new script',
         {
             name: z.string()
         },
         async ({ name }) => {
             try {
-                const res = await wss.send('asset:create', 'material', name);
+                const res = await wss.send('asset:create', 'script', name);
                 return {
                     content: [{
                         type: 'text',
-                        text: `Created material: ${JSON.stringify(res)}`
+                        text: `Created script: ${JSON.stringify(res)}`
                     }]
                 };
             } catch (err: any) {
                 return {
                     content: [{
                         type: 'text',
-                        text: `Failed to create material: ${err.message}`
+                        text: `Failed to create script: ${err.message}`
                     }],
                     isError: true
                 };
@@ -32,26 +32,26 @@ export const register = (server: McpServer, wss: WSS) => {
     );
 
     server.tool(
-        'set_material_diffuse',
-        'Set diffuse property on a material',
+        'set_script_content',
+        'Set script content',
         {
             assetId: z.number(),
-            color: z.array(z.number()).length(3)
+            content: z.string()
         },
-        async ({ assetId, color }) => {
+        async ({ assetId, content }) => {
             try {
-                const res = await wss.send('asset:property:set', assetId, 'diffuse', color);
+                const res = await wss.send('asset:script:content:set', assetId, content);
                 return {
                     content: [{
                         type: 'text',
-                        text: `Set diffuse property on material ${assetId}: ${JSON.stringify(res)}`
+                        text: `Set script content ${assetId}: ${JSON.stringify(res)}`
                     }]
                 };
             } catch (err: any) {
                 return {
                     content: [{
                         type: 'text',
-                        text: `Failed to set diffuse property on material ${assetId}: ${err.message}`
+                        text: `Failed script content ${assetId}: ${err.message}`
                     }],
                     isError: true
                 };
