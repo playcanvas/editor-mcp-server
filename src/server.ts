@@ -289,6 +289,5 @@ await server.connect(transport);
 
 // Ping Extension
 setInterval(() => {
-    const now = Date.now();
-    wss.send('ping').then(() => console.log('Ping', Date.now() - now)).catch(() => console.log('Ping failed'));
+    wss.send('ping').catch(() => {});
 }, 1000);
