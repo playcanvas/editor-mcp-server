@@ -8,11 +8,17 @@ export const register = (server: McpServer, wss: WSS) => {
         'create_entity',
         'Create a new entity',
         {
-            name: z.string()
+            enabled: z.boolean().optional(),
+            name: z.string().optional(),
+            parent: z.string().optional(),
+            position: z.array(z.number()).length(3).optional(),
+            rotation: z.array(z.number()).length(3).optional(),
+            scale: z.array(z.number()).length(3).optional(),
+            tags: z.array(z.string()).optional()
         },
-        async ({ name }) => {
+        async (options) => {
             try {
-                const res = await wss.send('entity:create', name);
+                const res = await wss.send('entity:create', options);
                 return {
                     content: [{
                         type: 'text',
@@ -24,6 +30,69 @@ export const register = (server: McpServer, wss: WSS) => {
                     content: [{
                         type: 'text',
                         text: `Failed to create entity: ${err.message}`
+                    }],
+                    isError: true
+                };
+            }
+        }
+    );
+
+    server.tool(
+        'modify_entity',
+        'Modify an entity\'s properties',
+        {
+            id: z.string(),
+            name: z.string().optional(),
+            enabled: z.boolean().optional(),
+            position: z.array(z.number()).length(3).optional(),
+            rotation: z.array(z.number()).length(3).optional(),
+            scale: z.array(z.number()).length(3).optional(),
+            tags: z.array(z.string()).optional()
+        },
+        async (options) => {
+            try {
+                const res = await wss.send('entity:modify', options.id, options);
+                return {
+                    content: [{
+                        type: 'text',
+                        text: `Modified entity ${options.id}: ${JSON.stringify(res)}`
+                    }]
+                };
+            } catch (err: any) {
+                return {
+                    content: [{
+                        type: 'text',
+                        text: `Failed to modify entity: ${err.message}`
+                    }],
+                    isError: true
+                };
+            }
+        }
+    );
+
+    server.tool(
+        'reparent_entity',
+        'Reparent an entity',
+        {
+            id: z.string(),
+            parent: z.string(),
+            index: z.number().optional(),
+            preserveTransform: z.boolean().optional()
+        },
+        async (options) => {
+            try {
+                const res = await wss.send('entity:reparent', options);
+                return {
+                    content: [{
+                        type: 'text',
+                        text: `Reparented entity ${options.id}: ${JSON.stringify(res)}`
+                    }]
+                };
+            } catch (err: any) {
+                return {
+                    content: [{
+                        type: 'text',
+                        text: `Failed to reparent entity: ${err.message}`
                     }],
                     isError: true
                 };
@@ -76,62 +145,6 @@ export const register = (server: McpServer, wss: WSS) => {
                     content: [{
                         type: 'text',
                         text: `Failed to list entities: ${err.message}`
-                    }],
-                    isError: true
-                };
-            }
-        }
-    );
-
-    server.tool(
-        'set_entity_position',
-        'Set the position of an entity',
-        {
-            id: z.string(),
-            position: z.array(z.number()).length(3)
-        },
-        async ({ id, position }) => {
-            try {
-                const res = await wss.send('entity:position:set', id, position);
-                return {
-                    content: [{
-                        type: 'text',
-                        text: `Set position of entity ${id} to ${JSON.stringify(res)}`
-                    }]
-                };
-            } catch (err: any) {
-                return {
-                    content: [{
-                        type: 'text',
-                        text: `Failed to set position of entity ${id}: ${err.message}`
-                    }],
-                    isError: true
-                };
-            }
-        }
-    );
-
-    server.tool(
-        'set_entity_scale',
-        'Set the scale of an entity',
-        {
-            id: z.string(),
-            scale: z.array(z.number()).length(3)
-        },
-        async ({ id, scale }) => {
-            try {
-                const res = await wss.send('entity:scale:set', id, scale);
-                return {
-                    content: [{
-                        type: 'text',
-                        text: `Set scale of entity ${id} to ${JSON.stringify(res)}`
-                    }]
-                };
-            } catch (err: any) {
-                return {
-                    content: [{
-                        type: 'text',
-                        text: `Failed to set scale of entity ${id}: ${err.message}`
                     }],
                     isError: true
                 };
