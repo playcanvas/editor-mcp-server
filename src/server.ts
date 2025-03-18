@@ -9,7 +9,7 @@ class WSS {
 
     private _socket?: WebSocket;
 
-    private _handlers = new Map();
+    private _callbacks = new Map();
 
     private _id = 0;
 
@@ -27,9 +27,9 @@ class WSS {
             ws.on('message', (data) => {
                 try {
                     const { id, res } = JSON.parse(data.toString());
-                    if (this._handlers.has(id)) {
-                        this._handlers.get(id)(res);
-                        this._handlers.delete(id);
+                    if (this._callbacks.has(id)) {
+                        this._callbacks.get(id)(res);
+                        this._callbacks.delete(id);
                     }
                 } catch (e) {
                     console.error('[WSS]', e);
@@ -48,7 +48,7 @@ class WSS {
     send(name: string, ...args: any[]) {
         return new Promise((resolve, reject) => {
             const id = this._id++;
-            this._handlers.set(id, resolve);
+            this._callbacks.set(id, resolve);
             if (!this._socket) {
                 reject(new Error('No socket'));
                 return;
@@ -64,70 +64,120 @@ setInterval(() => {
     wss.send('ping').then(() => console.log('Ping', Date.now() - now)).catch(() => console.log('Ping failed'));
 }, 1000);
 
-// // Create an MCP server
-// const server = new McpServer({
-//     name: 'PlayCanvas',
-//     version: '1.0.0'
-// });
+// Create an MCP server
+const server = new McpServer({
+    name: 'PlayCanvas',
+    version: '1.0.0'
+});
 
-// server.tool(
-//     'create_entity',
-//     'Create a new entity',
-//     {
-//         name: z.string()
-//     },
-//     ({ name }) => {
-//         return {
-//             content: [{
-//                 type: 'text',
-//                 text: `Created entity ${name}: ${JSON.stringify({ id: 1 })}`
-//             }]
-//         };
-//     }
-// );
+server.tool(
+    'create_entity',
+    'Create a new entity',
+    {
+        name: z.string()
+    },
+    async ({ name }) => {
+        try {
+            const res = await wss.send('entity:create', name);
+            return {
+                content: [{
+                    type: 'text',
+                    text: `Created entity: ${JSON.stringify(res)}`
+                }]
+            };
+        } catch (err: any) {
+            return {
+                content: [{
+                    type: 'text',
+                    text: `Failed to create entity: ${err.message}`
+                }],
+                isError: true
+            };
+        }
+    }
+);
 
-// server.tool(
-//     'set_entity_position',
-//     'Set the position of an entity',
-//     {
-//         id: z.number(),
-//         position: z.object({
-//             x: z.number(),
-//             y: z.number(),
-//             z: z.number()
-//         })
-//     },
-//     ({ id, position }) => {
-//         return {
-//             content: [{
-//                 type: 'text',
-//                 text: `Set position of entity ${id} to ${JSON.stringify(position)}`
-//             }]
-//         };
-//     }
-// );
+server.tool(
+    'list_entities',
+    'List all entities',
+    {},
+    async () => {
+        try {
+            const res = await wss.send('entity:list');
+            return {
+                content: [{
+                    type: 'text',
+                    text: `Entities: ${JSON.stringify(res)}`
+                }]
+            };
+        } catch (err: any) {
+            return {
+                content: [{
+                    type: 'text',
+                    text: `Failed to list entities: ${err.message}`
+                }],
+                isError: true
+            };
+        }
+    }
+);
 
-// server.tool(
-//     'create_component',
-//     'Create a new component on an entity',
-//     {
-//         id: z.number(),
-//         name: z.string(),
-//         type: z.string().optional().default('box')
-//     },
-//     ({ id, name, type }) => {
-//         return {
-//             content: [{
-//                 type: 'text',
-//                 text: `Created component ${name} of type ${type} on entity ${id}: ${JSON.stringify({
-//                     id,
-//                     name,
-//                     type
-//                 })}`
-//             }]
-//         };
-//     }
-// );
+server.tool(
+    'set_entity_position',
+    'Set the position of an entity',
+    {
+        id: z.string(),
+        position: z.array(z.number()).length(3)
+    },
+    async ({ id, position }) => {
+        try {
+            const data = await wss.send('entity:position:set', id, position);
+            return {
+                content: [{
+                    type: 'text',
+                    text: `Set position of entity ${id} to ${JSON.stringify(data)}`
+                }]
+            };
+        } catch (err: any) {
+            return {
+                content: [{
+                    type: 'text',
+                    text: `Failed to set position of entity ${id}: ${err.message}`
+                }],
+                isError: true
+            };
+        }
+    }
+);
+
+server.tool(
+    'create_component',
+    'Create a new component on an entity',
+    {
+        id: z.string(),
+        name: z.enum(['render']),
+        type: z.enum(['box', 'capsule', 'sphere', 'cylinder', 'cone', 'plane'])
+    },
+    async ({ id, name, type }) => {
+        try {
+            const data = await wss.send('entity:component:add', id, name, { type });
+            return {
+                content: [{
+                    type: 'text',
+                    text: `Created ${name} component: ${JSON.stringify(data)}`
+                }]
+            };
+        } catch (err: any) {
+            return {
+                content: [{
+                    type: 'text',
+                    text: `Failed to create ${name} component: ${err.message}`
+                }],
+                isError: true
+            };
+        }
+    }
+);
 
 // server.tool(
 //     'set_render_component_material',
@@ -183,6 +233,6 @@ setInterval(() => {
 //     }
 // );
 
-// // Start receiving messages on stdin and sending messages on stdout
-// const transport = new StdioServerTransport();
-// await server.connect(transport);
+// Start receiving messages on stdin and sending messages on stdout
+const transport = new StdioServerTransport();
+await server.connect(transport);

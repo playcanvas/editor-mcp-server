@@ -44,11 +44,39 @@ class WSC {
 }
 
 const wsc = window.wsc = new WSC('ws://localhost:52000');
+
+// general
 wsc.method('ping', () => 'pong');
+
+// entities
 wsc.method('entity:create', (name) => {
     const entity = window.editor.api.globals.entities.create({ name });
     if (!entity) {
         return undefined;
     }
-    return entity.observer.json();
+    return entity.json();
+});
+wsc.method('entity:list', () => {
+    return window.editor.api.globals.entities.list().map(entity => entity.json());
+});
+wsc.method('entity:position:set', (id, position) => {
+    const entity = window.editor.api.globals.entities.get(id);
+    if (!entity) {
+        return undefined;
+    }
+    entity.set('position', position);
+    return position;
+});
+wsc.method('entity:component:add', (id, name, fields) => {
+    const entity = window.editor.api.globals.entities.get(id);
+    if (!entity) {
+        return undefined;
+    }
+    if (entity.get(`components.${name}`)) {
+        return undefined;
+    }
+    const data = window.editor.schema.components.getDefaultData(name);
+    Object.assign(data, fields);
+    entity.set(`components.${name}`, data);
+    return data;
 });
