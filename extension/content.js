@@ -100,6 +100,15 @@ wsc.method('entity:position:set', (id, position) => {
     wsc.log(`Set entity(${id}) position: ${JSON.stringify(position)}`);
     return position;
 });
+wsc.method('entity:rotation:set', (id, rotation) => {
+    const entity = window.editor.api.globals.entities.get(id);
+    if (!entity) {
+        return undefined;
+    }
+    entity.set('rotation', rotation);
+    log(`Set entity(${id}) rotation: ${JSON.stringify(rotation)}`);
+    return rotation;
+});
 wsc.method('entity:scale:set', (id, scale) => {
     const entity = window.editor.api.globals.entities.get(id);
     if (!entity) {

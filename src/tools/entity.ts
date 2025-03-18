@@ -112,6 +112,34 @@ export const register = (server: McpServer, wss: WSS) => {
     );
 
     server.tool(
+        'set_entity_rotation',
+        'Set the rotation of an entity',
+        {
+            id: z.string(),
+            rotation: z.array(z.number()).length(3)
+        },
+        async ({ id, rotation }) => {
+            try {
+                const res = await wss.send('entity:rotation:set', id, rotation);
+                return {
+                    content: [{
+                        type: 'text',
+                        text: `Set rotation of entity ${id} to ${JSON.stringify(res)}`
+                    }]
+                };
+            } catch (err: any) {
+                return {
+                    content: [{
+                        type: 'text',
+                        text: `Failed to set rotation of entity ${id}: ${err.message}`
+                    }],
+                    isError: true
+                };
+            }
+        }
+    );
+
+    server.tool(
         'set_entity_scale',
         'Set the scale of an entity',
         {
