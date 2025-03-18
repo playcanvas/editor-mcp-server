@@ -50,7 +50,7 @@ export const register = (server: McpServer, wss: WSS) => {
         },
         async (options) => {
             try {
-                const res = await wss.send('entity:modify', options.id,options);
+                const res = await wss.send('entity:modify', options.id, options);
                 return {
                     content: [{
                         type: 'text',
