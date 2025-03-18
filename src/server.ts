@@ -152,27 +152,26 @@ server.tool(
 );
 
 server.tool(
-    'create_component',
-    'Create a new component on an entity',
+    'create_render_component',
+    'Create a render component on an entity',
     {
         id: z.string(),
-        name: z.enum(['render']),
         type: z.enum(['box', 'capsule', 'sphere', 'cylinder', 'cone', 'plane'])
     },
-    async ({ id, name, type }) => {
+    async ({ id, type }) => {
         try {
-            const res = await wss.send('entity:component:add', id, name, { type });
+            const res = await wss.send('entity:component:add', id, 'render', { type });
             return {
                 content: [{
                     type: 'text',
-                    text: `Created ${name} component: ${JSON.stringify(res)}`
+                    text: `Created render component: ${JSON.stringify(res)}`
                 }]
             };
         } catch (err: any) {
             return {
                 content: [{
                     type: 'text',
-                    text: `Failed to create ${name} component: ${err.message}`
+                    text: `Failed to create render component: ${err.message}`
                 }],
                 isError: true
             };
