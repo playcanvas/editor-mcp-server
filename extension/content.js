@@ -1,34 +1,54 @@
-const handlers = {
-    'connected': () => {
-        console.log('Connected to server');
-    },
-    'create_entity': (id) => {
-        console.log('Creating entity:', id);
-    },
-    'set_position': (id, position) => {
-        console.log('Setting position of entity:', id, 'to:', position);
-    },
-    'create_component': (id, name, type) => {
-        console.log('Creating component:', name, 'of type:', type, 'on entity:', id);
-    },
-    'set_render_component_material': (id, materialId) => {
-        console.log('Setting material:', materialId, 'on render component:', id);
-    },
-    'create_material': (name) => {
-        console.log('Creating material:', name);
-    },
-    'set_material_color': (id, color) => {
-        console.log('Setting color:', color, 'on material:', id);
-    }
-};
+class WSC {
+    _ws;
 
-const ws = new WebSocket('ws://localhost:52000');
-ws.onmessage = (event) => {
-    try {
-        const { name, args } = JSON.parse(event.data);
-        const res = handlers[name]?.(...args);
-        ws.send(JSON.stringify({ res }));
-    } catch (e) {
-        console.error('[content.js] Error:', e);
+    _methods = new Map();
+
+    constructor(address) {
+        this._ws = new WebSocket(address);
+        this._ws.onopen = () => {
+            console.log('[WSC] Connected to:', address);
+        };
+        this._ws.onmessage = (event) => {
+            try {
+                const { id, name, args } = JSON.parse(event.data);
+                const res = this._methods.get(name)?.(...args);
+                this._ws.send(JSON.stringify({ id, res }));
+            } catch (e) {
+                console.error('[WSC]', e);
+            }
+        };
+        this._ws.onclose = () => {
+            console.log('[WSC] Disconnected from:', address);
+        };
     }
-};
+
+    /**
+     * @param {string} name - The name of the method to add.
+     * @param {Function} fn - The function to call when the method is called.
+     */
+    method(name, fn) {
+        if (this._methods.get(name)) {
+            throw new Error(`[WSC] method '${name}' already registered`);
+        }
+        this._methods.set(name, fn);
+    }
+
+    /**
+     * @param {string} name - The name of the method to call.
+     * @param {...*} args - The arguments to pass to the method.
+     * @returns {*} The return value of the method.
+     */
+    call(name, ...args) {
+        return this._methods.get(name)?.(...args);
+    }
+}
+
+const wsc = window.wsc = new WSC('ws://localhost:52000');
+wsc.method('ping', () => 'pong');
+wsc.method('entity:create', (name) => {
+    const entity = window.editor.api.globals.entities.create({ name });
+    if (!entity) {
+        return undefined;
+    }
+    return entity.observer.json();
+});

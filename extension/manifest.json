@@ -10,8 +10,9 @@
     "host_permissions": ["http://playcanvas.com/*", "https://playcanvas.com/*"],
     "content_scripts": [
         {
-            "matches": ["<all_urls>"],
-            "js": ["content.js"]
+            "matches": ["http://playcanvas.com/*", "https://playcanvas.com/*"],
+            "js": ["content.js"],
+            "world": "MAIN"
         }
     ]
 }
