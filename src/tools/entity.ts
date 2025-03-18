@@ -8,8 +8,9 @@ export const register = (server: McpServer, wss: WSS) => {
         'create_entity',
         'Create a new entity',
         {
-            name: z.string().optional(),
             enabled: z.boolean().optional(),
+            name: z.string().optional(),
+            parent: z.string().optional(),
             position: z.array(z.number()).length(3).optional(),
             rotation: z.array(z.number()).length(3).optional(),
             scale: z.array(z.number()).length(3).optional(),
@@ -62,6 +63,36 @@ export const register = (server: McpServer, wss: WSS) => {
                     content: [{
                         type: 'text',
                         text: `Failed to modify entity: ${err.message}`
+                    }],
+                    isError: true
+                };
+            }
+        }
+    );
+
+    server.tool(
+        'reparent_entity',
+        'Reparent an entity',
+        {
+            id: z.string(),
+            parent: z.string(),
+            index: z.number().optional(),
+            preserveTransform: z.boolean().optional()
+        },
+        async (options) => {
+            try {
+                const res = await wss.send('entity:reparent', options);
+                return {
+                    content: [{
+                        type: 'text',
+                        text: `Reparented entity ${options.id}: ${JSON.stringify(res)}`
+                    }]
+                };
+            } catch (err: any) {
+                return {
+                    content: [{
+                        type: 'text',
+                        text: `Failed to reparent entity: ${err.message}`
                     }],
                     isError: true
                 };
