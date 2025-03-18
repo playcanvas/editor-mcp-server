@@ -105,6 +105,21 @@ wsc.method('entity:modify', (id, options = {}) => {
     wsc.log(`Modified entity(${id})`);
     return entity.json();
 });
+wsc.method('entity:reparent', (options) => {
+    const entity = window.editor.api.globals.entities.get(options.id);
+    if (!entity) {
+        return undefined;
+    }
+    const parent = window.editor.api.globals.entities.get(options.parent);
+    if (!parent) {
+        return undefined;
+    }
+    entity.reparent(parent, options.index, {
+        preserveTransform: options.preserveTransform
+    });
+    wsc.log(`Reparented entity(${options.id}) to entity(${options.parent})`);
+    return entity.json();
+});
 wsc.method('entity:delete', (id) => {
     const entity = window.editor.api.globals.entities.get(id);
     if (!entity) {
