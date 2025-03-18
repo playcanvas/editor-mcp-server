@@ -71,7 +71,7 @@ const wsc = window.wsc = new WSC('ws://localhost:52000');
 wsc.method('ping', () => 'pong');
 
 // entities
-wsc.method('entity:create', (name, options = {}) => {
+wsc.method('entity:create', (options = {}) => {
     const entity = window.editor.api.globals.entities.create(options);
     if (!entity) {
         return undefined;
