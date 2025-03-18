@@ -3,6 +3,10 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { WebSocketServer, type WebSocket } from 'ws';
 import { z } from 'zod';
 
+const log = (...args: any[]) => {
+    // console.log(...args);
+};
+
 // Create a WebSocket server
 class WSS {
     private _server: WebSocketServer;
@@ -23,7 +27,7 @@ class WSS {
             if (this._socket) {
                 return;
             }
-            console.log('[WSS] Connected');
+            log('[WSS] Connected');
             ws.on('message', (data) => {
                 try {
                     const { id, res } = JSON.parse(data.toString());
@@ -36,7 +40,7 @@ class WSS {
                 }
             });
             ws.on('close', () => {
-                console.log('[WSS] Disconnected');
+                log('[WSS] Disconnected');
                 this._socket = undefined;
                 this._waitForSocket();
             });
@@ -289,5 +293,6 @@ await server.connect(transport);
 
 // Ping Extension
 setInterval(() => {
-    wss.send('ping').catch(() => {});
+    const now = Date.now();
+    wss.send('ping').then(() => log(`Ping: ${Date.now() - now}ms`)).catch(() => log('Ping failed'));
 }, 1000);
