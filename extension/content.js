@@ -79,6 +79,32 @@ wsc.method('entity:create', (options = {}) => {
     wsc.log(`Created entity(${entity.get('resource_id')})`);
     return entity.json();
 });
+wsc.method('entity:modify', (id, options = {}) => {
+    const entity = window.editor.api.globals.entities.get(id);
+    if (!entity) {
+        return undefined;
+    }
+    if (options.name) {
+        entity.set('name', options.name);
+    }
+    if (options.position) {
+        entity.set('position', options.position);
+    }
+    if (options.rotation) {
+        entity.set('rotation', options.rotation);
+    }
+    if (options.scale) {
+        entity.set('scale', options.scale);
+    }
+    if (options.enabled) {
+        entity.set('enabled', options.enabled);
+    }
+    if (options.tags) {
+        entity.set('tags', options.tags);
+    }
+    wsc.log(`Modified entity(${id})`);
+    return entity.json();
+});
 wsc.method('entity:delete', (id) => {
     const entity = window.editor.api.globals.entities.get(id);
     if (!entity) {
@@ -90,33 +116,6 @@ wsc.method('entity:delete', (id) => {
 });
 wsc.method('entity:list', () => {
     return window.editor.api.globals.entities.list().map(entity => entity.json());
-});
-wsc.method('entity:position:set', (id, position) => {
-    const entity = window.editor.api.globals.entities.get(id);
-    if (!entity) {
-        return undefined;
-    }
-    entity.set('position', position);
-    wsc.log(`Set entity(${id}) position: ${JSON.stringify(position)}`);
-    return position;
-});
-wsc.method('entity:rotation:set', (id, rotation) => {
-    const entity = window.editor.api.globals.entities.get(id);
-    if (!entity) {
-        return undefined;
-    }
-    entity.set('rotation', rotation);
-    log(`Set entity(${id}) rotation: ${JSON.stringify(rotation)}`);
-    return rotation;
-});
-wsc.method('entity:scale:set', (id, scale) => {
-    const entity = window.editor.api.globals.entities.get(id);
-    if (!entity) {
-        return undefined;
-    }
-    entity.set('scale', scale);
-    wsc.log(`Set entity(${id}) scale: ${JSON.stringify(scale)}`);
-    return scale;
 });
 wsc.method('entity:component:add', (id, name, fields) => {
     const entity = window.editor.api.globals.entities.get(id);
