@@ -8,12 +8,26 @@ class WSC {
     }
 
     /**
+     * @param {string} msg - The message to log.
+     */
+    _log(msg) {
+        console.log(`%c[WSC] ${msg}`, 'color:#f60');
+    }
+
+    /**
+     * @param {string} msg - The error message to log.
+     */
+    _error(msg) {
+        console.error(`%c[WSC] ${msg}`, 'color:#f60');
+    }
+
+    /**
      * @param {string} address - The address to connect to.
      */
     _connect(address, retryTimeout = 3000) {
         this._ws = new WebSocket(address);
         this._ws.onopen = () => {
-            console.log('[WSC] Connected to:', address);
+            this._log(`Connected to: ${address}`);
         };
         this._ws.onmessage = (event) => {
             try {
@@ -21,11 +35,11 @@ class WSC {
                 const res = this._methods.get(name)?.(...args);
                 this._ws.send(JSON.stringify({ id, res }));
             } catch (e) {
-                console.error('[WSC]', e);
+                this._error(e);
             }
         };
         this._ws.onclose = () => {
-            console.log('[WSC] Disconnected from:', address);
+            this._log(`Disconnected from: ${address}`);
             setTimeout(() => this._connect(address), retryTimeout);
         };
     }
@@ -36,7 +50,8 @@ class WSC {
      */
     method(name, fn) {
         if (this._methods.get(name)) {
-            throw new Error(`[WSC] method '${name}' already registered`);
+            this._error(`Method already exists: ${name}`);
+            return;
         }
         this._methods.set(name, fn);
     }
