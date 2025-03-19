@@ -12,7 +12,7 @@ export const register = (server: McpServer, wss: WSS) => {
         },
         async ({ name }) => {
             try {
-                const res = await wss.send('assets:create', 'material', name);
+                const res = await wss.send('assets:create', 'material', { name });
                 if (res === undefined) {
                     throw new Error('Failed to create material');
                 }

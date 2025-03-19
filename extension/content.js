@@ -216,17 +216,17 @@ wsc.method('entities:components:script:add', (id, scriptName) => {
 });
 
 // assets
-wsc.method('assets:create', async (type, name, data) => {
+wsc.method('assets:create', async (type, options = {}) => {
     let asset;
     switch (type) {
         case 'material':
-            asset = await editorApi.assets.createMaterial({ name, data });
+            asset = await editorApi.assets.createMaterial(options);
             break;
         case 'texture':
-            asset = await editorApi.assets.createTexture({ name, data });
+            asset = await editorApi.assets.createTexture(options);
             break;
         case 'script':
-            asset = await editorApi.assets.createScript({ filename: name, data });
+            asset = await editorApi.assets.createScript(options);
             break;
         default:
             return undefined;
