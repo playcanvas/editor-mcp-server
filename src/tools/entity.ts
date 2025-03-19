@@ -141,21 +141,21 @@ export const register = (server: McpServer, wss: WSS) => {
     );
 
     server.tool(
-        'delete_entity',
-        'Delete an entity',
+        'delete_entities',
+        'Delete one or more entities',
         {
-            id: z.string()
+            ids: z.array(z.string())
         },
-        async ({ id }) => {
+        async ({ ids }) => {
             try {
-                const res = await wss.send('entity:delete', id);
+                const res = await wss.send('entity:delete', ids);
                 if (res === undefined) {
-                    throw new Error('Failed to delete entity');
+                    throw new Error('Failed to delete entities');
                 }
                 return {
                     content: [{
                         type: 'text',
-                        text: `Deleted entity ${id}: ${JSON.stringify(res)}`
+                        text: `Deleted entities: ${JSON.stringify(res)}`
                     }]
                 };
             } catch (err: any) {
