@@ -125,7 +125,7 @@ wsc.method('entity:delete', (id) => {
     if (!entity) {
         return undefined;
     }
-    window.editor.api.globals.entities.delete(entity);
+    entity.delete();
     wsc.log(`Deleted entity(${id})`);
     return true;
 });
@@ -163,10 +163,10 @@ wsc.method('entity:component:script:add', (id, scriptName) => {
     if (!entity) {
         return undefined;
     }
-    if (!entity.get(`components.${name}`)) {
+    if (!entity.get('components.script')) {
         return undefined;
     }
-    window.editor.api.globals.scripts.addScript([entity], scriptName);
+    entity.addScript(scriptName);
     wsc.log(`Added script(${scriptName}) to component(script) of entity(${id})`);
     return true;
 });
@@ -198,7 +198,7 @@ wsc.method('asset:delete', (id) => {
     if (!asset) {
         return undefined;
     }
-    window.editor.api.globals.assets.delete(asset);
+    window.editor.api.globals.assets.delete([asset]);
     wsc.log(`Deleted asset(${id})`);
     return true;
 });

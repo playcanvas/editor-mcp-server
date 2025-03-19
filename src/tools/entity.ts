@@ -240,7 +240,7 @@ export const register = (server: McpServer, wss: WSS) => {
         'Add a script to a script component',
         {
             id: z.string(),
-            scriptName: z.number()
+            scriptName: z.string()
         },
         async ({ id, scriptName }) => {
             try {
