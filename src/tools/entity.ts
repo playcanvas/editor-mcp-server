@@ -199,6 +199,37 @@ export const register = (server: McpServer, wss: WSS) => {
     );
 
     server.tool(
+        'remove_components',
+        'Remove components from an entity',
+        {
+            id: z.string(),
+            components: z.array(z.string())
+        },
+        async ({ id, components }) => {
+            try {
+                const res = await wss.send('entities:components:remove', id, components);
+                if (res === undefined) {
+                    throw new Error('Failed to remove components');
+                }
+                return {
+                    content: [{
+                        type: 'text',
+                        text: `Removed components from entity ${id}: ${JSON.stringify(res)}`
+                    }]
+                };
+            } catch (err: any) {
+                return {
+                    content: [{
+                        type: 'text',
+                        text: err.message
+                    }],
+                    isError: true
+                };
+            }
+        }
+    );
+
+    server.tool(
         'create_render_component',
         'Create a render component on an entity',
         {

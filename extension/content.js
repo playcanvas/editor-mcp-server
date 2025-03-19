@@ -190,6 +190,17 @@ wsc.method('entities:components:add', (id, name, data) => {
     wsc.log(`Added component(${name}) to entity(${id})`);
     return true;
 });
+wsc.method('entities:components:remove', (id, components) => {
+    const entity = editorApi.entities.get(id);
+    if (!entity) {
+        return undefined;
+    }
+    components.forEach(component => {
+        entity.removeComponent(component);
+    });
+    wsc.log(`Removed components(${components.join(', ')}) from entity(${id})`);
+    return true;
+});
 wsc.method('entities:components:property:set', (id, name, prop, value) => {
     const entity = editorApi.entities.get(id);
     if (!entity) {
