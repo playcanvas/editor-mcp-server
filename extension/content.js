@@ -69,8 +69,30 @@ class WSC {
 const wsc = new WSC('ws://localhost:52000');
 const editorApi = window.editor.api.globals;
 
-// helpers
-function iterateObject(obj, callback, currentPath = '') {
+/**
+ * @param {'GET' | 'POST' | 'PUT' | 'DELETE'} method - The HTTP method to use.
+ * @param {string} path - The path to the API endpoint.
+ * @param {FormData | Object} data - The data to send.
+ * @param {boolean} auth - Whether to use authentication.
+ * @returns {Promise<Object>} The response data.
+ */
+const restApi = (method, path, data, auth = false) => {
+    return fetch(`/api/${path}`, {
+        method,
+        headers: {
+            'Content-Type': 'application/json',
+            Authorization: auth ? `Bearer ${editorApi.accessToken}` : undefined
+        },
+        body: data instanceof FormData ? data : JSON.stringify(data)
+    }).then(res => res.json());
+};
+
+/**
+ * @param {Object} obj - The object to iterate.
+ * @param {Function} callback - The callback to call for each key-value pair.
+ * @param {string} currentPath - The current path of the object.
+ */
+const iterateObject = (obj, callback, currentPath = '') => {
     Object.entries(obj).forEach(([key, value]) => {
         const path = currentPath ? `${currentPath}.${key}` : key;
 
@@ -80,7 +102,7 @@ function iterateObject(obj, callback, currentPath = '') {
             callback(path, value);
         }
     });
-}
+};
 
 // general
 wsc.method('ping', () => 'pong');
@@ -259,14 +281,7 @@ wsc.method('asset:script:content:set', async (id, content) => {
     form.append('branchId', window.config.self.branch.id);
 
     try {
-        const res = await fetch(`/api/assets/${id}`, {
-            method: 'PUT',
-            body: form,
-            headers: {
-                Authorization: `Bearer ${editorApi.accessToken}`
-            }
-        });
-        const data = await res.json();
+        const data = await restApi('PUT', `assets/${id}`, form, true);
         if (data.error) {
             return undefined;
         }
@@ -310,8 +325,7 @@ wsc.method('store:playcanvas:list', async (options = {}) => {
     }
 
     try {
-        const res = await fetch(`/api/store?${params.join('&')}`);
-        const data = await res.json();
+        const data = await restApi('GET', `store?${params.join('&')}`);
         if (data.error) {
             return undefined;
         }
@@ -323,8 +337,7 @@ wsc.method('store:playcanvas:list', async (options = {}) => {
 });
 wsc.method('store:playcanvas:get', async (id) => {
     try {
-        const res = await fetch(`/api/store/${id}`);
-        const data = await res.json();
+        const data = await restApi('GET', `store/${id}`);
         if (data.error) {
             return undefined;
         }
@@ -336,24 +349,16 @@ wsc.method('store:playcanvas:get', async (id) => {
 });
 wsc.method('store:playcanvas:clone', async (id, name, license) => {
     try {
-        const res = await fetch(`/api/store/${id}/clone`, {
-            method: 'POST',
-            headers: {
-                Authorization: `Bearer ${editorApi.accessToken}`,
-                'Content-Type': 'application/json'
+        const data = await restApi('POST', `store/${id}/clone`, {
+            scope: {
+                type: 'project',
+                id: window.config.project.id
             },
-            body: JSON.stringify({
-                scope: {
-                    type: 'project',
-                    id: window.config.project.id
-                },
-                name,
-                store: 'playcanvas',
-                targetFolderId: null,
-                license
-            })
+            name,
+            store: 'playcanvas',
+            targetFolderId: null,
+            license
         });
-        const data = await res.json();
         if (data.error) {
             return undefined;
         }
@@ -415,24 +420,16 @@ wsc.method('store:sketchfab:get', async (uid) => {
 });
 wsc.method('store:sketchfab:clone', async (uid, name, license) => {
     try {
-        const res = await fetch(`/api/store/${uid}/clone`, {
-            method: 'POST',
-            headers: {
-                Authorization: `Bearer ${editorApi.accessToken}`,
-                'Content-Type': 'application/json'
+        const data = await restApi('POST', `store/${uid}/clone`, {
+            scope: {
+                type: 'project',
+                id: window.config.project.id
             },
-            body: JSON.stringify({
-                scope: {
-                    type: 'project',
-                    id: window.config.project.id
-                },
-                name,
-                store: 'sketchfab',
-                targetFolderId: null,
-                license
-            })
+            name,
+            store: 'sketchfab',
+            targetFolderId: null,
+            license
         });
-        const data = await res.json();
         if (data.error) {
             return undefined;
         }
