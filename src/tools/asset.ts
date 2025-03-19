@@ -11,6 +11,9 @@ export const register = (server: McpServer, wss: WSS) => {
         async () => {
             try {
                 const res = await wss.send('asset:list');
+                if (res === undefined) {
+                    throw new Error('Failed to list assets');
+                }
                 return {
                     content: [{
                         type: 'text',
@@ -21,7 +24,7 @@ export const register = (server: McpServer, wss: WSS) => {
                 return {
                     content: [{
                         type: 'text',
-                        text: `Failed to list assets: ${err.message}`
+                        text: err.message
                     }],
                     isError: true
                 };
@@ -38,6 +41,9 @@ export const register = (server: McpServer, wss: WSS) => {
         async ({ id }) => {
             try {
                 const res = await wss.send('asset:delete', id);
+                if (res === undefined) {
+                    throw new Error('Failed to delete asset');
+                }
                 return {
                     content: [{
                         type: 'text',
@@ -48,7 +54,7 @@ export const register = (server: McpServer, wss: WSS) => {
                 return {
                     content: [{
                         type: 'text',
-                        text: `Failed to delete asset ${id}: ${err.message}`
+                        text: err.message
                     }],
                     isError: true
                 };

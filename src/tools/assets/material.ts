@@ -13,6 +13,9 @@ export const register = (server: McpServer, wss: WSS) => {
         async ({ name }) => {
             try {
                 const res = await wss.send('asset:create', 'material', name);
+                if (res === undefined) {
+                    throw new Error('Failed to create material');
+                }
                 return {
                     content: [{
                         type: 'text',
@@ -23,7 +26,7 @@ export const register = (server: McpServer, wss: WSS) => {
                 return {
                     content: [{
                         type: 'text',
-                        text: `Failed to create material: ${err.message}`
+                        text: err.message
                     }],
                     isError: true
                 };
@@ -41,6 +44,9 @@ export const register = (server: McpServer, wss: WSS) => {
         async ({ assetId, color }) => {
             try {
                 const res = await wss.send('asset:property:set', assetId, 'diffuse', color);
+                if (res === undefined) {
+                    throw new Error('Failed to set diffuse property on material');
+                }
                 return {
                     content: [{
                         type: 'text',
@@ -51,7 +57,7 @@ export const register = (server: McpServer, wss: WSS) => {
                 return {
                     content: [{
                         type: 'text',
-                        text: `Failed to set diffuse property on material ${assetId}: ${err.message}`
+                        text: err.message
                     }],
                     isError: true
                 };

@@ -19,6 +19,9 @@ export const register = (server: McpServer, wss: WSS) => {
         async (options) => {
             try {
                 const res = await wss.send('entity:create', options);
+                if (res === undefined) {
+                    throw new Error('Failed to create entity');
+                }
                 return {
                     content: [{
                         type: 'text',
@@ -29,7 +32,7 @@ export const register = (server: McpServer, wss: WSS) => {
                 return {
                     content: [{
                         type: 'text',
-                        text: `Failed to create entity: ${err.message}`
+                        text: err.message
                     }],
                     isError: true
                 };
@@ -52,6 +55,9 @@ export const register = (server: McpServer, wss: WSS) => {
         async (options) => {
             try {
                 const res = await wss.send('entity:modify', options.id, options);
+                if (res === undefined) {
+                    throw new Error('Failed to modify entity');
+                }
                 return {
                     content: [{
                         type: 'text',
@@ -62,7 +68,7 @@ export const register = (server: McpServer, wss: WSS) => {
                 return {
                     content: [{
                         type: 'text',
-                        text: `Failed to modify entity: ${err.message}`
+                        text: err.message
                     }],
                     isError: true
                 };
@@ -82,6 +88,9 @@ export const register = (server: McpServer, wss: WSS) => {
         async (options) => {
             try {
                 const res = await wss.send('entity:reparent', options);
+                if (res === undefined) {
+                    throw new Error('Failed to reparent entity');
+                }
                 return {
                     content: [{
                         type: 'text',
@@ -92,7 +101,7 @@ export const register = (server: McpServer, wss: WSS) => {
                 return {
                     content: [{
                         type: 'text',
-                        text: `Failed to reparent entity: ${err.message}`
+                        text: err.message
                     }],
                     isError: true
                 };
@@ -109,6 +118,9 @@ export const register = (server: McpServer, wss: WSS) => {
         async ({ id }) => {
             try {
                 const res = await wss.send('entity:delete', id);
+                if (res === undefined) {
+                    throw new Error('Failed to delete entity');
+                }
                 return {
                     content: [{
                         type: 'text',
@@ -119,7 +131,7 @@ export const register = (server: McpServer, wss: WSS) => {
                 return {
                     content: [{
                         type: 'text',
-                        text: `Failed to delete entity ${id}: ${err.message}`
+                        text: err.message
                     }],
                     isError: true
                 };
@@ -134,6 +146,9 @@ export const register = (server: McpServer, wss: WSS) => {
         async () => {
             try {
                 const res = await wss.send('entity:list');
+                if (res === undefined) {
+                    throw new Error('Failed to list entities');
+                }
                 return {
                     content: [{
                         type: 'text',
@@ -144,7 +159,7 @@ export const register = (server: McpServer, wss: WSS) => {
                 return {
                     content: [{
                         type: 'text',
-                        text: `Failed to list entities: ${err.message}`
+                        text: err.message
                     }],
                     isError: true
                 };
@@ -162,6 +177,9 @@ export const register = (server: McpServer, wss: WSS) => {
         async ({ id, type }) => {
             try {
                 const res = await wss.send('entity:component:add', id, 'render', { type });
+                if (res === undefined) {
+                    throw new Error('Failed to create render component');
+                }
                 return {
                     content: [{
                         type: 'text',
@@ -172,7 +190,7 @@ export const register = (server: McpServer, wss: WSS) => {
                 return {
                     content: [{
                         type: 'text',
-                        text: `Failed to create render component: ${err.message}`
+                        text: err.message
                     }],
                     isError: true
                 };
@@ -190,6 +208,9 @@ export const register = (server: McpServer, wss: WSS) => {
         async ({ id, assetId }) => {
             try {
                 const res = await wss.send('entity:component:property:set', id, 'render', 'materialAssets', [assetId]);
+                if (res === undefined) {
+                    throw new Error('Failed to set material on render component');
+                }
                 return {
                     content: [{
                         type: 'text',
@@ -200,7 +221,7 @@ export const register = (server: McpServer, wss: WSS) => {
                 return {
                     content: [{
                         type: 'text',
-                        text: `Failed to set material on render component ${id}: ${err.message}`
+                        text: err.message
                     }],
                     isError: true
                 };
@@ -217,6 +238,9 @@ export const register = (server: McpServer, wss: WSS) => {
         async ({ id }) => {
             try {
                 const res = await wss.send('entity:component:add', id, 'script');
+                if (res === undefined) {
+                    throw new Error('Failed to create script component');
+                }
                 return {
                     content: [{
                         type: 'text',
@@ -227,7 +251,7 @@ export const register = (server: McpServer, wss: WSS) => {
                 return {
                     content: [{
                         type: 'text',
-                        text: `Failed to create script component: ${err.message}`
+                        text: err.message
                     }],
                     isError: true
                 };
@@ -245,6 +269,9 @@ export const register = (server: McpServer, wss: WSS) => {
         async ({ id, scriptName }) => {
             try {
                 const res = await wss.send('entity:component:script:add', id, scriptName);
+                if (res === undefined) {
+                    throw new Error('Failed to add script on script component');
+                }
                 return {
                     content: [{
                         type: 'text',
@@ -255,7 +282,7 @@ export const register = (server: McpServer, wss: WSS) => {
                 return {
                     content: [{
                         type: 'text',
-                        text: `Failed to add script on script component ${id}: ${err.message}`
+                        text: err.message
                     }],
                     isError: true
                 };

@@ -156,7 +156,7 @@ wsc.method('entity:component:property:set', (id, name, prop, value) => {
     }
     entity.set(`components.${name}.${prop}`, value);
     wsc.log(`Set component(${name}) property(${prop}) of entity(${id}) to: ${JSON.stringify(value)}`);
-    return value;
+    return true;
 });
 wsc.method('entity:component:script:add', (id, scriptName) => {
     const entity = window.editor.api.globals.entities.get(id);
@@ -212,7 +212,7 @@ wsc.method('asset:property:set', (id, prop, value) => {
     }
     asset.set(`data.${prop}`, value);
     wsc.log(`Set asset(${id}) property(${prop}) to: ${JSON.stringify(value)}`);
-    return value;
+    return true;
 });
 wsc.method('asset:script:content:set', async (id, content) => {
     const asset = window.editor.api.globals.assets.get(id);
