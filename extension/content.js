@@ -203,17 +203,26 @@ wsc.method('asset:create', async (type, name, data) => {
     wsc.log(`Created asset(${asset.get('id')})`);
     return asset.json();
 });
-wsc.method('asset:delete', (id) => {
-    const asset = window.editor.api.globals.assets.get(id);
-    if (!asset) {
+wsc.method('asset:delete', (ids) => {
+    const assets = ids.map(id => window.editor.api.globals.assets.get(id));
+    if (!assets) {
         return undefined;
     }
-    window.editor.api.globals.assets.delete([asset]);
-    wsc.log(`Deleted asset(${id})`);
+    window.editor.api.globals.assets.delete(assets);
+    wsc.log(`Deleted assets: ${ids.join(', ')}`);
     return true;
 });
 wsc.method('asset:list', () => {
     return window.editor.api.globals.assets.list().map(asset => asset.json());
+});
+wsc.method('asset:instantiate', async (ids) => {
+    const assets = ids.map(id => window.editor.api.globals.assets.get(id));
+    if (!assets) {
+        return undefined;
+    }
+    const entities = await window.editor.api.globals.assets.instantiateTemplates(assets);
+    wsc.log(`Instantiated assets: ${ids.join(', ')}`);
+    return entities.map(entity => entity.json());
 });
 wsc.method('asset:property:set', (id, prop, value) => {
     const asset = window.editor.api.globals.assets.get(id);

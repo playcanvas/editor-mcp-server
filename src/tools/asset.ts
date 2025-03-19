@@ -5,7 +5,7 @@ import { type WSS } from '../wss.ts';
 
 export const register = (server: McpServer, wss: WSS) => {
     server.tool(
-        'asset_list',
+        'list_assets',
         'List all assets',
         {},
         async () => {
@@ -33,21 +33,51 @@ export const register = (server: McpServer, wss: WSS) => {
     );
 
     server.tool(
-        'asset_delete',
-        'Delete an asset',
+        'delete_assets',
+        'Delete one or more assets',
         {
-            id: z.number()
+            ids: z.array(z.number())
         },
-        async ({ id }) => {
+        async ({ ids }) => {
             try {
-                const res = await wss.send('asset:delete', id);
+                const res = await wss.send('asset:delete', ids);
                 if (res === undefined) {
                     throw new Error('Failed to delete asset');
                 }
                 return {
                     content: [{
                         type: 'text',
-                        text: `Deleted asset ${id}: ${JSON.stringify(res)}`
+                        text: `Deleted assets: ${JSON.stringify(res)}`
+                    }]
+                };
+            } catch (err: any) {
+                return {
+                    content: [{
+                        type: 'text',
+                        text: err.message
+                    }],
+                    isError: true
+                };
+            }
+        }
+    );
+
+    server.tool(
+        'instantiate_assets',
+        'Instantiate one or more asset',
+        {
+            ids: z.array(z.number())
+        },
+        async ({ ids }) => {
+            try {
+                const res = await wss.send('asset:instantiate', ids);
+                if (res === undefined) {
+                    throw new Error('Failed to instantiate asset');
+                }
+                return {
+                    content: [{
+                        type: 'text',
+                        text: `Instantiated assets: ${JSON.stringify(res)}`
                     }]
                 };
             } catch (err: any) {
