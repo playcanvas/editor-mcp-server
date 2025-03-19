@@ -21,7 +21,8 @@ class WSC {
                 const res = await this._methods.get(name)?.(...args);
                 this._ws.send(JSON.stringify({ id, res }));
             } catch (e) {
-                wsc.error(e);
+                console.error(e);
+                this.error(e);
             }
         };
         this._ws.onclose = () => {
@@ -104,6 +105,15 @@ wsc.method('entity:modify', (id, options = {}) => {
     }
     wsc.log(`Modified entity(${id})`);
     return entity.json();
+});
+wsc.method('entity:duplicate', async (ids, options = {}) => {
+    const entities = ids.map(id => window.editor.api.globals.entities.get(id));
+    if (!entities) {
+        return undefined;
+    }
+    const res = await window.editor.api.globals.entities.duplicate(entities, options);
+    wsc.log(`Duplicated entities: ${res.map(entity => entity.get('resource_id')).join(', ')}`);
+    return res.map(entity => entity.json());
 });
 wsc.method('entity:reparent', (options) => {
     const entity = window.editor.api.globals.entities.get(options.id);

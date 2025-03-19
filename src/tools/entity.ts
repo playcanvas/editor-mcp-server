@@ -77,6 +77,37 @@ export const register = (server: McpServer, wss: WSS) => {
     );
 
     server.tool(
+        'duplicate_entities',
+        'Duplicate one or more entities',
+        {
+            ids: z.array(z.string()),
+            rename: z.boolean().optional()
+        },
+        async ({ ids, rename }) => {
+            try {
+                const res = await wss.send('entity:duplicate', ids, { rename });
+                if (res === undefined) {
+                    throw new Error('Failed to duplicate entities');
+                }
+                return {
+                    content: [{
+                        type: 'text',
+                        text: `Duplicated entities: ${JSON.stringify(res)}`
+                    }]
+                };
+            } catch (err: any) {
+                return {
+                    content: [{
+                        type: 'text',
+                        text: err.message
+                    }],
+                    isError: true
+                };
+            }
+        }
+    );
+
+    server.tool(
         'reparent_entity',
         'Reparent an entity',
         {
