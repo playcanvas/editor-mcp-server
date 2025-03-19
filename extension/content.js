@@ -125,7 +125,7 @@ wsc.method('entity:delete', (id) => {
     if (!entity) {
         return undefined;
     }
-    window.editor.api.globals.entities.delete(entity);
+    entity.delete();
     wsc.log(`Deleted entity(${id})`);
     return true;
 });
@@ -158,6 +158,18 @@ wsc.method('entity:component:property:set', (id, name, prop, value) => {
     wsc.log(`Set component(${name}) property(${prop}) of entity(${id}) to: ${JSON.stringify(value)}`);
     return value;
 });
+wsc.method('entity:component:script:add', (id, scriptName) => {
+    const entity = window.editor.api.globals.entities.get(id);
+    if (!entity) {
+        return undefined;
+    }
+    if (!entity.get('components.script')) {
+        return undefined;
+    }
+    entity.addScript(scriptName);
+    wsc.log(`Added script(${scriptName}) to component(script) of entity(${id})`);
+    return true;
+});
 
 // assets
 wsc.method('asset:create', async (type, name, data) => {
@@ -186,7 +198,7 @@ wsc.method('asset:delete', (id) => {
     if (!asset) {
         return undefined;
     }
-    window.editor.api.globals.assets.delete(asset);
+    window.editor.api.globals.assets.delete([asset]);
     wsc.log(`Deleted asset(${id})`);
     return true;
 });
