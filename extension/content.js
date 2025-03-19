@@ -178,16 +178,15 @@ wsc.method('entities:delete', async (ids) => {
 wsc.method('entities:list', () => {
     return editorApi.entities.list().map(entity => entity.json());
 });
-wsc.method('entities:components:add', (id, name, data) => {
+wsc.method('entities:components:add', (id, components) => {
     const entity = editorApi.entities.get(id);
     if (!entity) {
         return undefined;
     }
-    if (entity.get(`components.${name}`)) {
-        return undefined;
-    }
-    entity.addComponent(name, data);
-    wsc.log(`Added component(${name}) to entity(${id})`);
+    Object.entries(components).forEach(([name, data]) => {
+        entity.addComponent(name, data);
+    });
+    wsc.log(`Added components(${Object.keys(components).join(', ')}) to entity(${id})`);
     return true;
 });
 wsc.method('entities:components:remove', (id, components) => {
