@@ -3,6 +3,7 @@ import { z } from 'zod';
 
 import { type WSS } from '../wss.ts';
 
+/* eslint-disable-next-line no-unused-vars */
 const collisionComponentSchema = z.object({
     enabled: z.boolean().optional(),
     type: z.enum(['box', 'sphere', 'capsule', 'cylinder', 'mesh']).optional(),
@@ -39,6 +40,7 @@ const renderComponentSchema = z.object({
     aabbHalfExtents: z.array(z.number()).length(3).optional()
 });
 
+/* eslint-disable-next-line no-unused-vars */
 const rigidbodyComponentSchema = z.object({
     enabled: z.boolean().optional(),
     type: z.enum(['static', 'dynamic', 'kinematic']).optional(),
@@ -258,9 +260,7 @@ export const register = (server: McpServer, wss: WSS) => {
         {
             id: z.string(),
             components: z.object({
-//                collision: collisionComponentSchema.optional(),
                 render: renderComponentSchema.optional(),
-//                rigidbody: rigidbodyComponentSchema.optional(),
                 script: scriptComponentSchema.optional()
             })
         },
