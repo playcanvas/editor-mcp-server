@@ -255,13 +255,13 @@ function iterateObject(obj, callback, currentPath = '') {
         }
     });
 }
-  
+
 // scenes
 wsc.method('scene:modify', (settings) => {
     iterateObject(settings, (path, value) => {
-        window.editor.settings.scene.set(path, value);
+        window.editor.api.globals.settings.scene.set(path, value);
     });
 
-    wsc.log(`Modified scene settings`);
+    wsc.log('Modified scene settings');
     return true;
 });
