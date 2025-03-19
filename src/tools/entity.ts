@@ -3,6 +3,62 @@ import { z } from 'zod';
 
 import { type WSS } from '../wss.ts';
 
+/* eslint-disable-next-line no-unused-vars */
+const collisionComponentSchema = z.object({
+    enabled: z.boolean().optional(),
+    type: z.enum(['box', 'sphere', 'capsule', 'cylinder', 'mesh']).optional(),
+    halfExtents: z.array(z.number()).length(3).optional(),
+    radius: z.number().optional(),
+    axis: z.number().optional(),
+    height: z.number().optional(),
+    convexHull: z.boolean().optional(),
+    asset: z.number().optional(),
+    renderAsset: z.number().optional(),
+    linearOffset: z.array(z.number()).length(3).optional(),
+    angularOffset: z.array(z.number()).length(3).optional()
+});
+
+const renderComponentSchema = z.object({
+    enabled: z.boolean().optional(),
+    type: z.enum(['box', 'capsule', 'sphere', 'cylinder', 'cone', 'plane']).optional(),
+    asset: z.number().optional(),
+    materialAssets: z.array(z.number()).optional(),
+    layers: z.array(z.number()).optional(),
+    batchGroupId: z.number().optional(),
+    castShadows: z.boolean().optional(),
+    castShadowsLightmap: z.boolean().optional(),
+    receiveShadows: z.boolean().optional(),
+    static: z.boolean().optional(),
+    lightmapped: z.boolean().optional(),
+    lightmapSizeMultiplier: z.number().optional(),
+    castShadowsLightMap: z.boolean().optional(),
+    lightMapped: z.boolean().optional(),
+    lightMapSizeMultiplier: z.number().optional(),
+    isStatic: z.boolean().optional(),
+    rootBone: z.string().optional(),
+    aabbCenter: z.array(z.number()).length(3).optional(),
+    aabbHalfExtents: z.array(z.number()).length(3).optional()
+});
+
+/* eslint-disable-next-line no-unused-vars */
+const rigidbodyComponentSchema = z.object({
+    enabled: z.boolean().optional(),
+    type: z.enum(['static', 'dynamic', 'kinematic']).optional(),
+    mass: z.number().optional(),
+    linearDamping: z.number().optional(),
+    angularDamping: z.number().optional(),
+    linearFactor: z.array(z.number()).length(3).optional(),
+    angularFactor: z.array(z.number()).length(3).optional(),
+    friction: z.number().optional(),
+    restitution: z.number().optional()
+});
+
+const scriptComponentSchema = z.object({
+    enabled: z.boolean().optional(),
+    order: z.array(z.string()).optional(),
+    scripts: z.record(z.string(), z.any()).optional()
+});
+
 export const register = (server: McpServer, wss: WSS) => {
     server.tool(
         'create_entity',
@@ -199,6 +255,39 @@ export const register = (server: McpServer, wss: WSS) => {
     );
 
     server.tool(
+        'add_components',
+        'Add components to an entity',
+        {
+            id: z.string(),
+            components: z.object({
+                render: renderComponentSchema.optional(),
+                script: scriptComponentSchema.optional()
+            })
+        },
+        async ({ id, components }) => {
+            try {
+                const res = await wss.send('entities:components:add', id, components);
+                if (res === undefined) {
+                    throw new Error('Failed to add components');
+                }
+                return {
+                    content: [{
+                        type: 'text',
+                        text: `Added components to entity ${id}: ${JSON.stringify(res)}`
+                    }]
+                };
+            } catch (err: any) {
+                return {
+                    content: [{
+                        type: 'text',
+                        text: err.message
+                    }]
+                };
+            }
+        }
+    );
+
+    server.tool(
         'remove_components',
         'Remove components from an entity',
         {
@@ -230,37 +319,6 @@ export const register = (server: McpServer, wss: WSS) => {
     );
 
     server.tool(
-        'create_render_component',
-        'Create a render component on an entity',
-        {
-            id: z.string(),
-            type: z.enum(['box', 'capsule', 'sphere', 'cylinder', 'cone', 'plane'])
-        },
-        async ({ id, type }) => {
-            try {
-                const res = await wss.send('entities:components:add', id, 'render', { type });
-                if (res === undefined) {
-                    throw new Error('Failed to create render component');
-                }
-                return {
-                    content: [{
-                        type: 'text',
-                        text: `Created render component: ${JSON.stringify(res)}`
-                    }]
-                };
-            } catch (err: any) {
-                return {
-                    content: [{
-                        type: 'text',
-                        text: err.message
-                    }],
-                    isError: true
-                };
-            }
-        }
-    );
-
-    server.tool(
         'set_render_component_material',
         'Set the material on a render component',
         {
@@ -277,36 +335,6 @@ export const register = (server: McpServer, wss: WSS) => {
                     content: [{
                         type: 'text',
                         text: `Set material on render component ${id}: ${JSON.stringify(res)}`
-                    }]
-                };
-            } catch (err: any) {
-                return {
-                    content: [{
-                        type: 'text',
-                        text: err.message
-                    }],
-                    isError: true
-                };
-            }
-        }
-    );
-
-    server.tool(
-        'create_script_component',
-        'Create a script component on an entity',
-        {
-            id: z.string()
-        },
-        async ({ id }) => {
-            try {
-                const res = await wss.send('entities:components:add', id, 'script');
-                if (res === undefined) {
-                    throw new Error('Failed to create script component');
-                }
-                return {
-                    content: [{
-                        type: 'text',
-                        text: `Created script component: ${JSON.stringify(res)}`
                     }]
                 };
             } catch (err: any) {
