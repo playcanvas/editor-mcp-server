@@ -243,3 +243,25 @@ wsc.method('asset:script:content:set', async (id, content) => {
         return undefined;
     }
 });
+
+function iterateObject(obj, callback, currentPath = '') {
+    Object.entries(obj).forEach(([key, value]) => {
+        const path = currentPath ? `${currentPath}.${key}` : key;
+
+        if (value && typeof value === 'object' && !Array.isArray(value)) {
+            iterateObject(value, callback, path);
+        } else {
+            callback(path, value);
+        }
+    });
+}
+  
+// scenes
+wsc.method('scene:modify', (settings) => {
+    iterateObject(settings, (path, value) => {
+        window.editor.settings.scene.set(path, value);
+    });
+
+    wsc.log(`Modified scene settings`);
+    return true;
+});
