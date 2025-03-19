@@ -3,6 +3,27 @@ import { z } from 'zod';
 
 import { type WSS } from '../wss.ts';
 
+const cameraComponentSchema = z.object({
+    enabled: z.boolean().optional(),
+    clearColorBuffer: z.boolean().optional(),
+    clearColor: z.array(z.number()).length(4).optional(),
+    clearDepthBuffer: z.boolean().optional(),
+    renderSceneDepthMap: z.boolean().optional(),
+    renderSceneColorMap: z.boolean().optional(),
+    projection: z.number().optional(),
+    fov: z.number().optional(),
+    frustumCulling: z.boolean().optional(),
+    orthoHeight: z.number().optional(),
+    nearClip: z.number().optional(),
+    farClip: z.number().optional(),
+    priority: z.number().optional(),
+    rect: z.array(z.number()).length(4).optional(),
+    offscreen: z.boolean().optional(),
+    layers: z.array(z.number()).optional(),
+    toneMapping: z.number().optional(),
+    gammaCorrection: z.number().optional()
+});
+
 /* eslint-disable-next-line no-unused-vars */
 const collisionComponentSchema = z.object({
     enabled: z.boolean().optional(),
@@ -114,6 +135,7 @@ export const register = (server: McpServer, wss: WSS) => {
             scale: z.array(z.number()).length(3).optional(),
             tags: z.array(z.string()).optional(),
             components: z.object({
+                camera: cameraComponentSchema.optional(),
                 light: lightComponentSchema.optional(),
                 render: renderComponentSchema.optional(),
                 script: scriptComponentSchema.optional()
@@ -307,6 +329,7 @@ export const register = (server: McpServer, wss: WSS) => {
         {
             id: z.string(),
             components: z.object({
+                camera: cameraComponentSchema.optional(),
                 light: lightComponentSchema.optional(),
                 render: renderComponentSchema.optional(),
                 script: scriptComponentSchema.optional()
