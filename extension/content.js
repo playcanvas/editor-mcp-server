@@ -68,6 +68,19 @@ class WSC {
 }
 const wsc = window.wsc = new WSC('ws://localhost:52000');
 
+// helpers
+function iterateObject(obj, callback, currentPath = '') {
+    Object.entries(obj).forEach(([key, value]) => {
+        const path = currentPath ? `${currentPath}.${key}` : key;
+
+        if (value && typeof value === 'object' && !Array.isArray(value)) {
+            iterateObject(value, callback, path);
+        } else {
+            callback(path, value);
+        }
+    });
+}
+
 // general
 wsc.method('ping', () => 'pong');
 
@@ -262,18 +275,6 @@ wsc.method('asset:script:content:set', async (id, content) => {
         return undefined;
     }
 });
-
-function iterateObject(obj, callback, currentPath = '') {
-    Object.entries(obj).forEach(([key, value]) => {
-        const path = currentPath ? `${currentPath}.${key}` : key;
-
-        if (value && typeof value === 'object' && !Array.isArray(value)) {
-            iterateObject(value, callback, path);
-        } else {
-            callback(path, value);
-        }
-    });
-}
 
 // scenes
 wsc.method('scene:modify', (settings) => {
