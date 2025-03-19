@@ -178,7 +178,7 @@ wsc.method('entities:delete', async (ids) => {
 wsc.method('entities:list', () => {
     return editorApi.entities.list().map(entity => entity.json());
 });
-wsc.method('entities:component:add', (id, name, fields) => {
+wsc.method('entities:components:add', (id, name, data) => {
     const entity = editorApi.entities.get(id);
     if (!entity) {
         return undefined;
@@ -186,13 +186,11 @@ wsc.method('entities:component:add', (id, name, fields) => {
     if (entity.get(`components.${name}`)) {
         return undefined;
     }
-    const data = window.editor.schema.components.getDefaultData(name);
-    Object.assign(data, fields);
-    entity.set(`components.${name}`, data);
+    entity.addComponent(name, data);
     wsc.log(`Added component(${name}) to entity(${id})`);
-    return data;
+    return true;
 });
-wsc.method('entities:component:property:set', (id, name, prop, value) => {
+wsc.method('entities:components:property:set', (id, name, prop, value) => {
     const entity = editorApi.entities.get(id);
     if (!entity) {
         return undefined;
@@ -204,7 +202,7 @@ wsc.method('entities:component:property:set', (id, name, prop, value) => {
     wsc.log(`Set component(${name}) property(${prop}) of entity(${id}) to: ${JSON.stringify(value)}`);
     return true;
 });
-wsc.method('entities:component:script:add', (id, scriptName) => {
+wsc.method('entities:components:script:add', (id, scriptName) => {
     const entity = editorApi.entities.get(id);
     if (!entity) {
         return undefined;

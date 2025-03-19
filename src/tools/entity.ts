@@ -207,7 +207,7 @@ export const register = (server: McpServer, wss: WSS) => {
         },
         async ({ id, type }) => {
             try {
-                const res = await wss.send('entities:component:add', id, 'render', { type });
+                const res = await wss.send('entities:components:add', id, 'render', { type });
                 if (res === undefined) {
                     throw new Error('Failed to create render component');
                 }
@@ -238,7 +238,7 @@ export const register = (server: McpServer, wss: WSS) => {
         },
         async ({ id, assetId }) => {
             try {
-                const res = await wss.send('entities:component:property:set', id, 'render', 'materialAssets', [assetId]);
+                const res = await wss.send('entities:components:property:set', id, 'render', 'materialAssets', [assetId]);
                 if (res === undefined) {
                     throw new Error('Failed to set material on render component');
                 }
@@ -268,7 +268,7 @@ export const register = (server: McpServer, wss: WSS) => {
         },
         async ({ id }) => {
             try {
-                const res = await wss.send('entities:component:add', id, 'script');
+                const res = await wss.send('entities:components:add', id, 'script');
                 if (res === undefined) {
                     throw new Error('Failed to create script component');
                 }
@@ -299,7 +299,7 @@ export const register = (server: McpServer, wss: WSS) => {
         },
         async ({ id, scriptName }) => {
             try {
-                const res = await wss.send('entities:component:script:add', id, scriptName);
+                const res = await wss.send('entities:components:script:add', id, scriptName);
                 if (res === undefined) {
                     throw new Error('Failed to add script on script component');
                 }
