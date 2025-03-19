@@ -13,7 +13,7 @@ export const register = (server: McpServer, wss: WSS) => {
             }).optional(),
             render: z.object({
                 exposure: z.number().optional(),
-                fog: z.enum(["none", "linear", "exp", "exp2"]).optional(),
+                fog: z.enum(['none', 'linear', 'exp', 'exp2']).optional(),
                 fog_color: z.array(z.number()).length(3).optional(),
                 fog_density: z.number().optional(),
                 fog_end: z.number().optional(),
