@@ -94,7 +94,7 @@ export const register = (server: McpServer, wss: WSS) => {
         },
         async ({ store, id, name, license }) => {
             try {
-                const res = await wss.send(`store:${store}:download`, id, name, license);
+                const res = await wss.send(`store:${store}:clone`, id, name, license);
                 if (res === undefined) {
                     throw new Error('Failed to download asset');
                 }
