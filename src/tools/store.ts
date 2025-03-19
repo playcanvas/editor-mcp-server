@@ -13,16 +13,16 @@ export const register = (server: McpServer, wss: WSS) => {
         'store_search',
         'Search for an asset in the store',
         {
+            store: z.enum(['playcanvas', 'sketchfab']).optional(),
             search: z.string(),
             order: z.enum(['asc', 'desc']).optional(),
             skip: z.number().optional(),
             limit: z.number().optional()
         },
-        async ({ search, order, skip, limit }) => {
+        async ({ store, search, order, skip, limit }) => {
             try {
-                const res = await wss.send('store:list', {
+                const res = await wss.send(`store:${store}:list`, {
                     search,
-                    regex: true,
                     order: order ? orderEnum[order] : undefined,
                     skip,
                     limit
@@ -52,11 +52,12 @@ export const register = (server: McpServer, wss: WSS) => {
         'store_get',
         'Get an asset from the store',
         {
+            store: z.enum(['playcanvas', 'sketchfab']).optional(),
             id: z.string()
         },
-        async ({ id }) => {
+        async ({ store, id }) => {
             try {
-                const res = await wss.send('store:get', id);
+                const res = await wss.send(`store:${store}:get`, id);
                 if (res === undefined) {
                     throw new Error('Failed to get asset');
                 }
@@ -82,16 +83,18 @@ export const register = (server: McpServer, wss: WSS) => {
         'store_download',
         'Download an asset from the store',
         {
+            store: z.enum(['playcanvas', 'sketchfab']).optional(),
             id: z.string(),
+            name: z.string(),
             license: z.object({
                 author: z.string(),
                 authorUrl: z.string().url(),
                 license: z.string()
             })
         },
-        async ({ id, license }) => {
+        async ({ store, id, name, license }) => {
             try {
-                const res = await wss.send('store:clone', id, license);
+                const res = await wss.send(`store:${store}:download`, id, name, license);
                 if (res === undefined) {
                     throw new Error('Failed to download asset');
                 }

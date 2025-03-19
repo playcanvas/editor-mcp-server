@@ -267,19 +267,13 @@ wsc.method('scene:modify', (settings) => {
 });
 
 // store
-wsc.method('store:list', async (options = {}) => {
-    const params = [];
+
+// playcanvas
+wsc.method('store:playcanvas:list', async (options = {}) => {
+    const params = ['regex=true'];
 
     if (options.search) {
         params.push(`search=${options.search}`);
-    }
-
-    if (options.regex) {
-        params.push(`regexp=${options.regex}`);
-    }
-
-    if (options.sort) {
-        params.push(`sort=${options.sort}`);
     }
 
     if (options.order) {
@@ -294,14 +288,6 @@ wsc.method('store:list', async (options = {}) => {
         params.push(`limit=${options.limit}`);
     }
 
-    if (options.tags) {
-        params.push(`tags=${options.tags}`);
-    }
-
-    if (options.excludeTags) {
-        params.push(`excludeTags=${options.excludeTags}`);
-    }
-
     try {
         const res = await fetch(`/api/store?${params.join('&')}`);
         const data = await res.json();
@@ -314,7 +300,7 @@ wsc.method('store:list', async (options = {}) => {
         return undefined;
     }
 });
-wsc.method('store:get', async (id) => {
+wsc.method('store:playcanvas:get', async (id) => {
     try {
         const res = await fetch(`/api/store/${id}`);
         const data = await res.json();
@@ -327,7 +313,7 @@ wsc.method('store:get', async (id) => {
         return undefined;
     }
 });
-wsc.method('store:clone', async (storeId, license) => {
+wsc.method('store:playcanvas:clone', async (storeId, name, license) => {
     try {
         const res = await fetch(`/api/store/${storeId}/clone`, {
             method: 'POST',
@@ -340,6 +326,7 @@ wsc.method('store:clone', async (storeId, license) => {
                     type: 'project',
                     id: window.config.project.id
                 },
+                name,
                 store: 'playcanvas',
                 targetFolderId: null,
                 license
@@ -350,6 +337,85 @@ wsc.method('store:clone', async (storeId, license) => {
             return undefined;
         }
         wsc.log(`Cloned store item(${storeId})`);
+        return data;
+    } catch (e) {
+        return undefined;
+    }
+});
+
+// sketchfab
+wsc.method('store:sketchfab:list', async (options = {}) => {
+    const params = [
+        'restricted=0',
+        'type=models',
+        'downloadable=true'
+    ];
+
+    if (options.search) {
+        params.push(`q=${options.search}`);
+    }
+
+    if (options.order) {
+        params.push(`sort_by=${options.order}`);
+    }
+
+    if (options.skip) {
+        params.push(`cursor=${options.skip}`);
+    }
+
+    if (options.limit) {
+        params.push(`count=${Math.min(options.limit ?? 0, 24)}`);
+    }
+
+    try {
+        const res = await fetch(`https://api.sketchfab.com/v3/search?${params.join('&')}`);
+        const data = await res.json();
+        if (data.error) {
+            return undefined;
+        }
+        wsc.log(`Searched Sketchfab: ${JSON.stringify(options)}`);
+        return data;
+    } catch (e) {
+        return undefined;
+    }
+});
+wsc.method('store:sketchfab:get', async (uid) => {
+    try {
+        const res = await fetch(`https://api.sketchfab.com/v3/models/${uid}`);
+        const data = await res.json();
+        if (data.error) {
+            return undefined;
+        }
+        wsc.log(`Got Sketchfab model(${uid})`);
+        return data;
+    } catch (e) {
+        return undefined;
+    }
+});
+wsc.method('store:sketchfab:clone', async (storeId, name, license) => {
+    try {
+        const res = await fetch(`/api/store/${storeId}/clone`, {
+            method: 'POST',
+            headers: {
+                Authorization: `Bearer ${window.editor.api.globals.accessToken}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                scope: {
+                    type: 'project',
+                    id: window.config.project.id
+                },
+                name,
+                store: 'sketchfab',
+                targetFolderId: null,
+                license
+            })
+        });
+        const data = await res.json();
+        if (data.error) {
+            return undefined;
+        }
+        wsc.log(`Cloned sketchfab item(${storeId})`);
         return data;
     } catch (e) {
         return undefined;
