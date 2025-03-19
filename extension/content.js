@@ -265,3 +265,93 @@ wsc.method('scene:modify', (settings) => {
     wsc.log('Modified scene settings');
     return true;
 });
+
+// store
+wsc.method('store:list', async (options = {}) => {
+    const params = [];
+
+    if (options.search) {
+        params.push(`search=${options.search}`);
+    }
+
+    if (options.regex) {
+        params.push(`regexp=${options.regex}`);
+    }
+
+    if (options.sort) {
+        params.push(`sort=${options.sort}`);
+    }
+
+    if (options.order) {
+        params.push(`order=${options.order}`);
+    }
+
+    if (options.skip) {
+        params.push(`skip=${options.skip}`);
+    }
+
+    if (options.limit) {
+        params.push(`limit=${options.limit}`);
+    }
+
+    if (options.tags) {
+        params.push(`tags=${options.tags}`);
+    }
+
+    if (options.excludeTags) {
+        params.push(`excludeTags=${options.excludeTags}`);
+    }
+
+    try {
+        const res = await fetch(`/api/store?${params.join('&')}`);
+        const data = await res.json();
+        if (data.error) {
+            return undefined;
+        }
+        wsc.log(`Searched store: ${JSON.stringify(options)}`);
+        return data;
+    } catch (e) {
+        return undefined;
+    }
+});
+wsc.method('store:get', async (id) => {
+    try {
+        const res = await fetch(`/api/store/${id}`);
+        const data = await res.json();
+        if (data.error) {
+            return undefined;
+        }
+        wsc.log(`Got store item(${id})`);
+        return data;
+    } catch (e) {
+        return undefined;
+    }
+});
+wsc.method('store:clone', async (storeId, license) => {
+    try {
+        const res = await fetch(`/api/store/${storeId}/clone`, {
+            method: 'POST',
+            headers: {
+                Authorization: `Bearer ${window.editor.api.globals.accessToken}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                scope: {
+                    type: 'project',
+                    id: window.config.project.id
+                },
+                store: 'playcanvas',
+                targetFolderId: null,
+                license
+            })
+        });
+        const data = await res.json();
+        if (data.error) {
+            return undefined;
+        }
+        wsc.log(`Cloned store item(${storeId})`);
+        return data;
+    } catch (e) {
+        return undefined;
+    }
+});
