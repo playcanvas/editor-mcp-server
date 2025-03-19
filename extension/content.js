@@ -314,10 +314,6 @@ wsc.method('store:playcanvas:list', async (options = {}) => {
 
     params.push('regexp=true');
 
-    if (options.sort) {
-        params.push(`sort=${options.sort}`);
-    }
-
     if (options.order) {
         params.push(`order=${options.order}`);
     }
