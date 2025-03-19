@@ -32,7 +32,7 @@ export const register = (server: McpServer, wss: WSS) => {
         },
         async (settings) => {
             try {
-                const res = await wss.send('scene:modify', settings);
+                const res = await wss.send('scene:settings:modify', settings);
                 if (res === undefined) {
                     throw new Error('Failed to modify scene settings');
                 }

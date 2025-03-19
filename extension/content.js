@@ -291,7 +291,7 @@ wsc.method('assets:script:text:set', async (id, text) => {
 });
 
 // scenes
-wsc.method('scene:modify', (settings) => {
+wsc.method('scene:settings:modify', (settings) => {
     iterateObject(settings, (path, value) => {
         editorApi.settings.scene.set(path, value);
     });
