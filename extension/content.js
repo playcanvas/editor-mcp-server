@@ -84,22 +84,22 @@ wsc.method('entity:modify', (id, options = {}) => {
     if (!entity) {
         return undefined;
     }
-    if (options.name) {
+    if (Object.hasOwn(options, 'name')) {
         entity.set('name', options.name);
     }
-    if (options.position) {
+    if (Object.hasOwn(options, 'position')) {
         entity.set('position', options.position);
     }
-    if (options.rotation) {
+    if (Object.hasOwn(options, 'rotation')) {
         entity.set('rotation', options.rotation);
     }
-    if (options.scale) {
+    if (Object.hasOwn(options, 'scale')) {
         entity.set('scale', options.scale);
     }
-    if (options.enabled) {
+    if (Object.hasOwn(options, 'enabled')) {
         entity.set('enabled', options.enabled);
     }
-    if (options.tags) {
+    if (Object.hasOwn(options, 'tags')) {
         entity.set('tags', options.tags);
     }
     wsc.log(`Modified entity(${id})`);
