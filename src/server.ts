@@ -6,6 +6,7 @@ import { register as registerAssetMaterial } from './tools/assets/material.ts';
 import { register as registerAssetScript } from './tools/assets/script.ts';
 import { register as registerEntity } from './tools/entity.ts';
 import { register as registerScene } from './tools/scene.ts';
+import { register as registerStore } from './tools/store.ts';
 import { WSS } from './wss.ts';
 
 // Create a WebSocket server
@@ -26,6 +27,7 @@ registerAsset(server, wss);
 registerAssetMaterial(server, wss);
 registerAssetScript(server, wss);
 registerScene(server, wss);
+registerStore(server, wss);
 
 // Start receiving messages on stdin and sending messages on stdout
 const transport = new StdioServerTransport();

@@ -275,3 +275,159 @@ wsc.method('scene:modify', (settings) => {
     wsc.log('Modified scene settings');
     return true;
 });
+
+// store
+
+// playcanvas
+wsc.method('store:playcanvas:list', async (options = {}) => {
+    const params = ['regex=true'];
+
+    if (options.search) {
+        params.push(`search=${options.search}`);
+    }
+
+    if (options.order) {
+        params.push(`order=${options.order}`);
+    }
+
+    if (options.skip) {
+        params.push(`skip=${options.skip}`);
+    }
+
+    if (options.limit) {
+        params.push(`limit=${options.limit}`);
+    }
+
+    try {
+        const res = await fetch(`/api/store?${params.join('&')}`);
+        const data = await res.json();
+        if (data.error) {
+            return undefined;
+        }
+        wsc.log(`Searched store: ${JSON.stringify(options)}`);
+        return data;
+    } catch (e) {
+        return undefined;
+    }
+});
+wsc.method('store:playcanvas:get', async (id) => {
+    try {
+        const res = await fetch(`/api/store/${id}`);
+        const data = await res.json();
+        if (data.error) {
+            return undefined;
+        }
+        wsc.log(`Got store item(${id})`);
+        return data;
+    } catch (e) {
+        return undefined;
+    }
+});
+wsc.method('store:playcanvas:clone', async (id, name, license) => {
+    try {
+        const res = await fetch(`/api/store/${id}/clone`, {
+            method: 'POST',
+            headers: {
+                Authorization: `Bearer ${window.editor.api.globals.accessToken}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                scope: {
+                    type: 'project',
+                    id: window.config.project.id
+                },
+                name,
+                store: 'playcanvas',
+                targetFolderId: null,
+                license
+            })
+        });
+        const data = await res.json();
+        if (data.error) {
+            return undefined;
+        }
+        wsc.log(`Cloned store item(${id})`);
+        return data;
+    } catch (e) {
+        return undefined;
+    }
+});
+
+// sketchfab
+wsc.method('store:sketchfab:list', async (options = {}) => {
+    const params = [
+        'restricted=0',
+        'type=models',
+        'downloadable=true'
+    ];
+
+    if (options.search) {
+        params.push(`q=${options.search}`);
+    }
+
+    if (options.order) {
+        params.push(`sort_by=${options.order}`);
+    }
+
+    if (options.skip) {
+        params.push(`cursor=${options.skip}`);
+    }
+
+    if (options.limit) {
+        params.push(`count=${Math.min(options.limit ?? 0, 24)}`);
+    }
+
+    try {
+        const res = await fetch(`https://api.sketchfab.com/v3/search?${params.join('&')}`);
+        const data = await res.json();
+        if (data.error) {
+            return undefined;
+        }
+        wsc.log(`Searched Sketchfab: ${JSON.stringify(options)}`);
+        return data;
+    } catch (e) {
+        return undefined;
+    }
+});
+wsc.method('store:sketchfab:get', async (uid) => {
+    try {
+        const res = await fetch(`https://api.sketchfab.com/v3/models/${uid}`);
+        const data = await res.json();
+        if (data.error) {
+            return undefined;
+        }
+        wsc.log(`Got Sketchfab model(${uid})`);
+        return data;
+    } catch (e) {
+        return undefined;
+    }
+});
+wsc.method('store:sketchfab:clone', async (uid, name, license) => {
+    try {
+        const res = await fetch(`/api/store/${uid}/clone`, {
+            method: 'POST',
+            headers: {
+                Authorization: `Bearer ${window.editor.api.globals.accessToken}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                scope: {
+                    type: 'project',
+                    id: window.config.project.id
+                },
+                name,
+                store: 'sketchfab',
+                targetFolderId: null,
+                license
+            })
+        });
+        const data = await res.json();
+        if (data.error) {
+            return undefined;
+        }
+        wsc.log(`Cloned sketchfab item(${uid})`);
+        return data;
+    } catch (e) {
+        return undefined;
+    }
+});
