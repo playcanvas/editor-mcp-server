@@ -112,7 +112,12 @@ export const register = (server: McpServer, wss: WSS) => {
             position: z.array(z.number()).length(3).optional(),
             rotation: z.array(z.number()).length(3).optional(),
             scale: z.array(z.number()).length(3).optional(),
-            tags: z.array(z.string()).optional()
+            tags: z.array(z.string()).optional(),
+            components: z.object({
+                light: lightComponentSchema.optional(),
+                render: renderComponentSchema.optional(),
+                script: scriptComponentSchema.optional()
+            })
         },
         async (options) => {
             try {
