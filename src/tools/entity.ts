@@ -103,7 +103,6 @@ const renderComponentSchema = z.object({
     aabbHalfExtents: z.array(z.number()).length(3).optional()
 });
 
-/* eslint-disable-next-line no-unused-vars */
 const rigidbodyComponentSchema = z.object({
     enabled: z.boolean().optional(),
     type: z.enum(['static', 'dynamic', 'kinematic']).optional(),
@@ -138,6 +137,7 @@ export const register = (server: McpServer, wss: WSS) => {
                 camera: cameraComponentSchema.optional(),
                 light: lightComponentSchema.optional(),
                 render: renderComponentSchema.optional(),
+                rigidbody: rigidbodyComponentSchema.optional(),
                 script: scriptComponentSchema.optional()
             })
         },
@@ -332,6 +332,7 @@ export const register = (server: McpServer, wss: WSS) => {
                 camera: cameraComponentSchema.optional(),
                 light: lightComponentSchema.optional(),
                 render: renderComponentSchema.optional(),
+                rigidbody: rigidbodyComponentSchema.optional(),
                 script: scriptComponentSchema.optional()
             })
         },
