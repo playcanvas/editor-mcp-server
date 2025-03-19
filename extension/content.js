@@ -130,12 +130,12 @@ wsc.method('entity:reparent', (options) => {
     wsc.log(`Reparented entity(${options.id}) to entity(${options.parent})`);
     return entity.json();
 });
-wsc.method('entity:delete', (ids) => {
+wsc.method('entity:delete', async (ids) => {
     const entities = ids.map(id => window.editor.api.globals.entities.get(id));
     if (!entities) {
         return undefined;
     }
-    window.editor.api.globals.entities.delete(entities);
+    await window.editor.api.globals.entities.delete(entities);
     wsc.log(`Deleted entities: ${ids.join(', ')}`);
     return true;
 });
