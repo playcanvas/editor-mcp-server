@@ -19,7 +19,7 @@
     "typescript": "^5.8.2"
   },
   "dependencies": {
-    "@ai-sdk/anthropic": "^1.1.17",
+    "@ai-sdk/anthropic": "^1.1.18",
     "@daydreamsai/core": "^0.2.16",
     "@modelcontextprotocol/sdk": "^1.7.0",
     "ws": "^8.18.1",
