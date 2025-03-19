@@ -267,7 +267,7 @@ wsc.method('assets:property:set', (id, prop, value) => {
     wsc.log(`Set asset(${id}) property(${prop}) to: ${JSON.stringify(value)}`);
     return true;
 });
-wsc.method('assets:script:content:set', async (id, content) => {
+wsc.method('assets:script:text:set', async (id, text) => {
     const asset = editorApi.assets.get(id);
     if (!asset) {
         return undefined;
@@ -275,7 +275,7 @@ wsc.method('assets:script:content:set', async (id, content) => {
 
     const form = new FormData();
     form.append('filename', asset.get('file.filename'));
-    form.append('file', new Blob([content], { type: 'text/plain' }), asset.get('file.filename'));
+    form.append('file', new Blob([text], { type: 'text/plain' }), asset.get('file.filename'));
     form.append('branchId', window.config.self.branch.id);
 
     try {
@@ -283,7 +283,7 @@ wsc.method('assets:script:content:set', async (id, content) => {
         if (data.error) {
             return undefined;
         }
-        wsc.log(`Set asset(${id}) script content`);
+        wsc.log(`Set asset(${id}) script text`);
         return data;
     } catch (e) {
         return undefined;
