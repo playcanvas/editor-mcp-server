@@ -306,10 +306,16 @@ wsc.method('scene:modify', (settings) => {
 
 // playcanvas
 wsc.method('store:playcanvas:list', async (options = {}) => {
-    const params = ['regex=true'];
+    const params = [];
 
     if (options.search) {
         params.push(`search=${options.search}`);
+    }
+
+    params.push('regexp=true');
+
+    if (options.sort) {
+        params.push(`sort=${options.sort}`);
     }
 
     if (options.order) {
