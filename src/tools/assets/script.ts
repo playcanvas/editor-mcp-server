@@ -12,7 +12,7 @@ export const register = (server: McpServer, wss: WSS) => {
         },
         async ({ name }) => {
             try {
-                const res = await wss.send('asset:create', 'script', name);
+                const res = await wss.send('assets:create', 'script', name);
                 if (res === undefined) {
                     throw new Error('Failed to create script');
                 }
@@ -43,7 +43,7 @@ export const register = (server: McpServer, wss: WSS) => {
         },
         async ({ assetId, content }) => {
             try {
-                const res = await wss.send('asset:script:content:set', assetId, content);
+                const res = await wss.send('assets:script:content:set', assetId, content);
                 if (res === undefined) {
                     throw new Error('Failed to set script content');
                 }

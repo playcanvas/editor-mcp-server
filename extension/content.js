@@ -108,7 +108,7 @@ const iterateObject = (obj, callback, currentPath = '') => {
 wsc.method('ping', () => 'pong');
 
 // entities
-wsc.method('entity:create', (options = {}) => {
+wsc.method('entities:create', (options = {}) => {
     const entity = editorApi.entities.create(options);
     if (!entity) {
         return undefined;
@@ -116,7 +116,7 @@ wsc.method('entity:create', (options = {}) => {
     wsc.log(`Created entity(${entity.get('resource_id')})`);
     return entity.json();
 });
-wsc.method('entity:modify', (id, options = {}) => {
+wsc.method('entities:modify', (id, options = {}) => {
     const entity = editorApi.entities.get(id);
     if (!entity) {
         return undefined;
@@ -142,7 +142,7 @@ wsc.method('entity:modify', (id, options = {}) => {
     wsc.log(`Modified entity(${id})`);
     return entity.json();
 });
-wsc.method('entity:duplicate', async (ids, options = {}) => {
+wsc.method('entities:duplicate', async (ids, options = {}) => {
     const entities = ids.map(id => editorApi.entities.get(id));
     if (!entities.length) {
         return [];
@@ -151,7 +151,7 @@ wsc.method('entity:duplicate', async (ids, options = {}) => {
     wsc.log(`Duplicated entities: ${res.map(entity => entity.get('resource_id')).join(', ')}`);
     return res.map(entity => entity.json());
 });
-wsc.method('entity:reparent', (options) => {
+wsc.method('entities:reparent', (options) => {
     const entity = editorApi.entities.get(options.id);
     if (!entity) {
         return undefined;
@@ -166,7 +166,7 @@ wsc.method('entity:reparent', (options) => {
     wsc.log(`Reparented entity(${options.id}) to entity(${options.parent})`);
     return entity.json();
 });
-wsc.method('entity:delete', async (ids) => {
+wsc.method('entities:delete', async (ids) => {
     const entities = ids.map(id => editorApi.entities.get(id));
     if (!entities.length) {
         return [];
@@ -175,10 +175,10 @@ wsc.method('entity:delete', async (ids) => {
     wsc.log(`Deleted entities: ${ids.join(', ')}`);
     return true;
 });
-wsc.method('entity:list', () => {
+wsc.method('entities:list', () => {
     return editorApi.entities.list().map(entity => entity.json());
 });
-wsc.method('entity:component:add', (id, name, fields) => {
+wsc.method('entities:component:add', (id, name, fields) => {
     const entity = editorApi.entities.get(id);
     if (!entity) {
         return undefined;
@@ -192,7 +192,7 @@ wsc.method('entity:component:add', (id, name, fields) => {
     wsc.log(`Added component(${name}) to entity(${id})`);
     return data;
 });
-wsc.method('entity:component:property:set', (id, name, prop, value) => {
+wsc.method('entities:component:property:set', (id, name, prop, value) => {
     const entity = editorApi.entities.get(id);
     if (!entity) {
         return undefined;
@@ -204,7 +204,7 @@ wsc.method('entity:component:property:set', (id, name, prop, value) => {
     wsc.log(`Set component(${name}) property(${prop}) of entity(${id}) to: ${JSON.stringify(value)}`);
     return true;
 });
-wsc.method('entity:component:script:add', (id, scriptName) => {
+wsc.method('entities:component:script:add', (id, scriptName) => {
     const entity = editorApi.entities.get(id);
     if (!entity) {
         return undefined;
@@ -218,7 +218,7 @@ wsc.method('entity:component:script:add', (id, scriptName) => {
 });
 
 // assets
-wsc.method('asset:create', async (type, name, data) => {
+wsc.method('assets:create', async (type, name, data) => {
     let asset;
     switch (type) {
         case 'material':
@@ -239,7 +239,7 @@ wsc.method('asset:create', async (type, name, data) => {
     wsc.log(`Created asset(${asset.get('id')})`);
     return asset.json();
 });
-wsc.method('asset:delete', (ids) => {
+wsc.method('assets:delete', (ids) => {
     const assets = ids.map(id => editorApi.assets.get(id));
     if (!assets.length) {
         return [];
@@ -248,10 +248,10 @@ wsc.method('asset:delete', (ids) => {
     wsc.log(`Deleted assets: ${ids.join(', ')}`);
     return true;
 });
-wsc.method('asset:list', () => {
+wsc.method('assets:list', () => {
     return editorApi.assets.list().map(asset => asset.json());
 });
-wsc.method('asset:instantiate', async (ids) => {
+wsc.method('assets:instantiate', async (ids) => {
     const assets = ids.map(id => editorApi.assets.get(id));
     if (!assets.length) {
         return [];
@@ -260,7 +260,7 @@ wsc.method('asset:instantiate', async (ids) => {
     wsc.log(`Instantiated assets: ${ids.join(', ')}`);
     return entities.map(entity => entity.json());
 });
-wsc.method('asset:property:set', (id, prop, value) => {
+wsc.method('assets:property:set', (id, prop, value) => {
     const asset = editorApi.assets.get(id);
     if (!asset) {
         return undefined;
@@ -269,7 +269,7 @@ wsc.method('asset:property:set', (id, prop, value) => {
     wsc.log(`Set asset(${id}) property(${prop}) to: ${JSON.stringify(value)}`);
     return true;
 });
-wsc.method('asset:script:content:set', async (id, content) => {
+wsc.method('assets:script:content:set', async (id, content) => {
     const asset = editorApi.assets.get(id);
     if (!asset) {
         return undefined;

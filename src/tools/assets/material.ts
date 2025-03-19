@@ -12,7 +12,7 @@ export const register = (server: McpServer, wss: WSS) => {
         },
         async ({ name }) => {
             try {
-                const res = await wss.send('asset:create', 'material', name);
+                const res = await wss.send('assets:create', 'material', name);
                 if (res === undefined) {
                     throw new Error('Failed to create material');
                 }
@@ -43,7 +43,7 @@ export const register = (server: McpServer, wss: WSS) => {
         },
         async ({ assetId, color }) => {
             try {
-                const res = await wss.send('asset:property:set', assetId, 'diffuse', color);
+                const res = await wss.send('assets:property:set', assetId, 'diffuse', color);
                 if (res === undefined) {
                     throw new Error('Failed to set diffuse property on material');
                 }

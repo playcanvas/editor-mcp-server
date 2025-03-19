@@ -10,7 +10,7 @@ export const register = (server: McpServer, wss: WSS) => {
         {},
         async () => {
             try {
-                const res = await wss.send('asset:list');
+                const res = await wss.send('assets:list');
                 if (res === undefined) {
                     throw new Error('Failed to list assets');
                 }
@@ -40,7 +40,7 @@ export const register = (server: McpServer, wss: WSS) => {
         },
         async ({ ids }) => {
             try {
-                const res = await wss.send('asset:delete', ids);
+                const res = await wss.send('assets:delete', ids);
                 if (res === undefined) {
                     throw new Error('Failed to delete asset');
                 }
@@ -70,7 +70,7 @@ export const register = (server: McpServer, wss: WSS) => {
         },
         async ({ ids }) => {
             try {
-                const res = await wss.send('asset:instantiate', ids);
+                const res = await wss.send('assets:instantiate', ids);
                 if (res === undefined) {
                     throw new Error('Failed to instantiate asset');
                 }

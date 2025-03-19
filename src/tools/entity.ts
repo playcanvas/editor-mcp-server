@@ -18,7 +18,7 @@ export const register = (server: McpServer, wss: WSS) => {
         },
         async (options) => {
             try {
-                const res = await wss.send('entity:create', options);
+                const res = await wss.send('entities:create', options);
                 if (res === undefined) {
                     throw new Error('Failed to create entity');
                 }
@@ -54,7 +54,7 @@ export const register = (server: McpServer, wss: WSS) => {
         },
         async (options) => {
             try {
-                const res = await wss.send('entity:modify', options.id, options);
+                const res = await wss.send('entities:modify', options.id, options);
                 if (res === undefined) {
                     throw new Error('Failed to modify entity');
                 }
@@ -85,7 +85,7 @@ export const register = (server: McpServer, wss: WSS) => {
         },
         async ({ ids, rename }) => {
             try {
-                const res = await wss.send('entity:duplicate', ids, { rename });
+                const res = await wss.send('entities:duplicate', ids, { rename });
                 if (res === undefined) {
                     throw new Error('Failed to duplicate entities');
                 }
@@ -118,7 +118,7 @@ export const register = (server: McpServer, wss: WSS) => {
         },
         async (options) => {
             try {
-                const res = await wss.send('entity:reparent', options);
+                const res = await wss.send('entities:reparent', options);
                 if (res === undefined) {
                     throw new Error('Failed to reparent entity');
                 }
@@ -148,7 +148,7 @@ export const register = (server: McpServer, wss: WSS) => {
         },
         async ({ ids }) => {
             try {
-                const res = await wss.send('entity:delete', ids);
+                const res = await wss.send('entities:delete', ids);
                 if (res === undefined) {
                     throw new Error('Failed to delete entities');
                 }
@@ -176,7 +176,7 @@ export const register = (server: McpServer, wss: WSS) => {
         {},
         async () => {
             try {
-                const res = await wss.send('entity:list');
+                const res = await wss.send('entities:list');
                 if (res === undefined) {
                     throw new Error('Failed to list entities');
                 }
@@ -207,7 +207,7 @@ export const register = (server: McpServer, wss: WSS) => {
         },
         async ({ id, type }) => {
             try {
-                const res = await wss.send('entity:component:add', id, 'render', { type });
+                const res = await wss.send('entities:component:add', id, 'render', { type });
                 if (res === undefined) {
                     throw new Error('Failed to create render component');
                 }
@@ -238,7 +238,7 @@ export const register = (server: McpServer, wss: WSS) => {
         },
         async ({ id, assetId }) => {
             try {
-                const res = await wss.send('entity:component:property:set', id, 'render', 'materialAssets', [assetId]);
+                const res = await wss.send('entities:component:property:set', id, 'render', 'materialAssets', [assetId]);
                 if (res === undefined) {
                     throw new Error('Failed to set material on render component');
                 }
@@ -268,7 +268,7 @@ export const register = (server: McpServer, wss: WSS) => {
         },
         async ({ id }) => {
             try {
-                const res = await wss.send('entity:component:add', id, 'script');
+                const res = await wss.send('entities:component:add', id, 'script');
                 if (res === undefined) {
                     throw new Error('Failed to create script component');
                 }
@@ -299,7 +299,7 @@ export const register = (server: McpServer, wss: WSS) => {
         },
         async ({ id, scriptName }) => {
             try {
-                const res = await wss.send('entity:component:script:add', id, scriptName);
+                const res = await wss.send('entities:component:script:add', id, scriptName);
                 if (res === undefined) {
                     throw new Error('Failed to add script on script component');
                 }
