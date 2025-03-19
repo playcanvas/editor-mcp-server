@@ -66,7 +66,8 @@ class WSC {
         return this._methods.get(name)?.(...args);
     }
 }
-const wsc = window.wsc = new WSC('ws://localhost:52000');
+const wsc = new WSC('ws://localhost:52000');
+const editorApi = window.editor.api.globals;
 
 // helpers
 function iterateObject(obj, callback, currentPath = '') {
@@ -86,7 +87,7 @@ wsc.method('ping', () => 'pong');
 
 // entities
 wsc.method('entity:create', (options = {}) => {
-    const entity = window.editor.api.globals.entities.create(options);
+    const entity = editorApi.entities.create(options);
     if (!entity) {
         return undefined;
     }
@@ -94,7 +95,7 @@ wsc.method('entity:create', (options = {}) => {
     return entity.json();
 });
 wsc.method('entity:modify', (id, options = {}) => {
-    const entity = window.editor.api.globals.entities.get(id);
+    const entity = editorApi.entities.get(id);
     if (!entity) {
         return undefined;
     }
@@ -120,20 +121,20 @@ wsc.method('entity:modify', (id, options = {}) => {
     return entity.json();
 });
 wsc.method('entity:duplicate', async (ids, options = {}) => {
-    const entities = ids.map(id => window.editor.api.globals.entities.get(id));
+    const entities = ids.map(id => editorApi.entities.get(id));
     if (!entities) {
         return undefined;
     }
-    const res = await window.editor.api.globals.entities.duplicate(entities, options);
+    const res = await editorApi.entities.duplicate(entities, options);
     wsc.log(`Duplicated entities: ${res.map(entity => entity.get('resource_id')).join(', ')}`);
     return res.map(entity => entity.json());
 });
 wsc.method('entity:reparent', (options) => {
-    const entity = window.editor.api.globals.entities.get(options.id);
+    const entity = editorApi.entities.get(options.id);
     if (!entity) {
         return undefined;
     }
-    const parent = window.editor.api.globals.entities.get(options.parent);
+    const parent = editorApi.entities.get(options.parent);
     if (!parent) {
         return undefined;
     }
@@ -144,19 +145,19 @@ wsc.method('entity:reparent', (options) => {
     return entity.json();
 });
 wsc.method('entity:delete', async (ids) => {
-    const entities = ids.map(id => window.editor.api.globals.entities.get(id));
+    const entities = ids.map(id => editorApi.entities.get(id));
     if (!entities) {
         return undefined;
     }
-    await window.editor.api.globals.entities.delete(entities);
+    await editorApi.entities.delete(entities);
     wsc.log(`Deleted entities: ${ids.join(', ')}`);
     return true;
 });
 wsc.method('entity:list', () => {
-    return window.editor.api.globals.entities.list().map(entity => entity.json());
+    return editorApi.entities.list().map(entity => entity.json());
 });
 wsc.method('entity:component:add', (id, name, fields) => {
-    const entity = window.editor.api.globals.entities.get(id);
+    const entity = editorApi.entities.get(id);
     if (!entity) {
         return undefined;
     }
@@ -170,7 +171,7 @@ wsc.method('entity:component:add', (id, name, fields) => {
     return data;
 });
 wsc.method('entity:component:property:set', (id, name, prop, value) => {
-    const entity = window.editor.api.globals.entities.get(id);
+    const entity = editorApi.entities.get(id);
     if (!entity) {
         return undefined;
     }
@@ -182,7 +183,7 @@ wsc.method('entity:component:property:set', (id, name, prop, value) => {
     return true;
 });
 wsc.method('entity:component:script:add', (id, scriptName) => {
-    const entity = window.editor.api.globals.entities.get(id);
+    const entity = editorApi.entities.get(id);
     if (!entity) {
         return undefined;
     }
@@ -199,13 +200,13 @@ wsc.method('asset:create', async (type, name, data) => {
     let asset;
     switch (type) {
         case 'material':
-            asset = await window.editor.api.globals.assets.createMaterial({ name, data });
+            asset = await editorApi.assets.createMaterial({ name, data });
             break;
         case 'texture':
-            asset = await window.editor.api.globals.assets.createTexture({ name, data });
+            asset = await editorApi.assets.createTexture({ name, data });
             break;
         case 'script':
-            asset = await window.editor.api.globals.assets.createScript({ filename: name, data });
+            asset = await editorApi.assets.createScript({ filename: name, data });
             break;
         default:
             return undefined;
@@ -217,28 +218,28 @@ wsc.method('asset:create', async (type, name, data) => {
     return asset.json();
 });
 wsc.method('asset:delete', (ids) => {
-    const assets = ids.map(id => window.editor.api.globals.assets.get(id));
+    const assets = ids.map(id => editorApi.assets.get(id));
     if (!assets) {
         return undefined;
     }
-    window.editor.api.globals.assets.delete(assets);
+    editorApi.assets.delete(assets);
     wsc.log(`Deleted assets: ${ids.join(', ')}`);
     return true;
 });
 wsc.method('asset:list', () => {
-    return window.editor.api.globals.assets.list().map(asset => asset.json());
+    return editorApi.assets.list().map(asset => asset.json());
 });
 wsc.method('asset:instantiate', async (ids) => {
-    const assets = ids.map(id => window.editor.api.globals.assets.get(id));
+    const assets = ids.map(id => editorApi.assets.get(id));
     if (!assets) {
         return undefined;
     }
-    const entities = await window.editor.api.globals.assets.instantiateTemplates(assets);
+    const entities = await editorApi.assets.instantiateTemplates(assets);
     wsc.log(`Instantiated assets: ${ids.join(', ')}`);
     return entities.map(entity => entity.json());
 });
 wsc.method('asset:property:set', (id, prop, value) => {
-    const asset = window.editor.api.globals.assets.get(id);
+    const asset = editorApi.assets.get(id);
     if (!asset) {
         return undefined;
     }
@@ -247,7 +248,7 @@ wsc.method('asset:property:set', (id, prop, value) => {
     return true;
 });
 wsc.method('asset:script:content:set', async (id, content) => {
-    const asset = window.editor.api.globals.assets.get(id);
+    const asset = editorApi.assets.get(id);
     if (!asset) {
         return undefined;
     }
@@ -262,7 +263,7 @@ wsc.method('asset:script:content:set', async (id, content) => {
             method: 'PUT',
             body: form,
             headers: {
-                Authorization: `Bearer ${window.editor.api.globals.accessToken}`
+                Authorization: `Bearer ${editorApi.accessToken}`
             }
         });
         const data = await res.json();
@@ -279,7 +280,7 @@ wsc.method('asset:script:content:set', async (id, content) => {
 // scenes
 wsc.method('scene:modify', (settings) => {
     iterateObject(settings, (path, value) => {
-        window.editor.api.globals.settings.scene.set(path, value);
+        editorApi.settings.scene.set(path, value);
     });
 
     wsc.log('Modified scene settings');
@@ -338,7 +339,7 @@ wsc.method('store:playcanvas:clone', async (id, name, license) => {
         const res = await fetch(`/api/store/${id}/clone`, {
             method: 'POST',
             headers: {
-                Authorization: `Bearer ${window.editor.api.globals.accessToken}`,
+                Authorization: `Bearer ${editorApi.accessToken}`,
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
@@ -417,7 +418,7 @@ wsc.method('store:sketchfab:clone', async (uid, name, license) => {
         const res = await fetch(`/api/store/${uid}/clone`, {
             method: 'POST',
             headers: {
-                Authorization: `Bearer ${window.editor.api.globals.accessToken}`,
+                Authorization: `Bearer ${editorApi.accessToken}`,
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
