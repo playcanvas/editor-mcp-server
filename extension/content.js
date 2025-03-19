@@ -122,8 +122,8 @@ wsc.method('entity:modify', (id, options = {}) => {
 });
 wsc.method('entity:duplicate', async (ids, options = {}) => {
     const entities = ids.map(id => editorApi.entities.get(id));
-    if (!entities) {
-        return undefined;
+    if (!entities.length) {
+        return [];
     }
     const res = await editorApi.entities.duplicate(entities, options);
     wsc.log(`Duplicated entities: ${res.map(entity => entity.get('resource_id')).join(', ')}`);
@@ -146,8 +146,8 @@ wsc.method('entity:reparent', (options) => {
 });
 wsc.method('entity:delete', async (ids) => {
     const entities = ids.map(id => editorApi.entities.get(id));
-    if (!entities) {
-        return undefined;
+    if (!entities.length) {
+        return [];
     }
     await editorApi.entities.delete(entities);
     wsc.log(`Deleted entities: ${ids.join(', ')}`);
@@ -219,8 +219,8 @@ wsc.method('asset:create', async (type, name, data) => {
 });
 wsc.method('asset:delete', (ids) => {
     const assets = ids.map(id => editorApi.assets.get(id));
-    if (!assets) {
-        return undefined;
+    if (!assets.length) {
+        return [];
     }
     editorApi.assets.delete(assets);
     wsc.log(`Deleted assets: ${ids.join(', ')}`);
@@ -231,8 +231,8 @@ wsc.method('asset:list', () => {
 });
 wsc.method('asset:instantiate', async (ids) => {
     const assets = ids.map(id => editorApi.assets.get(id));
-    if (!assets) {
-        return undefined;
+    if (!assets.length) {
+        return [];
     }
     const entities = await editorApi.assets.instantiateTemplates(assets);
     wsc.log(`Instantiated assets: ${ids.join(', ')}`);
