@@ -18,6 +18,48 @@ const collisionComponentSchema = z.object({
     angularOffset: z.array(z.number()).length(3).optional()
 });
 
+const lightComponentSchema = z.object({
+    enabled: z.boolean().optional(),
+    type: z.enum(['directional', 'spot', 'omni']).optional(),
+    bake: z.boolean().optional(),
+    bakeArea: z.number().optional(),
+    bakeNumSamples: z.number().optional(),
+    bakeDir: z.boolean().optional(),
+    affectDynamic: z.boolean().optional(),
+    affectLightmapped: z.boolean().optional(),
+    affectSpecularity: z.boolean().optional(),
+    color: z.array(z.number()).length(3).optional(),
+    intensity: z.number().optional(),
+    castShadows: z.boolean().optional(),
+    shadowUpdateMode: z.number().optional(),
+    shadowType: z.number().optional(),
+    vsmBlurMode: z.number().optional(),
+    vsmBlurSize: z.number().optional(),
+    vsmBias: z.number().optional(),
+    shadowDistance: z.number().optional(),
+    shadowIntensity: z.number().optional(),
+    shadowResolution: z.number().optional(),
+    numCascades: z.number().optional(),
+    cascadeDistribution: z.number().optional(),
+    shadowBias: z.number().optional(),
+    normalOffsetBias: z.number().optional(),
+    range: z.number().optional(),
+    falloffMode: z.number().optional(),
+    innerConeAngle: z.number().optional(),
+    outerConeAngle: z.number().optional(),
+    shape: z.number().optional(),
+    cookieAsset: z.number().optional(),
+    cookie: z.number().optional(),
+    cookieIntensity: z.number().optional(),
+    cookieFalloff: z.boolean().optional(),
+    cookieChannel: z.string().optional(),
+    cookieAngle: z.number().optional(),
+    cookieScale: z.array(z.number()).length(2).optional(),
+    cookieOffset: z.array(z.number()).length(2).optional(),
+    isStatic: z.boolean().optional(),
+    layers: z.array(z.number()).optional()
+});
+
 const renderComponentSchema = z.object({
     enabled: z.boolean().optional(),
     type: z.enum(['box', 'capsule', 'sphere', 'cylinder', 'cone', 'plane']).optional(),
@@ -260,6 +302,7 @@ export const register = (server: McpServer, wss: WSS) => {
         {
             id: z.string(),
             components: z.object({
+                light: lightComponentSchema.optional(),
                 render: renderComponentSchema.optional(),
                 script: scriptComponentSchema.optional()
             })
