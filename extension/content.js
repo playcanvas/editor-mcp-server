@@ -313,9 +313,9 @@ wsc.method('store:playcanvas:get', async (id) => {
         return undefined;
     }
 });
-wsc.method('store:playcanvas:clone', async (storeId, name, license) => {
+wsc.method('store:playcanvas:clone', async (id, name, license) => {
     try {
-        const res = await fetch(`/api/store/${storeId}/clone`, {
+        const res = await fetch(`/api/store/${id}/clone`, {
             method: 'POST',
             headers: {
                 Authorization: `Bearer ${window.editor.api.globals.accessToken}`,
@@ -336,7 +336,7 @@ wsc.method('store:playcanvas:clone', async (storeId, name, license) => {
         if (data.error) {
             return undefined;
         }
-        wsc.log(`Cloned store item(${storeId})`);
+        wsc.log(`Cloned store item(${id})`);
         return data;
     } catch (e) {
         return undefined;
@@ -392,9 +392,9 @@ wsc.method('store:sketchfab:get', async (uid) => {
         return undefined;
     }
 });
-wsc.method('store:sketchfab:clone', async (storeId, name, license) => {
+wsc.method('store:sketchfab:clone', async (uid, name, license) => {
     try {
-        const res = await fetch(`/api/store/${storeId}/clone`, {
+        const res = await fetch(`/api/store/${uid}/clone`, {
             method: 'POST',
             headers: {
                 Authorization: `Bearer ${window.editor.api.globals.accessToken}`,
@@ -415,7 +415,7 @@ wsc.method('store:sketchfab:clone', async (storeId, name, license) => {
         if (data.error) {
             return undefined;
         }
-        wsc.log(`Cloned sketchfab item(${storeId})`);
+        wsc.log(`Cloned sketchfab item(${uid})`);
         return data;
     } catch (e) {
         return undefined;
