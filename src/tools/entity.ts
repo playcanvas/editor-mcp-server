@@ -24,7 +24,6 @@ const cameraComponentSchema = z.object({
     gammaCorrection: z.number().optional()
 });
 
-/* eslint-disable-next-line no-unused-vars */
 const collisionComponentSchema = z.object({
     enabled: z.boolean().optional(),
     type: z.enum(['box', 'sphere', 'capsule', 'cylinder', 'mesh']).optional(),
@@ -33,8 +32,8 @@ const collisionComponentSchema = z.object({
     axis: z.number().optional(),
     height: z.number().optional(),
     convexHull: z.boolean().optional(),
-    asset: z.number().optional(),
-    renderAsset: z.number().optional(),
+    asset: z.number().optional().nullable(),
+    renderAsset: z.number().optional().nullable(),
     linearOffset: z.array(z.number()).length(3).optional(),
     angularOffset: z.array(z.number()).length(3).optional()
 });
@@ -137,7 +136,6 @@ export const register = (server: McpServer, wss: WSS) => {
                 camera: cameraComponentSchema.optional(),
                 light: lightComponentSchema.optional(),
                 render: renderComponentSchema.optional(),
-                rigidbody: rigidbodyComponentSchema.optional(),
                 script: scriptComponentSchema.optional()
             })
         },
@@ -330,6 +328,7 @@ export const register = (server: McpServer, wss: WSS) => {
             id: z.string(),
             components: z.object({
                 camera: cameraComponentSchema.optional(),
+                collision: collisionComponentSchema.optional(),
                 light: lightComponentSchema.optional(),
                 render: renderComponentSchema.optional(),
                 rigidbody: rigidbodyComponentSchema.optional(),
