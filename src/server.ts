@@ -33,7 +33,7 @@ if (process.platform === 'win32') {
 // Create a WebSocket server
 const wss = new WSS(PORT);
 setInterval(() => {
-    wss.send('ping').catch(() => {});
+    wss._send('ping').catch(() => {});
 }, 1000);
 
 // Create an MCP server

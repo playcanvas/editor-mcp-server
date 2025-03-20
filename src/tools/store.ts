@@ -21,19 +21,19 @@ export const register = (server: McpServer, wss: WSS) => {
         },
         async ({ search, order, skip, limit }) => {
             try {
-                const res = await wss.send('store:playcanvas:list', {
+                const { data, error } = await wss._send('store:playcanvas:list', {
                     search,
                     order: order ? orderEnum[order] : undefined,
                     skip,
                     limit
                 });
-                if (res === undefined) {
-                    throw new Error('Failed to search for assets');
+                if (error) {
+                    throw new Error(error);
                 }
                 return {
                     content: [{
                         type: 'text',
-                        text: `Search results: ${JSON.stringify(res)}`
+                        text: JSON.stringify(data)
                     }]
                 };
             } catch (err: any) {
@@ -55,27 +55,8 @@ export const register = (server: McpServer, wss: WSS) => {
             // store: z.enum(['playcanvas', 'sketchfab']).optional(),
             id: z.string()
         },
-        async ({ id }) => {
-            try {
-                const res = await wss.send('store:playcanvas:get', id);
-                if (res === undefined) {
-                    throw new Error('Failed to get asset');
-                }
-                return {
-                    content: [{
-                        type: 'text',
-                        text: `Asset: ${JSON.stringify(res)}`
-                    }]
-                };
-            } catch (err: any) {
-                return {
-                    content: [{
-                        type: 'text',
-                        text: err.message
-                    }],
-                    isError: true
-                };
-            }
+        ({ id }) => {
+            return wss.call('store:playcanvas:get', id);
         }
     );
 
@@ -92,27 +73,8 @@ export const register = (server: McpServer, wss: WSS) => {
                 license: z.string()
             })
         },
-        async ({ id, name, license }) => {
-            try {
-                const res = await wss.send('store:playcanvas:clone', id, name, license);
-                if (res === undefined) {
-                    throw new Error('Failed to download asset');
-                }
-                return {
-                    content: [{
-                        type: 'text',
-                        text: `Downloaded asset: ${JSON.stringify(res)}`
-                    }]
-                };
-            } catch (err: any) {
-                return {
-                    content: [{
-                        type: 'text',
-                        text: err.message
-                    }],
-                    isError: true
-                };
-            }
+        ({ id, name, license }) => {
+            return wss.call('store:playcanvas:download', id, name, license);
         }
     );
 };
