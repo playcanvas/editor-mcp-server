@@ -199,7 +199,7 @@ wsc.method('entities:components:remove', (id, components) => {
     if (!entity) {
         return undefined;
     }
-    components.forEach(component => {
+    components.forEach((component) => {
         entity.removeComponent(component);
     });
     wsc.log(`Removed components(${components.join(', ')}) from entity(${id})`);
@@ -303,6 +303,21 @@ wsc.method('assets:script:text:set', async (id, text) => {
     } catch (e) {
         return undefined;
     }
+});
+wsc.method('assets:script:parse', async (id) => {
+    const asset = editorApi.assets.get(id);
+    if (!asset) {
+        return undefined;
+    }
+    // FIXME: This is a hacky way to get the parsed script data. Expose a proper API for this.
+    const [error, res] = await new Promise((resolve) => {
+        window.editor.call('scripts:parse', asset.observer, (...data) => resolve(data));
+    });
+    if (error) {
+        return undefined;
+    }
+    wsc.log(`Parsed asset(${id}) script`);
+    return res;
 });
 
 // scenes

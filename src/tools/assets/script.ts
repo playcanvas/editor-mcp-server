@@ -8,11 +8,12 @@ export const register = (server: McpServer, wss: WSS) => {
         'create_script',
         'Create a new script',
         {
-            name: z.string()
+            name: z.string(),
+            text: z.string().optional()
         },
-        async ({ name }) => {
+        async ({ name, text }) => {
             try {
-                const res = await wss.send('assets:create', 'script', { filename: `${name}.mjs` });
+                const res = await wss.send('assets:create', 'script', { filename: `${name}.mjs`, text });
                 if (res === undefined) {
                     throw new Error('Failed to create script');
                 }
@@ -51,6 +52,36 @@ export const register = (server: McpServer, wss: WSS) => {
                     content: [{
                         type: 'text',
                         text: `Set script text ${assetId}: ${JSON.stringify(res)}`
+                    }]
+                };
+            } catch (err: any) {
+                return {
+                    content: [{
+                        type: 'text',
+                        text: err.message
+                    }],
+                    isError: true
+                };
+            }
+        }
+    );
+
+    server.tool(
+        'script_parse',
+        'Parse the script after modification',
+        {
+            assetId: z.number()
+        },
+        async ({ assetId }) => {
+            try {
+                const res = await wss.send('assets:script:parse', assetId);
+                if (res === undefined) {
+                    throw new Error('Failed to parse script');
+                }
+                return {
+                    content: [{
+                        type: 'text',
+                        text: `Parsed script ${assetId}: ${JSON.stringify(res)}`
                     }]
                 };
             } catch (err: any) {
