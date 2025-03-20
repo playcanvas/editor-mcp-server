@@ -19,32 +19,13 @@ export const register = (server: McpServer, wss: WSS) => {
             skip: z.number().optional(),
             limit: z.number().optional()
         },
-        async ({ search, order, skip, limit }) => {
-            try {
-                const { data, error } = await wss._send('store:playcanvas:list', {
-                    search,
-                    order: order ? orderEnum[order] : undefined,
-                    skip,
-                    limit
-                });
-                if (error) {
-                    throw new Error(error);
-                }
-                return {
-                    content: [{
-                        type: 'text',
-                        text: JSON.stringify(data)
-                    }]
-                };
-            } catch (err: any) {
-                return {
-                    content: [{
-                        type: 'text',
-                        text: err.message
-                    }],
-                    isError: true
-                };
-            }
+        ({ search, order, skip, limit }) => {
+            return wss.call('store:playcanvas:search', {
+                search,
+                order: order ? orderEnum[order] : undefined,
+                skip,
+                limit
+            });
         }
     );
 
