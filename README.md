@@ -18,7 +18,9 @@ Run `npm install` to install all dependencies
 
 1. Select `File` > `Preferences` > `Cursor Settings`.
 2. Click `+ Add new global MCP server`.
-3. In `mcp.json`, add the following (Windows version below):
+3. In `mcp.json`, add the following:
+
+Windows
 
 ```json
 {
@@ -30,6 +32,22 @@ Run `npm install` to install all dependencies
         "npx",
         "tsx",
         "C:\\path\\to\\mcp-editor\\src\\server.ts"
+      ]
+    }
+  }
+}
+```
+
+macOS
+
+```json
+{
+  "mcpServers": {
+    "playcanvas": {
+      "command": "npx",
+      "args": [
+        "tsx",
+        "~/path/to/mcp-editor/src/server.ts"
       ]
     }
   }
