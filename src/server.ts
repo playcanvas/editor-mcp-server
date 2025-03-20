@@ -22,7 +22,12 @@ if (process.platform === 'win32') {
         child_process.spawnSync('taskkill', ['/F', '/PID', pid, '/T']);
     }
 } else {
-    // TODO: Implement for other platforms
+    // TODO: Test on Mac/Linux
+    // const cmd = `lsof -i :${PORT} | grep node | awk '{ print $2 }'`;
+    // const pid = child_process.execSync(cmd).toString().trim();
+    // if (pid) {
+    //     child_process.spawnSync('kill', ['-9', pid]);
+    // }
 }
 
 // Create a WebSocket server
