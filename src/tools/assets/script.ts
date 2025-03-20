@@ -11,27 +11,8 @@ export const register = (server: McpServer, wss: WSS) => {
             name: z.string(),
             text: z.string().optional()
         },
-        async ({ name, text }) => {
-            try {
-                const { data, error } = await wss.send('assets:create', 'script', { filename: `${name}.js`, text });
-                if (error) {
-                    throw new Error(error);
-                }
-                return {
-                    content: [{
-                        type: 'text',
-                        text: JSON.stringify(data)
-                    }]
-                };
-            } catch (err: any) {
-                return {
-                    content: [{
-                        type: 'text',
-                        text: err.message
-                    }],
-                    isError: true
-                };
-            }
+        ({ name, text }) => {
+            return wss.call('assets:create', 'script', { filename: `${name}.js`, text });
         }
     );
 
@@ -42,27 +23,8 @@ export const register = (server: McpServer, wss: WSS) => {
             assetId: z.number(),
             text: z.string()
         },
-        async ({ assetId, text }) => {
-            try {
-                const { data, error } = await wss.send('assets:script:text:set', assetId, text);
-                if (error) {
-                    throw new Error(error);
-                }
-                return {
-                    content: [{
-                        type: 'text',
-                        text: JSON.stringify(data)
-                    }]
-                };
-            } catch (err: any) {
-                return {
-                    content: [{
-                        type: 'text',
-                        text: err.message
-                    }],
-                    isError: true
-                };
-            }
+        ({ assetId, text }) => {
+            return wss.call('assets:script:text:set', assetId, text);
         }
     );
 
@@ -72,27 +34,8 @@ export const register = (server: McpServer, wss: WSS) => {
         {
             assetId: z.number()
         },
-        async ({ assetId }) => {
-            try {
-                const { data, error } = await wss.send('assets:script:parse', assetId);
-                if (error) {
-                    throw new Error(error);
-                }
-                return {
-                    content: [{
-                        type: 'text',
-                        text: JSON.stringify(data)
-                    }]
-                };
-            } catch (err: any) {
-                return {
-                    content: [{
-                        type: 'text',
-                        text: err.message
-                    }],
-                    isError: true
-                };
-            }
+        ({ assetId }) => {
+            return wss.call('assets:script:parse', assetId);
         }
     );
 };

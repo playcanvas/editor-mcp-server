@@ -50,7 +50,7 @@ class WSS {
         });
     }
 
-    send(name: string, ...args: any[]) {
+    private _send(name: string, ...args: any[]) {
         return new Promise<{ data?: any, error?: string }>((resolve, reject) => {
             const id = this._id++;
             this._callbacks.set(id, resolve);
@@ -60,6 +60,29 @@ class WSS {
             }
             this._socket?.send(JSON.stringify({ id, name, args }));
         });
+    }
+
+    async call(name: string, ...args: any[]): Promise<{ content: any[], isError?: boolean }> {
+        try {
+            const { data, error } = await this._send(name, ...args);
+            if (error) {
+                throw new Error(error);
+            }
+            return {
+                content: [{
+                    type: 'text',
+                    text: JSON.stringify(data)
+                }]
+            };
+        } catch (err: any) {
+            return {
+                content: [{
+                    type: 'text',
+                    text: err.message
+                }],
+                isError: true
+            };
+        }
     }
 }
 

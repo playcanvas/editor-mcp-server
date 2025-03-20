@@ -8,27 +8,8 @@ export const register = (server: McpServer, wss: WSS) => {
         'list_assets',
         'List all assets',
         {},
-        async () => {
-            try {
-                const { data, error } = await wss.send('assets:list');
-                if (error) {
-                    throw new Error(error);
-                }
-                return {
-                    content: [{
-                        type: 'text',
-                        text: JSON.stringify(data)
-                    }]
-                };
-            } catch (err: any) {
-                return {
-                    content: [{
-                        type: 'text',
-                        text: err.message
-                    }],
-                    isError: true
-                };
-            }
+        () => {
+            return wss.call('assets:list');
         }
     );
 
@@ -38,27 +19,8 @@ export const register = (server: McpServer, wss: WSS) => {
         {
             ids: z.array(z.number())
         },
-        async ({ ids }) => {
-            try {
-                const { data, error } = await wss.send('assets:delete', ids);
-                if (error) {
-                    throw new Error(error);
-                }
-                return {
-                    content: [{
-                        type: 'text',
-                        text: JSON.stringify(data)
-                    }]
-                };
-            } catch (err: any) {
-                return {
-                    content: [{
-                        type: 'text',
-                        text: err.message
-                    }],
-                    isError: true
-                };
-            }
+        ({ ids }) => {
+            return wss.call('assets:delete', ids);
         }
     );
 
@@ -68,27 +30,8 @@ export const register = (server: McpServer, wss: WSS) => {
         {
             ids: z.array(z.number())
         },
-        async ({ ids }) => {
-            try {
-                const { data, error } = await wss.send('assets:instantiate', ids);
-                if (error) {
-                    throw new Error(error);
-                }
-                return {
-                    content: [{
-                        type: 'text',
-                        text: JSON.stringify(data)
-                    }]
-                };
-            } catch (err: any) {
-                return {
-                    content: [{
-                        type: 'text',
-                        text: err.message
-                    }],
-                    isError: true
-                };
-            }
+        ({ ids }) => {
+            return wss.call('assets:instantiate', ids);
         }
     );
 };

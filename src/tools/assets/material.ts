@@ -10,27 +10,8 @@ export const register = (server: McpServer, wss: WSS) => {
         {
             name: z.string()
         },
-        async ({ name }) => {
-            try {
-                const { data, error } = await wss.send('assets:create', 'material', { name });
-                if (error) {
-                    throw new Error(error);
-                }
-                return {
-                    content: [{
-                        type: 'text',
-                        text: JSON.stringify(data)
-                    }]
-                };
-            } catch (err: any) {
-                return {
-                    content: [{
-                        type: 'text',
-                        text: err.message
-                    }],
-                    isError: true
-                };
-            }
+        ({ name }) => {
+            return wss.call('assets:create', 'material', { name });
         }
     );
 
@@ -41,27 +22,8 @@ export const register = (server: McpServer, wss: WSS) => {
             assetId: z.number(),
             color: z.array(z.number()).length(3)
         },
-        async ({ assetId, color }) => {
-            try {
-                const { data, error } = await wss.send('assets:property:set', assetId, 'diffuse', color);
-                if (error) {
-                    throw new Error(error);
-                }
-                return {
-                    content: [{
-                        type: 'text',
-                        text: JSON.stringify(data)
-                    }]
-                };
-            } catch (err: any) {
-                return {
-                    content: [{
-                        type: 'text',
-                        text: err.message
-                    }],
-                    isError: true
-                };
-            }
+        ({ assetId, color }) => {
+            return wss.call('assets:property:set', assetId, 'diffuse', color);
         }
     );
 };
