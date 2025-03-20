@@ -194,27 +194,8 @@ export const register = (server: McpServer, wss: WSS) => {
                 script: scriptComponentSchema.optional()
             })
         },
-        async (options) => {
-            try {
-                const res = await wss.send('entities:create', options);
-                if (res === undefined) {
-                    throw new Error('Failed to create entity');
-                }
-                return {
-                    content: [{
-                        type: 'text',
-                        text: `Created entity: ${JSON.stringify(res)}`
-                    }]
-                };
-            } catch (err: any) {
-                return {
-                    content: [{
-                        type: 'text',
-                        text: err.message
-                    }],
-                    isError: true
-                };
-            }
+        (options) => {
+            return wss.call('entities:create', options);
         }
     );
 
@@ -230,27 +211,8 @@ export const register = (server: McpServer, wss: WSS) => {
             scale: z.array(z.number()).length(3).optional(),
             tags: z.array(z.string()).optional()
         },
-        async (options) => {
-            try {
-                const res = await wss.send('entities:modify', options.id, options);
-                if (res === undefined) {
-                    throw new Error('Failed to modify entity');
-                }
-                return {
-                    content: [{
-                        type: 'text',
-                        text: `Modified entity ${options.id}: ${JSON.stringify(res)}`
-                    }]
-                };
-            } catch (err: any) {
-                return {
-                    content: [{
-                        type: 'text',
-                        text: err.message
-                    }],
-                    isError: true
-                };
-            }
+        (options) => {
+            return wss.call('entities:modify', options.id, options);
         }
     );
 
@@ -261,27 +223,8 @@ export const register = (server: McpServer, wss: WSS) => {
             ids: z.array(z.string()),
             rename: z.boolean().optional()
         },
-        async ({ ids, rename }) => {
-            try {
-                const res = await wss.send('entities:duplicate', ids, { rename });
-                if (res === undefined) {
-                    throw new Error('Failed to duplicate entities');
-                }
-                return {
-                    content: [{
-                        type: 'text',
-                        text: `Duplicated entities: ${JSON.stringify(res)}`
-                    }]
-                };
-            } catch (err: any) {
-                return {
-                    content: [{
-                        type: 'text',
-                        text: err.message
-                    }],
-                    isError: true
-                };
-            }
+        ({ ids, rename }) => {
+            return wss.call('entities:duplicate', ids, { rename });
         }
     );
 
@@ -294,27 +237,8 @@ export const register = (server: McpServer, wss: WSS) => {
             index: z.number().optional(),
             preserveTransform: z.boolean().optional()
         },
-        async (options) => {
-            try {
-                const res = await wss.send('entities:reparent', options);
-                if (res === undefined) {
-                    throw new Error('Failed to reparent entity');
-                }
-                return {
-                    content: [{
-                        type: 'text',
-                        text: `Reparented entity ${options.id}: ${JSON.stringify(res)}`
-                    }]
-                };
-            } catch (err: any) {
-                return {
-                    content: [{
-                        type: 'text',
-                        text: err.message
-                    }],
-                    isError: true
-                };
-            }
+        (options) => {
+            return wss.call('entities:reparent', options);
         }
     );
 
@@ -324,27 +248,8 @@ export const register = (server: McpServer, wss: WSS) => {
         {
             ids: z.array(z.string())
         },
-        async ({ ids }) => {
-            try {
-                const res = await wss.send('entities:delete', ids);
-                if (res === undefined) {
-                    throw new Error('Failed to delete entities');
-                }
-                return {
-                    content: [{
-                        type: 'text',
-                        text: `Deleted entities: ${JSON.stringify(res)}`
-                    }]
-                };
-            } catch (err: any) {
-                return {
-                    content: [{
-                        type: 'text',
-                        text: err.message
-                    }],
-                    isError: true
-                };
-            }
+        ({ ids }) => {
+            return wss.call('entities:delete', ids);
         }
     );
 
@@ -352,27 +257,8 @@ export const register = (server: McpServer, wss: WSS) => {
         'list_entities',
         'List all entities',
         {},
-        async () => {
-            try {
-                const res = await wss.send('entities:list');
-                if (res === undefined) {
-                    throw new Error('Failed to list entities');
-                }
-                return {
-                    content: [{
-                        type: 'text',
-                        text: `Entities: ${JSON.stringify(res)}`
-                    }]
-                };
-            } catch (err: any) {
-                return {
-                    content: [{
-                        type: 'text',
-                        text: err.message
-                    }],
-                    isError: true
-                };
-            }
+        () => {
+            return wss.call('entities:list');
         }
     );
 
@@ -392,26 +278,8 @@ export const register = (server: McpServer, wss: WSS) => {
                 script: scriptComponentSchema.optional()
             })
         },
-        async ({ id, components }) => {
-            try {
-                const res = await wss.send('entities:components:add', id, components);
-                if (res === undefined) {
-                    throw new Error('Failed to add components');
-                }
-                return {
-                    content: [{
-                        type: 'text',
-                        text: `Added components to entity ${id}: ${JSON.stringify(res)}`
-                    }]
-                };
-            } catch (err: any) {
-                return {
-                    content: [{
-                        type: 'text',
-                        text: err.message
-                    }]
-                };
-            }
+        ({ id, components }) => {
+            return wss.call('entities:components:add', id, components);
         }
     );
 
@@ -422,27 +290,8 @@ export const register = (server: McpServer, wss: WSS) => {
             id: z.string(),
             components: z.array(z.string())
         },
-        async ({ id, components }) => {
-            try {
-                const res = await wss.send('entities:components:remove', id, components);
-                if (res === undefined) {
-                    throw new Error('Failed to remove components');
-                }
-                return {
-                    content: [{
-                        type: 'text',
-                        text: `Removed components from entity ${id}: ${JSON.stringify(res)}`
-                    }]
-                };
-            } catch (err: any) {
-                return {
-                    content: [{
-                        type: 'text',
-                        text: err.message
-                    }],
-                    isError: true
-                };
-            }
+        ({ id, components }) => {
+            return wss.call('entities:components:remove', id, components);
         }
     );
 
@@ -453,27 +302,8 @@ export const register = (server: McpServer, wss: WSS) => {
             id: z.string(),
             assetId: z.number()
         },
-        async ({ id, assetId }) => {
-            try {
-                const res = await wss.send('entities:components:property:set', id, 'render', 'materialAssets', [assetId]);
-                if (res === undefined) {
-                    throw new Error('Failed to set material on render component');
-                }
-                return {
-                    content: [{
-                        type: 'text',
-                        text: `Set material on render component ${id}: ${JSON.stringify(res)}`
-                    }]
-                };
-            } catch (err: any) {
-                return {
-                    content: [{
-                        type: 'text',
-                        text: err.message
-                    }],
-                    isError: true
-                };
-            }
+        ({ id, assetId }) => {
+            return wss.call('entities:components:property:set', id, 'render', 'materialAsset', assetId);
         }
     );
 
@@ -484,27 +314,8 @@ export const register = (server: McpServer, wss: WSS) => {
             id: z.string(),
             scriptName: z.string()
         },
-        async ({ id, scriptName }) => {
-            try {
-                const res = await wss.send('entities:components:script:add', id, scriptName);
-                if (res === undefined) {
-                    throw new Error('Failed to add script on script component');
-                }
-                return {
-                    content: [{
-                        type: 'text',
-                        text: `Added script on script component ${id}: ${JSON.stringify(res)}`
-                    }]
-                };
-            } catch (err: any) {
-                return {
-                    content: [{
-                        type: 'text',
-                        text: err.message
-                    }],
-                    isError: true
-                };
-            }
+        ({ id, scriptName }) => {
+            return wss.call('entities:components:script:add', id, scriptName);
         }
     );
 };

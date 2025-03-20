@@ -13,27 +13,27 @@ export const register = (server: McpServer, wss: WSS) => {
         'store_search',
         'Search for an asset in the store',
         {
-            store: z.enum(['playcanvas', 'sketchfab']).optional(),
+            // store: z.enum(['playcanvas', 'sketchfab']).optional(),
             search: z.string(),
             order: z.enum(['asc', 'desc']).optional(),
             skip: z.number().optional(),
             limit: z.number().optional()
         },
-        async ({ store, search, order, skip, limit }) => {
+        async ({ search, order, skip, limit }) => {
             try {
-                const res = await wss.send(`store:${store}:list`, {
+                const { data, error } = await wss._send('store:playcanvas:list', {
                     search,
                     order: order ? orderEnum[order] : undefined,
                     skip,
                     limit
                 });
-                if (res === undefined) {
-                    throw new Error('Failed to search for assets');
+                if (error) {
+                    throw new Error(error);
                 }
                 return {
                     content: [{
                         type: 'text',
-                        text: `Search results: ${JSON.stringify(res)}`
+                        text: JSON.stringify(data)
                     }]
                 };
             } catch (err: any) {
@@ -52,30 +52,11 @@ export const register = (server: McpServer, wss: WSS) => {
         'store_get',
         'Get an asset from the store',
         {
-            store: z.enum(['playcanvas', 'sketchfab']).optional(),
+            // store: z.enum(['playcanvas', 'sketchfab']).optional(),
             id: z.string()
         },
-        async ({ store, id }) => {
-            try {
-                const res = await wss.send(`store:${store}:get`, id);
-                if (res === undefined) {
-                    throw new Error('Failed to get asset');
-                }
-                return {
-                    content: [{
-                        type: 'text',
-                        text: `Asset: ${JSON.stringify(res)}`
-                    }]
-                };
-            } catch (err: any) {
-                return {
-                    content: [{
-                        type: 'text',
-                        text: err.message
-                    }],
-                    isError: true
-                };
-            }
+        ({ id }) => {
+            return wss.call('store:playcanvas:get', id);
         }
     );
 
@@ -83,7 +64,7 @@ export const register = (server: McpServer, wss: WSS) => {
         'store_download',
         'Download an asset from the store',
         {
-            store: z.enum(['playcanvas', 'sketchfab']).optional(),
+            // store: z.enum(['playcanvas', 'sketchfab']).optional(),
             id: z.string(),
             name: z.string(),
             license: z.object({
@@ -92,27 +73,8 @@ export const register = (server: McpServer, wss: WSS) => {
                 license: z.string()
             })
         },
-        async ({ store, id, name, license }) => {
-            try {
-                const res = await wss.send(`store:${store}:clone`, id, name, license);
-                if (res === undefined) {
-                    throw new Error('Failed to download asset');
-                }
-                return {
-                    content: [{
-                        type: 'text',
-                        text: `Downloaded asset: ${JSON.stringify(res)}`
-                    }]
-                };
-            } catch (err: any) {
-                return {
-                    content: [{
-                        type: 'text',
-                        text: err.message
-                    }],
-                    isError: true
-                };
-            }
+        ({ id, name, license }) => {
+            return wss.call('store:playcanvas:download', id, name, license);
         }
     );
 };

@@ -8,27 +8,8 @@ export const register = (server: McpServer, wss: WSS) => {
         'list_assets',
         'List all assets',
         {},
-        async () => {
-            try {
-                const res = await wss.send('assets:list');
-                if (res === undefined) {
-                    throw new Error('Failed to list assets');
-                }
-                return {
-                    content: [{
-                        type: 'text',
-                        text: `Assets: ${JSON.stringify(res)}`
-                    }]
-                };
-            } catch (err: any) {
-                return {
-                    content: [{
-                        type: 'text',
-                        text: err.message
-                    }],
-                    isError: true
-                };
-            }
+        () => {
+            return wss.call('assets:list');
         }
     );
 
@@ -38,27 +19,8 @@ export const register = (server: McpServer, wss: WSS) => {
         {
             ids: z.array(z.number())
         },
-        async ({ ids }) => {
-            try {
-                const res = await wss.send('assets:delete', ids);
-                if (res === undefined) {
-                    throw new Error('Failed to delete asset');
-                }
-                return {
-                    content: [{
-                        type: 'text',
-                        text: `Deleted assets: ${JSON.stringify(res)}`
-                    }]
-                };
-            } catch (err: any) {
-                return {
-                    content: [{
-                        type: 'text',
-                        text: err.message
-                    }],
-                    isError: true
-                };
-            }
+        ({ ids }) => {
+            return wss.call('assets:delete', ids);
         }
     );
 
@@ -68,27 +30,8 @@ export const register = (server: McpServer, wss: WSS) => {
         {
             ids: z.array(z.number())
         },
-        async ({ ids }) => {
-            try {
-                const res = await wss.send('assets:instantiate', ids);
-                if (res === undefined) {
-                    throw new Error('Failed to instantiate asset');
-                }
-                return {
-                    content: [{
-                        type: 'text',
-                        text: `Instantiated assets: ${JSON.stringify(res)}`
-                    }]
-                };
-            } catch (err: any) {
-                return {
-                    content: [{
-                        type: 'text',
-                        text: err.message
-                    }],
-                    isError: true
-                };
-            }
+        ({ ids }) => {
+            return wss.call('assets:instantiate', ids);
         }
     );
 };

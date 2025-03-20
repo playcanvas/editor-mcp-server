@@ -11,7 +11,7 @@
   "devDependencies": {
     "@playcanvas/eslint-config": "^2.0.9",
     "@types/ws": "^8.18.0",
-    "@typescript-eslint/parser": "^8.26.1",
+    "@typescript-eslint/parser": "^8.27.0",
     "dotenv": "^16.4.7",
     "eslint": "^9.22.0",
     "globals": "^16.0.0",
@@ -19,7 +19,7 @@
     "typescript": "^5.8.2"
   },
   "dependencies": {
-    "@ai-sdk/anthropic": "^1.1.18",
+    "@ai-sdk/anthropic": "^1.1.19",
     "@daydreamsai/core": "^0.2.16",
     "@modelcontextprotocol/sdk": "^1.7.0",
     "ws": "^8.18.1",

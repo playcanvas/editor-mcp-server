@@ -226,8 +226,7 @@ export const register = (server: McpServer, wss: WSS) => {
         'create_material',
         'Create a new material',
         {
-            name: z.string().optional(),
-            data: materialSchema
+            name: z.string()
         },
         async (data) => {
             try {
@@ -260,27 +259,8 @@ export const register = (server: McpServer, wss: WSS) => {
             assetId: z.number(),
             color: z.array(z.number()).length(3)
         },
-        async ({ assetId, color }) => {
-            try {
-                const res = await wss.send('assets:property:set', assetId, 'diffuse', color);
-                if (res === undefined) {
-                    throw new Error('Failed to set diffuse property on material');
-                }
-                return {
-                    content: [{
-                        type: 'text',
-                        text: `Set diffuse property on material ${assetId}: ${JSON.stringify(res)}`
-                    }]
-                };
-            } catch (err: any) {
-                return {
-                    content: [{
-                        type: 'text',
-                        text: err.message
-                    }],
-                    isError: true
-                };
-            }
+        ({ assetId, color }) => {
+            return wss.call('assets:property:set', assetId, 'diffuse', color);
         }
     );
 };

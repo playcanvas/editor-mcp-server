@@ -30,27 +30,8 @@ export const register = (server: McpServer, wss: WSS) => {
                 tonemapping: z.number().optional()
             }).optional()
         },
-        async (settings) => {
-            try {
-                const res = await wss.send('scene:settings:modify', settings);
-                if (res === undefined) {
-                    throw new Error('Failed to modify scene settings');
-                }
-                return {
-                    content: [{
-                        type: 'text',
-                        text: `Modified scene settings: ${JSON.stringify(res)}`
-                    }]
-                };
-            } catch (err: any) {
-                return {
-                    content: [{
-                        type: 'text',
-                        text: err.message
-                    }],
-                    isError: true
-                };
-            }
+        (settings) => {
+            return wss.call('scene:settings:modify', settings);
         }
     );
 };
