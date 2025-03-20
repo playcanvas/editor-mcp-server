@@ -77,14 +77,19 @@ const editorApi = window.editor.api.globals;
  * @returns {Promise<Object>} The response data.
  */
 const restApi = (method, path, data, auth = false) => {
-    return fetch(`/api/${path}`, {
+    const init = {
         method,
         headers: {
-            'Content-Type': 'application/json',
             Authorization: auth ? `Bearer ${editorApi.accessToken}` : undefined
-        },
-        body: data instanceof FormData ? data : JSON.stringify(data)
-    }).then(res => res.json());
+        }
+    };
+    if (data instanceof FormData) {
+        init.body = data;
+    } else {
+        init.headers['Content-Type'] = 'application/json';
+        init.body = JSON.stringify(data);
+    }
+    return fetch(`/api/${path}`, init).then(res => res.json());
 };
 
 /**
