@@ -51,7 +51,7 @@ class WSS {
     }
 
     send(name: string, ...args: any[]) {
-        return new Promise((resolve, reject) => {
+        return new Promise<{ data?: any, error?: string }>((resolve, reject) => {
             const id = this._id++;
             this._callbacks.set(id, resolve);
             if (!this._socket) {

@@ -196,14 +196,14 @@ export const register = (server: McpServer, wss: WSS) => {
         },
         async (options) => {
             try {
-                const res = await wss.send('entities:create', options);
-                if (res === undefined) {
-                    throw new Error('Failed to create entity');
+                const { data, error } = await wss.send('entities:create', options);
+                if (error) {
+                    throw new Error(error);
                 }
                 return {
                     content: [{
                         type: 'text',
-                        text: `Created entity: ${JSON.stringify(res)}`
+                        text: JSON.stringify(data)
                     }]
                 };
             } catch (err: any) {
@@ -232,14 +232,14 @@ export const register = (server: McpServer, wss: WSS) => {
         },
         async (options) => {
             try {
-                const res = await wss.send('entities:modify', options.id, options);
-                if (res === undefined) {
-                    throw new Error('Failed to modify entity');
+                const { data, error } = await wss.send('entities:modify', options.id, options);
+                if (error) {
+                    throw new Error(error);
                 }
                 return {
                     content: [{
                         type: 'text',
-                        text: `Modified entity ${options.id}: ${JSON.stringify(res)}`
+                        text: JSON.stringify(data)
                     }]
                 };
             } catch (err: any) {
@@ -263,14 +263,14 @@ export const register = (server: McpServer, wss: WSS) => {
         },
         async ({ ids, rename }) => {
             try {
-                const res = await wss.send('entities:duplicate', ids, { rename });
-                if (res === undefined) {
-                    throw new Error('Failed to duplicate entities');
+                const { data, error } = await wss.send('entities:duplicate', ids, { rename });
+                if (error) {
+                    throw new Error(error);
                 }
                 return {
                     content: [{
                         type: 'text',
-                        text: `Duplicated entities: ${JSON.stringify(res)}`
+                        text: JSON.stringify(data)
                     }]
                 };
             } catch (err: any) {
@@ -296,14 +296,14 @@ export const register = (server: McpServer, wss: WSS) => {
         },
         async (options) => {
             try {
-                const res = await wss.send('entities:reparent', options);
-                if (res === undefined) {
-                    throw new Error('Failed to reparent entity');
+                const { data, error } = await wss.send('entities:reparent', options);
+                if (error) {
+                    throw new Error(error);
                 }
                 return {
                     content: [{
                         type: 'text',
-                        text: `Reparented entity ${options.id}: ${JSON.stringify(res)}`
+                        text: JSON.stringify(data)
                     }]
                 };
             } catch (err: any) {
@@ -326,14 +326,14 @@ export const register = (server: McpServer, wss: WSS) => {
         },
         async ({ ids }) => {
             try {
-                const res = await wss.send('entities:delete', ids);
-                if (res === undefined) {
-                    throw new Error('Failed to delete entities');
+                const { data, error } = await wss.send('entities:delete', ids);
+                if (error) {
+                    throw new Error(error);
                 }
                 return {
                     content: [{
                         type: 'text',
-                        text: `Deleted entities: ${JSON.stringify(res)}`
+                        text: JSON.stringify(data)
                     }]
                 };
             } catch (err: any) {
@@ -354,14 +354,14 @@ export const register = (server: McpServer, wss: WSS) => {
         {},
         async () => {
             try {
-                const res = await wss.send('entities:list');
-                if (res === undefined) {
-                    throw new Error('Failed to list entities');
+                const { data, error } = await wss.send('entities:list');
+                if (error) {
+                    throw new Error(error);
                 }
                 return {
                     content: [{
                         type: 'text',
-                        text: `Entities: ${JSON.stringify(res)}`
+                        text: JSON.stringify(data)
                     }]
                 };
             } catch (err: any) {
@@ -394,14 +394,14 @@ export const register = (server: McpServer, wss: WSS) => {
         },
         async ({ id, components }) => {
             try {
-                const res = await wss.send('entities:components:add', id, components);
-                if (res === undefined) {
-                    throw new Error('Failed to add components');
+                const { data, error } = await wss.send('entities:components:add', id, components);
+                if (error) {
+                    throw new Error(error);
                 }
                 return {
                     content: [{
                         type: 'text',
-                        text: `Added components to entity ${id}: ${JSON.stringify(res)}`
+                        text: JSON.stringify(data)
                     }]
                 };
             } catch (err: any) {
@@ -409,7 +409,8 @@ export const register = (server: McpServer, wss: WSS) => {
                     content: [{
                         type: 'text',
                         text: err.message
-                    }]
+                    }],
+                    isError: true
                 };
             }
         }
@@ -424,14 +425,14 @@ export const register = (server: McpServer, wss: WSS) => {
         },
         async ({ id, components }) => {
             try {
-                const res = await wss.send('entities:components:remove', id, components);
-                if (res === undefined) {
-                    throw new Error('Failed to remove components');
+                const { data, error } = await wss.send('entities:components:remove', id, components);
+                if (error) {
+                    throw new Error(error);
                 }
                 return {
                     content: [{
                         type: 'text',
-                        text: `Removed components from entity ${id}: ${JSON.stringify(res)}`
+                        text: JSON.stringify(data)
                     }]
                 };
             } catch (err: any) {
@@ -455,14 +456,14 @@ export const register = (server: McpServer, wss: WSS) => {
         },
         async ({ id, assetId }) => {
             try {
-                const res = await wss.send('entities:components:property:set', id, 'render', 'materialAssets', [assetId]);
-                if (res === undefined) {
-                    throw new Error('Failed to set material on render component');
+                const { data, error } = await wss.send('entities:components:property:set', id, 'render', 'materialAssets', [assetId]);
+                if (error) {
+                    throw new Error(error);
                 }
                 return {
                     content: [{
                         type: 'text',
-                        text: `Set material on render component ${id}: ${JSON.stringify(res)}`
+                        text: JSON.stringify(data)
                     }]
                 };
             } catch (err: any) {
@@ -486,14 +487,14 @@ export const register = (server: McpServer, wss: WSS) => {
         },
         async ({ id, scriptName }) => {
             try {
-                const res = await wss.send('entities:components:script:add', id, scriptName);
-                if (res === undefined) {
-                    throw new Error('Failed to add script on script component');
+                const { data, error } = await wss.send('entities:components:script:add', id, scriptName);
+                if (error) {
+                    throw new Error(error);
                 }
                 return {
                     content: [{
                         type: 'text',
-                        text: `Added script on script component ${id}: ${JSON.stringify(res)}`
+                        text: JSON.stringify(data)
                     }]
                 };
             } catch (err: any) {

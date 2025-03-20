@@ -10,14 +10,14 @@ export const register = (server: McpServer, wss: WSS) => {
         {},
         async () => {
             try {
-                const res = await wss.send('assets:list');
-                if (res === undefined) {
-                    throw new Error('Failed to list assets');
+                const { data, error } = await wss.send('assets:list');
+                if (error) {
+                    throw new Error(error);
                 }
                 return {
                     content: [{
                         type: 'text',
-                        text: `Assets: ${JSON.stringify(res)}`
+                        text: JSON.stringify(data)
                     }]
                 };
             } catch (err: any) {
@@ -40,14 +40,14 @@ export const register = (server: McpServer, wss: WSS) => {
         },
         async ({ ids }) => {
             try {
-                const res = await wss.send('assets:delete', ids);
-                if (res === undefined) {
-                    throw new Error('Failed to delete asset');
+                const { data, error } = await wss.send('assets:delete', ids);
+                if (error) {
+                    throw new Error(error);
                 }
                 return {
                     content: [{
                         type: 'text',
-                        text: `Deleted assets: ${JSON.stringify(res)}`
+                        text: JSON.stringify(data)
                     }]
                 };
             } catch (err: any) {
@@ -70,14 +70,14 @@ export const register = (server: McpServer, wss: WSS) => {
         },
         async ({ ids }) => {
             try {
-                const res = await wss.send('assets:instantiate', ids);
-                if (res === undefined) {
-                    throw new Error('Failed to instantiate asset');
+                const { data, error } = await wss.send('assets:instantiate', ids);
+                if (error) {
+                    throw new Error(error);
                 }
                 return {
                     content: [{
                         type: 'text',
-                        text: `Instantiated assets: ${JSON.stringify(res)}`
+                        text: JSON.stringify(data)
                     }]
                 };
             } catch (err: any) {

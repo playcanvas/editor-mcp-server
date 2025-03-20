@@ -13,14 +13,14 @@ export const register = (server: McpServer, wss: WSS) => {
         },
         async ({ name, text }) => {
             try {
-                const res = await wss.send('assets:create', 'script', { filename: `${name}.js`, text });
-                if (res === undefined) {
-                    throw new Error('Failed to create script');
+                const { data, error } = await wss.send('assets:create', 'script', { filename: `${name}.js`, text });
+                if (error) {
+                    throw new Error(error);
                 }
                 return {
                     content: [{
                         type: 'text',
-                        text: `Created script: ${JSON.stringify(res)}`
+                        text: JSON.stringify(data)
                     }]
                 };
             } catch (err: any) {
@@ -44,14 +44,14 @@ export const register = (server: McpServer, wss: WSS) => {
         },
         async ({ assetId, text }) => {
             try {
-                const res = await wss.send('assets:script:text:set', assetId, text);
-                if (res === undefined) {
-                    throw new Error('Failed to set script text');
+                const { data, error } = await wss.send('assets:script:text:set', assetId, text);
+                if (error) {
+                    throw new Error(error);
                 }
                 return {
                     content: [{
                         type: 'text',
-                        text: `Set script text ${assetId}: ${JSON.stringify(res)}`
+                        text: JSON.stringify(data)
                     }]
                 };
             } catch (err: any) {
@@ -74,14 +74,14 @@ export const register = (server: McpServer, wss: WSS) => {
         },
         async ({ assetId }) => {
             try {
-                const res = await wss.send('assets:script:parse', assetId);
-                if (res === undefined) {
-                    throw new Error('Failed to parse script');
+                const { data, error } = await wss.send('assets:script:parse', assetId);
+                if (error) {
+                    throw new Error(error);
                 }
                 return {
                     content: [{
                         type: 'text',
-                        text: `Parsed script ${assetId}: ${JSON.stringify(res)}`
+                        text: JSON.stringify(data)
                     }]
                 };
             } catch (err: any) {

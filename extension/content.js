@@ -18,7 +18,7 @@ class WSC {
         this._ws.onmessage = async (event) => {
             try {
                 const { id, name, args } = JSON.parse(event.data);
-                const res = await this._methods.get(name)?.(...args);
+                const res = await this.call(name, ...args);
                 this._ws.send(JSON.stringify({ id, res }));
             } catch (e) {
                 console.error(e);
@@ -47,7 +47,7 @@ class WSC {
 
     /**
      * @param {string} name - The name of the method to add.
-     * @param {Function} fn - The function to call when the method is called.
+     * @param {(...args: any[]) => { data?: any, error?: string }} fn - The function to call when the method is called.
      */
     method(name, fn) {
         if (this._methods.get(name)) {
@@ -60,7 +60,7 @@ class WSC {
     /**
      * @param {string} name - The name of the method to call.
      * @param {...*} args - The arguments to pass to the method.
-     * @returns {*} The return value of the method.
+     * @returns {{ data?: any, error?: string }} The response data.
      */
     call(name, ...args) {
         return this._methods.get(name)?.(...args);
@@ -116,15 +116,15 @@ wsc.method('ping', () => 'pong');
 wsc.method('entities:create', (options = {}) => {
     const entity = editorApi.entities.create(options);
     if (!entity) {
-        return undefined;
+        return { error: 'Failed to create entity' };
     }
     wsc.log(`Created entity(${entity.get('resource_id')})`);
-    return entity.json();
+    return { data: entity.json() };
 });
 wsc.method('entities:modify', (id, options = {}) => {
     const entity = editorApi.entities.get(id);
     if (!entity) {
-        return undefined;
+        return { error: 'Entity not found' };
     }
     if (Object.hasOwn(options, 'name')) {
         entity.set('name', options.name);
@@ -145,89 +145,94 @@ wsc.method('entities:modify', (id, options = {}) => {
         entity.set('tags', options.tags);
     }
     wsc.log(`Modified entity(${id})`);
-    return entity.json();
+    return { data: entity.json() };
 });
 wsc.method('entities:duplicate', async (ids, options = {}) => {
     const entities = ids.map(id => editorApi.entities.get(id));
     if (!entities.length) {
-        return [];
+        return { error: 'Entities not found' };
     }
     const res = await editorApi.entities.duplicate(entities, options);
     wsc.log(`Duplicated entities: ${res.map(entity => entity.get('resource_id')).join(', ')}`);
-    return res.map(entity => entity.json());
+    return { data: res.map(entity => entity.json()) };
 });
 wsc.method('entities:reparent', (options) => {
     const entity = editorApi.entities.get(options.id);
     if (!entity) {
-        return undefined;
+        return { error: 'Entity not found' };
     }
     const parent = editorApi.entities.get(options.parent);
     if (!parent) {
-        return undefined;
+        return { error: 'Parent entity not found' };
     }
     entity.reparent(parent, options.index, {
         preserveTransform: options.preserveTransform
     });
     wsc.log(`Reparented entity(${options.id}) to entity(${options.parent})`);
-    return entity.json();
+    return { data: entity.json() };
 });
 wsc.method('entities:delete', async (ids) => {
     const entities = ids.map(id => editorApi.entities.get(id));
     if (!entities.length) {
-        return [];
+        return { error: 'Entities not found' };
     }
     await editorApi.entities.delete(entities);
     wsc.log(`Deleted entities: ${ids.join(', ')}`);
-    return true;
+    return { data: true };
 });
 wsc.method('entities:list', () => {
-    return editorApi.entities.list().map(entity => entity.json());
+    const entities = editorApi.entities.list();
+    if (!entities.length) {
+        return { error: 'No entities found' };
+    }
+    wsc.log('Listed entities');
+    return { data: entities.map(entity => entity.json()) };
 });
 wsc.method('entities:components:add', (id, components) => {
     const entity = editorApi.entities.get(id);
     if (!entity) {
-        return undefined;
+        return { error: 'Entity not found' };
     }
     Object.entries(components).forEach(([name, data]) => {
         entity.addComponent(name, data);
     });
     wsc.log(`Added components(${Object.keys(components).join(', ')}) to entity(${id})`);
-    return true;
+    return { data: entity.json() };
 });
 wsc.method('entities:components:remove', (id, components) => {
     const entity = editorApi.entities.get(id);
     if (!entity) {
-        return undefined;
+        return { error: 'Entity not found' };
     }
     components.forEach((component) => {
         entity.removeComponent(component);
     });
     wsc.log(`Removed components(${components.join(', ')}) from entity(${id})`);
-    return true;
+    return { data: entity.json() };
 });
 wsc.method('entities:components:property:set', (id, name, prop, value) => {
     const entity = editorApi.entities.get(id);
     if (!entity) {
-        return undefined;
+        return { error: 'Entity not found' };
     }
     if (!entity.get(`components.${name}`)) {
-        return undefined;
+        return { error: 'Component not found' };
     }
     entity.set(`components.${name}.${prop}`, value);
     wsc.log(`Set component(${name}) property(${prop}) of entity(${id}) to: ${JSON.stringify(value)}`);
-    return true;
+    return { data: entity.get(`components.${name}`) };
 });
 wsc.method('entities:components:script:add', (id, scriptName) => {
     const entity = editorApi.entities.get(id);
     if (!entity) {
-        return undefined;
+        return { error: 'Entity not found' };
     }
     if (!entity.get('components.script')) {
-        return undefined;
+        return { error: 'Script component not found' };
     }
     entity.addScript(scriptName);
     wsc.log(`Added script(${scriptName}) to component(script) of entity(${id})`);
-    return true;
+    return { data: entity.get('components.script') };
 });
 
 // assets
@@ -244,48 +249,56 @@ wsc.method('assets:create', async (type, options = {}) => {
             asset = await editorApi.assets.createScript(options);
             break;
         default:
-            return undefined;
+            return { error: 'Invalid asset type' };
     }
     if (!asset) {
-        return undefined;
+        return { error: 'Failed to create asset' };
     }
     wsc.log(`Created asset(${asset.get('id')})`);
-    return asset.json();
+    return { data: asset.json() };
 });
 wsc.method('assets:delete', (ids) => {
     const assets = ids.map(id => editorApi.assets.get(id));
     if (!assets.length) {
-        return [];
+        return { error: 'Assets not found' };
     }
     editorApi.assets.delete(assets);
     wsc.log(`Deleted assets: ${ids.join(', ')}`);
-    return true;
+    return { data: true };
 });
 wsc.method('assets:list', () => {
-    return editorApi.assets.list().map(asset => asset.json());
+    const assets = editorApi.assets.list();
+    if (!assets.length) {
+        return { error: 'No assets found' };
+    }
+    wsc.log('Listed assets');
+    return { data: assets.map(asset => asset.json()) };
 });
 wsc.method('assets:instantiate', async (ids) => {
     const assets = ids.map(id => editorApi.assets.get(id));
     if (!assets.length) {
-        return [];
+        return { error: 'Assets not found' };
+    }
+    if (assets.some(asset => asset.get('type') !== 'template')) {
+        return { error: 'Invalid template asset' };
     }
     const entities = await editorApi.assets.instantiateTemplates(assets);
     wsc.log(`Instantiated assets: ${ids.join(', ')}`);
-    return entities.map(entity => entity.json());
+    return { data: entities.map(entity => entity.json()) };
 });
 wsc.method('assets:property:set', (id, prop, value) => {
     const asset = editorApi.assets.get(id);
     if (!asset) {
-        return undefined;
+        return { error: 'Asset not found' };
     }
     asset.set(`data.${prop}`, value);
     wsc.log(`Set asset(${id}) property(${prop}) to: ${JSON.stringify(value)}`);
-    return true;
+    return { data: asset.json() };
 });
 wsc.method('assets:script:text:set', async (id, text) => {
     const asset = editorApi.assets.get(id);
     if (!asset) {
-        return undefined;
+        return { error: 'Asset not found' };
     }
 
     const form = new FormData();
@@ -296,38 +309,42 @@ wsc.method('assets:script:text:set', async (id, text) => {
     try {
         const data = await restApi('PUT', `assets/${id}`, form, true);
         if (data.error) {
-            return undefined;
+            return { error: data.error };
         }
         wsc.log(`Set asset(${id}) script text`);
-        return data;
+        return { data };
     } catch (e) {
-        return undefined;
+        return { error: e.message };
     }
 });
 wsc.method('assets:script:parse', async (id) => {
     const asset = editorApi.assets.get(id);
     if (!asset) {
-        return undefined;
+        return { error: 'Asset not found' };
     }
     // FIXME: This is a hacky way to get the parsed script data. Expose a proper API for this.
-    const [error, res] = await new Promise((resolve) => {
+    const [error, data] = await new Promise((resolve) => {
         window.editor.call('scripts:parse', asset.observer, (...data) => resolve(data));
     });
-    if (error || Object.keys(res.scripts).length === 0) {
-        return undefined;
+    if (error) {
+        return { error };
+    }
+    if (Object.keys(data.scripts).length === 0) {
+        return { error: 'Failed to parse script' };
     }
     wsc.log(`Parsed asset(${id}) script`);
-    return res;
+    return { data };
 });
 
 // scenes
 wsc.method('scene:settings:modify', (settings) => {
+    const scene = editorApi.settings.scene;
     iterateObject(settings, (path, value) => {
-        editorApi.settings.scene.set(path, value);
+        scene.set(path, value);
     });
 
     wsc.log('Modified scene settings');
-    return true;
+    return { data: scene.json() };
 });
 
 // store
@@ -357,24 +374,24 @@ wsc.method('store:playcanvas:list', async (options = {}) => {
     try {
         const data = await restApi('GET', `store?${params.join('&')}`);
         if (data.error) {
-            return undefined;
+            return { error: data.error };
         }
         wsc.log(`Searched store: ${JSON.stringify(options)}`);
-        return data;
+        return { data };
     } catch (e) {
-        return undefined;
+        return { error: e.message };
     }
 });
 wsc.method('store:playcanvas:get', async (id) => {
     try {
         const data = await restApi('GET', `store/${id}`);
         if (data.error) {
-            return undefined;
+            return { error: data.error };
         }
         wsc.log(`Got store item(${id})`);
-        return data;
+        return { data };
     } catch (e) {
-        return undefined;
+        return { error: e.message };
     }
 });
 wsc.method('store:playcanvas:clone', async (id, name, license) => {
@@ -390,12 +407,12 @@ wsc.method('store:playcanvas:clone', async (id, name, license) => {
             license
         });
         if (data.error) {
-            return undefined;
+            return { error: data.error };
         }
         wsc.log(`Cloned store item(${id})`);
-        return data;
+        return { data };
     } catch (e) {
-        return undefined;
+        return { error: e.message };
     }
 });
 
@@ -427,12 +444,12 @@ wsc.method('store:sketchfab:list', async (options = {}) => {
         const res = await fetch(`https://api.sketchfab.com/v3/search?${params.join('&')}`);
         const data = await res.json();
         if (data.error) {
-            return undefined;
+            return { error: data.error };
         }
         wsc.log(`Searched Sketchfab: ${JSON.stringify(options)}`);
-        return data;
+        return { data };
     } catch (e) {
-        return undefined;
+        return { error: e.message };
     }
 });
 wsc.method('store:sketchfab:get', async (uid) => {
@@ -440,12 +457,12 @@ wsc.method('store:sketchfab:get', async (uid) => {
         const res = await fetch(`https://api.sketchfab.com/v3/models/${uid}`);
         const data = await res.json();
         if (data.error) {
-            return undefined;
+            return { error: data.error };
         }
         wsc.log(`Got Sketchfab model(${uid})`);
-        return data;
+        return { data };
     } catch (e) {
-        return undefined;
+        return { error: e.message };
     }
 });
 wsc.method('store:sketchfab:clone', async (uid, name, license) => {
@@ -461,11 +478,11 @@ wsc.method('store:sketchfab:clone', async (uid, name, license) => {
             license
         });
         if (data.error) {
-            return undefined;
+            return { error: data.error };
         }
         wsc.log(`Cloned sketchfab item(${uid})`);
-        return data;
+        return { data };
     } catch (e) {
-        return undefined;
+        return { error: e.message };
     }
 });

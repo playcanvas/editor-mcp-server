@@ -32,14 +32,14 @@ export const register = (server: McpServer, wss: WSS) => {
         },
         async (settings) => {
             try {
-                const res = await wss.send('scene:settings:modify', settings);
-                if (res === undefined) {
-                    throw new Error('Failed to modify scene settings');
+                const { data, error } = await wss.send('scene:settings:modify', settings);
+                if (error) {
+                    throw new Error(error);
                 }
                 return {
                     content: [{
                         type: 'text',
-                        text: `Modified scene settings: ${JSON.stringify(res)}`
+                        text: JSON.stringify(data)
                     }]
                 };
             } catch (err: any) {

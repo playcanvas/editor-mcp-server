@@ -12,14 +12,14 @@ export const register = (server: McpServer, wss: WSS) => {
         },
         async ({ name }) => {
             try {
-                const res = await wss.send('assets:create', 'material', { name });
-                if (res === undefined) {
-                    throw new Error('Failed to create material');
+                const { data, error } = await wss.send('assets:create', 'material', { name });
+                if (error) {
+                    throw new Error(error);
                 }
                 return {
                     content: [{
                         type: 'text',
-                        text: `Created material: ${JSON.stringify(res)}`
+                        text: JSON.stringify(data)
                     }]
                 };
             } catch (err: any) {
@@ -43,14 +43,14 @@ export const register = (server: McpServer, wss: WSS) => {
         },
         async ({ assetId, color }) => {
             try {
-                const res = await wss.send('assets:property:set', assetId, 'diffuse', color);
-                if (res === undefined) {
-                    throw new Error('Failed to set diffuse property on material');
+                const { data, error } = await wss.send('assets:property:set', assetId, 'diffuse', color);
+                if (error) {
+                    throw new Error(error);
                 }
                 return {
                     content: [{
                         type: 'text',
-                        text: `Set diffuse property on material ${assetId}: ${JSON.stringify(res)}`
+                        text: JSON.stringify(data)
                     }]
                 };
             } catch (err: any) {
