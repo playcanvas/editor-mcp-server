@@ -13,15 +13,15 @@ export const register = (server: McpServer, wss: WSS) => {
         'store_search',
         'Search for an asset in the store',
         {
-            store: z.enum(['playcanvas', 'sketchfab']).optional(),
+            // store: z.enum(['playcanvas', 'sketchfab']).optional(),
             search: z.string(),
             order: z.enum(['asc', 'desc']).optional(),
             skip: z.number().optional(),
             limit: z.number().optional()
         },
-        async ({ store, search, order, skip, limit }) => {
+        async ({ search, order, skip, limit }) => {
             try {
-                const res = await wss.send(`store:${store}:list`, {
+                const res = await wss.send('store:playcanvas:list', {
                     search,
                     order: order ? orderEnum[order] : undefined,
                     skip,
@@ -52,12 +52,12 @@ export const register = (server: McpServer, wss: WSS) => {
         'store_get',
         'Get an asset from the store',
         {
-            store: z.enum(['playcanvas', 'sketchfab']).optional(),
+            // store: z.enum(['playcanvas', 'sketchfab']).optional(),
             id: z.string()
         },
-        async ({ store, id }) => {
+        async ({ id }) => {
             try {
-                const res = await wss.send(`store:${store}:get`, id);
+                const res = await wss.send('store:playcanvas:get', id);
                 if (res === undefined) {
                     throw new Error('Failed to get asset');
                 }
@@ -83,7 +83,7 @@ export const register = (server: McpServer, wss: WSS) => {
         'store_download',
         'Download an asset from the store',
         {
-            store: z.enum(['playcanvas', 'sketchfab']).optional(),
+            // store: z.enum(['playcanvas', 'sketchfab']).optional(),
             id: z.string(),
             name: z.string(),
             license: z.object({
@@ -92,9 +92,9 @@ export const register = (server: McpServer, wss: WSS) => {
                 license: z.string()
             })
         },
-        async ({ store, id, name, license }) => {
+        async ({ id, name, license }) => {
             try {
-                const res = await wss.send(`store:${store}:clone`, id, name, license);
+                const res = await wss.send('store:playcanvas:clone', id, name, license);
                 if (res === undefined) {
                     throw new Error('Failed to download asset');
                 }

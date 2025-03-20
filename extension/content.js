@@ -313,7 +313,7 @@ wsc.method('assets:script:parse', async (id) => {
     const [error, res] = await new Promise((resolve) => {
         window.editor.call('scripts:parse', asset.observer, (...data) => resolve(data));
     });
-    if (error) {
+    if (error || Object.keys(res.scripts).length === 0) {
         return undefined;
     }
     wsc.log(`Parsed asset(${id}) script`);

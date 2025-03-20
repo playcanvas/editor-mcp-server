@@ -13,7 +13,7 @@ export const register = (server: McpServer, wss: WSS) => {
         },
         async ({ name, text }) => {
             try {
-                const res = await wss.send('assets:create', 'script', { filename: `${name}.mjs`, text });
+                const res = await wss.send('assets:create', 'script', { filename: `${name}.js`, text });
                 if (res === undefined) {
                     throw new Error('Failed to create script');
                 }
