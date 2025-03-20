@@ -226,29 +226,11 @@ export const register = (server: McpServer, wss: WSS) => {
         'create_material',
         'Create a new material',
         {
-            name: z.string()
+            name: z.string().optional(),
+            data: materialSchema
         },
-        async (data) => {
-            try {
-                const res = await wss.send('assets:create', 'material', data);
-                if (res === undefined) {
-                    throw new Error('Failed to create material');
-                }
-                return {
-                    content: [{
-                        type: 'text',
-                        text: `Created material: ${JSON.stringify(res)}`
-                    }]
-                };
-            } catch (err: any) {
-                return {
-                    content: [{
-                        type: 'text',
-                        text: err.message
-                    }],
-                    isError: true
-                };
-            }
+        async (params) => {
+            return await wss.call('assets:create', 'material', params);
         }
     );
 
