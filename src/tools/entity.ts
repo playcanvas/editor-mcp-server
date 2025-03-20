@@ -38,6 +38,49 @@ const collisionComponentSchema = z.object({
     angularOffset: z.array(z.number()).length(3).optional()
 });
 
+const elementComponentSchema = z.object({
+    enabled: z.boolean().optional(),
+    type: z.enum(['text', 'image', 'group']).optional(),
+    anchor: z.array(z.number()).length(4).optional(),
+    pivot: z.array(z.number()).length(2).optional(),
+    text: z.string().optional(),
+    key: z.string().optional(),
+    fontAsset: z.number().optional(),
+    fontSize: z.number().optional(),
+    minFontSize: z.number().optional(),
+    maxFontSize: z.number().optional(),
+    autoFitWidth: z.boolean().optional(),
+    autoFitHeight: z.boolean().optional(),
+    maxLines: z.number().optional(),
+    lineHeight: z.number().optional(),
+    wrapLines: z.boolean().optional(),
+    spacing: z.number().optional(),
+    color: z.array(z.number()).length(3).optional(),
+    opacity: z.number().optional(),
+    textureAsset: z.number().optional(),
+    spriteAsset: z.number().optional(),
+    spriteFrame: z.number().optional(),
+    pixelsPerUnit: z.number().optional(),
+    width: z.number().optional(),
+    height: z.number().optional(),
+    margin: z.array(z.number()).length(4).optional(),
+    alignment: z.array(z.number()).length(2).optional(),
+    outlineColor: z.array(z.number()).length(4).optional(),
+    outlineThickness: z.number().optional(),
+    shadowColor: z.array(z.number()).length(4).optional(),
+    shadowOffset: z.array(z.number()).length(2).optional(),
+    rect: z.array(z.number()).length(4).optional(),
+    materialAsset: z.number().optional(),
+    autoWidth: z.boolean().optional(),
+    autoHeight: z.boolean().optional(),
+    fitMode: z.enum(['stretch', 'contain', 'cover']).optional(),
+    useInput: z.boolean().optional(),
+    batchGroupId: z.number().optional(),
+    mask: z.boolean().optional(),
+    layers: z.array(z.number()).optional(),
+    enableMarkup: z.boolean().optional()
+});
+
 const lightComponentSchema = z.object({
     enabled: z.boolean().optional(),
     type: z.enum(['directional', 'spot', 'omni']).optional(),
@@ -72,7 +115,7 @@ const lightComponentSchema = z.object({
     cookie: z.number().optional(),
     cookieIntensity: z.number().optional(),
     cookieFalloff: z.boolean().optional(),
-    cookieChannel: z.string().optional(),
+    cookieChannel: z.enum(['r', 'g', 'b', 'a', 'rgb']).optional(),
     cookieAngle: z.number().optional(),
     cookieScale: z.array(z.number()).length(2).optional(),
     cookieOffset: z.array(z.number()).length(2).optional(),
@@ -114,6 +157,16 @@ const rigidbodyComponentSchema = z.object({
     restitution: z.number().optional()
 });
 
+const screenComponentSchema = z.object({
+    enabled: z.boolean().optional(),
+    screenSpace: z.boolean().optional(),
+    scaleMode: z.enum(['none', 'blend']).optional(),
+    scaleBlend: z.number().optional(),
+    resolution: z.array(z.number()).length(2).optional(),
+    referenceResolution: z.array(z.number()).length(2).optional(),
+    priority: z.number().optional()
+});
+
 const scriptComponentSchema = z.object({
     enabled: z.boolean().optional(),
     order: z.array(z.string()).optional(),
@@ -134,8 +187,10 @@ export const register = (server: McpServer, wss: WSS) => {
             tags: z.array(z.string()).optional(),
             components: z.object({
                 camera: cameraComponentSchema.optional(),
+                element: elementComponentSchema.optional(),
                 light: lightComponentSchema.optional(),
                 render: renderComponentSchema.optional(),
+                screen: screenComponentSchema.optional(),
                 script: scriptComponentSchema.optional()
             })
         },
@@ -329,9 +384,11 @@ export const register = (server: McpServer, wss: WSS) => {
             components: z.object({
                 camera: cameraComponentSchema.optional(),
                 collision: collisionComponentSchema.optional(),
+                element: elementComponentSchema.optional(),
                 light: lightComponentSchema.optional(),
                 render: renderComponentSchema.optional(),
                 rigidbody: rigidbodyComponentSchema.optional(),
+                screen: screenComponentSchema.optional(),
                 script: scriptComponentSchema.optional()
             })
         },
