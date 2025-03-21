@@ -11,13 +11,13 @@ An MCP Server for the PlayCanvas Editor.
 
 Run `npm install` to install all dependencies.
 
-### Chrome Extension
+### Install Chrome Extension
 
 1. Visit `chrome://extensions/` and enable Developer mode
 2. Click `Load unpacked` and select the `extensions` folder
 3. Load the PlayCanvas Editor. The extension should be loaded.
 
-### MCP Server
+### Run MCP Server
 
 The MCP Server can be driven by Cursor (using Claude Sonnet 3.5 or 3.7) or Claude Desktop. We have found Claude Desktop to be generally more reliable.
 
@@ -26,26 +26,17 @@ The MCP Server can be driven by Cursor (using Claude Sonnet 3.5 or 3.7) or Claud
 1. Install Claude Desktop.
 2. Go to `Claude` > `Settings`.
 3. Select `Developer` and then `Edit Config`.
-4. Enter the following:
-
-```json
-{
-  "mcpServers": {
-    "playcanvas": {
-      "command": "tsx",
-      "args": [
-        "/path/to/mcp-editor/src/server.ts"
-      ]
-    }
-  }
-}
-```
+4. This will open `claude_desktop_config.json`, your MCP Config JSON file.
 
 #### Cursor
 
 1. Select `File` > `Preferences` > `Cursor Settings`.
 2. Click `+ Add new global MCP server`.
-3. In `mcp.json`, add the following:
+3. This will open `mcp.json`, your MCP Config JSON file.
+
+#### MCP Config JSON File
+
+This is how your config should look:
 
 Windows
 
