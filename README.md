@@ -1,6 +1,6 @@
-# MCP-Editor
+# PlayCanvas Editor MCP Server
 
-A MCP Server for the PlayCanvas Editor.
+An MCP Server for the PlayCanvas Editor.
 
 <img width="1864" alt="Screenshot 2025-03-21 at 15 50 10" src="https://github.com/user-attachments/assets/393ffe73-40eb-4e1b-9442-2295bbb63326" />
 
