@@ -114,10 +114,23 @@ wsc.method('ping', () => 'pong');
 
 // entities
 wsc.method('entities:create', (options = {}) => {
+    // FIXME: Requires patch of editor
+    let collision;
+    if (options?.components?.collision) {
+        collision = options.components.collision;
+        delete options.components.collision;
+    }
+
     const entity = editorApi.entities.create(options);
     if (!entity) {
         return { error: 'Failed to create entity' };
     }
+
+    // FIXME: Requires patch of editor
+    if (collision) {
+        entity.addComponent('collision', collision);
+    }
+
     wsc.log(`Created entity(${entity.get('resource_id')})`);
     return { data: entity.json() };
 });

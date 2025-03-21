@@ -37,8 +37,8 @@ const CollisionSchema = z.object({
     convexHull: z.boolean().default(false).describe('If true, the collision shape will be a convex hull.'),
     asset: z.number().nullable().default(null).describe('The `id` of the model asset that will be used as a source for the triangle-based collision mesh.'),
     renderAsset: z.number().nullable().default(null).describe('The `id` of the render asset that will be used as a source for the triangle-based collision mesh.'),
-    linearOffset: Vec3Schema.describe('The positional offset of the collision shape from the Entity position along the local axes.'),
-    angularOffset: Vec3Schema.describe('The rotational offset of the collision shape from the Entity rotation in local space.')
+    linearOffset: Vec3Schema.default([0, 0, 0]).describe('The positional offset of the collision shape from the Entity position along the local axes.'),
+    angularOffset: Vec3Schema.default([0, 0, 0]).describe('The rotational offset of the collision shape from the Entity rotation in local space.')
 }).describe('The data for the collision component.').optional();
 
 const ElementSchema = z.object({
