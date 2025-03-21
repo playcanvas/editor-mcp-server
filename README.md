@@ -75,5 +75,5 @@ macOS
 The MCP server and Chrome extension should now be running. You can enter a command!
 
 > [!IMPORTANT]  
-> Ensure you have `Agent` selected. `Ask` and `Edit` modes will not recognize the MCP Server.
+> In Cursor, ensure you have `Agent` selected. `Ask` and `Edit` modes will not recognize the MCP Server.
 
