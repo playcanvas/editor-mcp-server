@@ -9,7 +9,7 @@ An MCP Server for the PlayCanvas Editor.
 
 ## Installation
 
-Run `npm install` to install all dependencies
+Run `npm install` to install all dependencies.
 
 ### Chrome Extension
 
@@ -18,6 +18,8 @@ Run `npm install` to install all dependencies
 3. Load the PlayCanvas Editor. The extension should be loaded.
 
 ### MCP Server
+
+The MCP Server can be driven by Cursor (using Claude Sonnet 3.5 or 3.7) or Claude Desktop. We have found Claude Desktop to be generally more reliable.
 
 #### Claude Desktop
 
