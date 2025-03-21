@@ -81,4 +81,8 @@ macOS
 }
 ```
 
-The MCP server and Chrome extension should now be running. You can enter a command (we recommend Claude Sonnet 3.7). Ensure you have `Agent` selected.
+The MCP server and Chrome extension should now be running. You can enter a command (we recommend Claude Sonnet 3.7). 
+
+> [!IMPORTANT]  
+> Ensure you have `Agent` selected. `Ask` and `Edit` modes will not recognize the MCP Server.
+
