@@ -172,9 +172,11 @@ wsc.method('entities:reparent', (options) => {
     return { data: entity.json() };
 });
 wsc.method('entities:delete', async (ids) => {
-    const entities = ids.map(id => editorApi.entities.get(id));
+    const entities = ids
+        .map(id => editorApi.entities.get(id))
+        .filter(entity => entity !== editorApi.entities.root);
     if (!entities.length) {
-        return { error: 'Entities not found' };
+        return { error: 'No entities to delete' };
     }
     await editorApi.entities.delete(entities);
     wsc.log(`Deleted entities: ${ids.join(', ')}`);
