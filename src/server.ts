@@ -1,4 +1,4 @@
-import child_process from 'child_process';
+import child_process, { execSync } from 'child_process';
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
@@ -22,12 +22,13 @@ if (process.platform === 'win32') {
         child_process.spawnSync('taskkill', ['/F', '/PID', pid, '/T']);
     }
 } else {
-    // TODO: Test on Mac/Linux
-    // const cmd = `lsof -i :${PORT} | grep node | awk '{ print $2 }'`;
-    // const pid = child_process.execSync(cmd).toString().trim();
-    // if (pid) {
-    //     child_process.spawnSync('kill', ['-9', pid]);
-    // }
+    // Kill any process using the port
+    try {
+        execSync(`lsof -ti :${PORT} | xargs kill -9`);
+        console.error(`Killed any process using port ${PORT}`);
+    } catch (err) {
+        console.error(`No existing process on port ${PORT}`);
+    }
 }
 
 // Create a WebSocket server

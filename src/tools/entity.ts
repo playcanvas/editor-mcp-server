@@ -127,7 +127,7 @@ const renderComponentSchema = z.object({
     enabled: z.boolean().optional(),
     type: z.enum(['box', 'capsule', 'sphere', 'cylinder', 'cone', 'plane']).optional(),
     asset: z.number().optional(),
-    materialAssets: z.array(z.number()).optional(),
+    materialAssets: z.array(z.number()).optional().describe('Array of material asset IDs referenced by the render component'),
     layers: z.array(z.number()).optional(),
     batchGroupId: z.number().optional(),
     castShadows: z.boolean().optional(),
@@ -244,9 +244,9 @@ export const register = (server: McpServer, wss: WSS) => {
 
     server.tool(
         'delete_entities',
-        'Delete one or more entities',
+        'Delete one or more entities. The root entity cannot be deleted.',
         {
-            ids: z.array(z.string())
+            ids: z.array(z.string()).describe('Array of entity IDs to delete. The root entity cannot be deleted.')
         },
         ({ ids }) => {
             return wss.call('entities:delete', ids);
@@ -303,7 +303,7 @@ export const register = (server: McpServer, wss: WSS) => {
             assetId: z.number()
         },
         ({ id, assetId }) => {
-            return wss.call('entities:components:property:set', id, 'render', 'materialAsset', assetId);
+            return wss.call('entities:components:property:set', id, 'render', 'materialAssets', [assetId]);
         }
     );
 
