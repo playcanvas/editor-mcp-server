@@ -87,8 +87,3 @@ The MCP server and Chrome extension should now be running. You can enter a comma
 
 1. Create an `.env` file and add `ANTHROPIC_API_KEY` (refer to `.env.template` for format).
 2. Run `npm run agent` to start the agent.
-
-## Tools Overview
-
-TODO
-
