@@ -60,9 +60,12 @@ The MCP Server can be driven by Cursor or Claude Desktop.
 #### Cursor
 
 1. Install [Cursor](https://www.cursor.com/).
-1. Select `File` > `Preferences` > `Cursor Settings`.
-2. Click `+ Add new global MCP server`.
-3. This will open `mcp.json`, your MCP Config JSON file.
+2. Select `File` > `Preferences` > `Cursor Settings`.
+3. Click `+ Add new global MCP server`.
+4. This will open `mcp.json`, your MCP Config JSON file.
+
+> [!TIP]  
+> Also in `Cursor Settings`, select `Features` and scroll to the `Chat` section. Activate `Enable auto-run mode` to allow the LLM to run MCP tools without requiring constant authorization. You do this at your own risk (but we prefer it)!
 
 #### MCP Config JSON File
 
