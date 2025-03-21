@@ -82,8 +82,3 @@ macOS
 ```
 
 The MCP server and Chrome extension should now be running. You can enter a command (we recommend Claude Sonnet 3.7). Ensure you have `Agent` selected.
-
-#### Agent Mode
-
-1. Create an `.env` file and add `ANTHROPIC_API_KEY` (refer to `.env.template` for format).
-2. Run `npm run agent` to start the agent.
