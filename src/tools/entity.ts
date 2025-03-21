@@ -2,33 +2,17 @@ import { type McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 
 import { type WSS } from '../wss.ts';
-import { AudioListenerSchema, CameraSchema, CollisionSchema, ElementSchema, LightSchema, RenderSchema, RigidBodySchema, ScreenSchema, ScriptSchema, SoundSchema } from './schema/entity.ts';
+import { ComponentsSchema, EntitySchema } from './schema/entity.ts';
 
 export const register = (server: McpServer, wss: WSS) => {
     server.tool(
         'create_entity',
         'Create a new entity',
         {
-            enabled: z.boolean().optional(),
-            name: z.string().optional(),
-            parent: z.string().optional(),
-            position: z.array(z.number()).length(3).optional(),
-            rotation: z.array(z.number()).length(3).optional(),
-            scale: z.array(z.number()).length(3).optional(),
-            tags: z.array(z.string()).optional(),
-            components: z.object({
-                audiolistener: AudioListenerSchema,
-                camera: CameraSchema,
-                element: ElementSchema,
-                light: LightSchema,
-                render: RenderSchema,
-                screen: ScreenSchema,
-                script: ScriptSchema,
-                sound: SoundSchema
-            })
+            entity: EntitySchema
         },
-        (options) => {
-            return wss.call('entities:create', options);
+        ({ entity }) => {
+            return wss.call('entities:create', entity);
         }
     );
 
@@ -100,18 +84,7 @@ export const register = (server: McpServer, wss: WSS) => {
         'Add components to an entity',
         {
             id: z.string(),
-            components: z.object({
-                audiolistener: AudioListenerSchema,
-                camera: CameraSchema,
-                collision: CollisionSchema,
-                element: ElementSchema,
-                light: LightSchema,
-                render: RenderSchema,
-                rigidbody: RigidBodySchema,
-                screen: ScreenSchema,
-                script: ScriptSchema,
-                sound: SoundSchema
-            })
+            components: ComponentsSchema
         },
         ({ id, components }) => {
             return wss.call('entities:components:add', id, components);
