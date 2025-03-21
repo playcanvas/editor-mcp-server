@@ -55,7 +55,7 @@ export const register = (server: McpServer, wss: WSS) => {
             })
         },
         ({ id, name, license }) => {
-            return wss.call('store:playcanvas:download', id, name, license);
+            return wss.call('store:playcanvas:clone', id, name, license);
         }
     );
 };
