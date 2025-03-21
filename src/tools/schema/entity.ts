@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { Vec4Schema } from './common.ts';
+import { Vec3Schema, Vec4Schema } from './common.ts';
 
 const AudioListenerSchema = z.object({
     enabled: z.boolean().default(true).describe('Whether the component is enabled.')
@@ -212,11 +212,42 @@ const SoundSchema = z.object({
     }).describe('A dictionary of sound slots. Each sound slot controls playback of an audio asset. Each key in the dictionary is a number representing the index of each sound slot.')
 }).describe('The data for the sound component.').optional();
 
+const ComponentsSchema = z.object({
+    audiolistener: AudioListenerSchema,
+    camera: CameraSchema,
+    collision: CollisionSchema,
+    element: ElementSchema,
+    light: LightSchema,
+    render: RenderSchema,
+    rigidbody: RigidBodySchema,
+    screen: ScreenSchema,
+    script: ScriptSchema,
+    sound: SoundSchema
+}).describe('A dictionary that contains the components of the entity and their data.');
+
+const EntitySchema = z.object({
+    name: z.string().optional().describe('The name of the entity.'),
+    resource_id: z.string().optional().describe('The unique GUID of the entity.'),
+    enabled: z.boolean().default(true).describe('Whether the entity is enabled.'),
+    template: z.number().nullable().optional(),
+    tags: z.array(z.string()).default([]).describe('The tags of the entity.'),
+    parent: z.string().describe('The `resource_id` of the parent entity.'),
+    children: z.array(z.string()).default([]).describe('An array that contains the `resource_id`s of the entity\'s children.'),
+    position: Vec3Schema.default([0, 0, 0]).describe('The position of the entity in local space (x, y, z).'),
+    rotation: Vec3Schema.default([0, 0, 0]).describe('The rotation of the entity in local space (rx, ry, rz euler angles in degrees)'),
+    scale: Vec3Schema.default([1, 1, 1]).describe('The scale of the entity in local space (sx, sy, sz).'),
+    template_id: z.number().optional().describe('The `id` of the Template asset that this entity is linked to.'),
+    template_ent_ids: z.record(z.string()).describe('A dictionary of <`resource_id`, `resource_id`> pairs that maps the entity (and its children) to the respective Entities in the template asset.'),
+    components: ComponentsSchema
+}).optional();
+
 export {
     AudioListenerSchema,
     CameraSchema,
     CollisionSchema,
+    ComponentsSchema,
     ElementSchema,
+    EntitySchema,
     LightSchema,
     RenderSchema,
     RigidBodySchema,
