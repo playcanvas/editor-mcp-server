@@ -1,6 +1,6 @@
 # PlayCanvas Editor MCP Server
 
-An MCP Server for automating the PlayCanvas Editor using an LLM.
+An MCP Server for automating the [PlayCanvas Editor](https://playcanvas.com/products/editor) using an LLM.
 
 <img width="1864" alt="Screenshot 2025-03-21 at 15 50 10" src="https://github.com/user-attachments/assets/393ffe73-40eb-4e1b-9442-2295bbb63326" />
 
