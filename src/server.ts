@@ -25,9 +25,8 @@ if (process.platform === 'win32') {
     // Kill any process using the port
     try {
         execSync(`lsof -ti :${PORT} | xargs kill -9`);
-        console.error(`Killed any process using port ${PORT}`);
     } catch (err) {
-        console.error(`No existing process on port ${PORT}`);
+        // Do nothing
     }
 }
 
