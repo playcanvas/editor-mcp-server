@@ -229,8 +229,8 @@ export const register = (server: McpServer, wss: WSS) => {
             name: z.string().optional(),
             data: materialSchema.optional()
         },
-        async (params) => {
-            return await wss.call('assets:create', 'material', params);
+        (params) => {
+            return wss.call('assets:create', 'material', params);
         }
     );
 
