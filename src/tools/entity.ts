@@ -226,14 +226,14 @@ export const register = (server: McpServer, wss: WSS) => {
             scale: z.array(z.number()).length(3).optional(),
             tags: z.array(z.string()).optional(),
             components: z.object({
-                audiolistener: audioListenerComponentSchema.optional(),
+                audiolistener: audioListenerComponentSchema,
                 camera: cameraComponentSchema.optional(),
                 element: elementComponentSchema.optional(),
                 light: lightComponentSchema.optional(),
                 render: renderComponentSchema.optional(),
                 screen: screenComponentSchema.optional(),
                 script: scriptComponentSchema.optional(),
-                sound: soundComponentSchema.optional()
+                sound: soundComponentSchema
             })
         },
         (options) => {
