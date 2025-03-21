@@ -7,6 +7,32 @@ An MCP Server for the PlayCanvas Editor.
 > [!IMPORTANT]  
 > At the moment, the MCP Server needs to be driven by Anthropic's Claude. Our experience shows that the free tier for Claude does not deliver a big enough chat context to operate the MCP Server reliably. Therefore, we strongly recommend subscribing to a Pro Claude account.
 
+## Available Tools
+
+* `create_entity`
+* `modify_entity`
+* `duplicate_entities`
+* `reparent_entity`
+* `delete_entities`
+* `list_entities`
+* `add_components`
+* `remove_components`
+* `list_assets`
+* `delete_assets`
+* `instantiate_assets`
+* `create_script`
+* `set_script_text`
+* `script_parse`
+* `create_material`
+* `set_material_diffuse`
+* `set_render_component_material`
+* `add_script_component_script`
+* `modify_scene_settings`
+* `query_scene_settings`
+* `store_search`
+* `store_get`
+* `store_download`
+
 ## Installation
 
 Run `npm install` to install all dependencies.
