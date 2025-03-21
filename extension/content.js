@@ -173,8 +173,8 @@ wsc.method('entities:reparent', (options) => {
 });
 wsc.method('entities:delete', async (ids) => {
     const entities = ids
-        .map(id => editorApi.entities.get(id))
-        .filter(entity => entity !== editorApi.entities.root);
+    .map(id => editorApi.entities.get(id))
+    .filter(entity => entity !== editorApi.entities.root);
     if (!entities.length) {
         return { error: 'No entities to delete' };
     }
