@@ -45,7 +45,10 @@ Run `npm install` to install all dependencies.
 
 ### Run MCP Server
 
-The MCP Server can be driven by Cursor (using Claude Sonnet 3.5 or 3.7) or Claude Desktop. We have found Claude Desktop to be generally more reliable.
+The MCP Server can be driven by Cursor or Claude Desktop.
+
+> [!TIP]  
+> We have found Claude Desktop to be generally more reliable.
 
 #### Claude Desktop
 
@@ -56,6 +59,7 @@ The MCP Server can be driven by Cursor (using Claude Sonnet 3.5 or 3.7) or Claud
 
 #### Cursor
 
+1. Install [Cursor](https://www.cursor.com/).
 1. Select `File` > `Preferences` > `Cursor Settings`.
 2. Click `+ Add new global MCP server`.
 3. This will open `mcp.json`, your MCP Config JSON file.
