@@ -20,7 +20,7 @@ export const register = (server: McpServer, wss: WSS) => {
             limit: z.number().optional()
         },
         ({ search, order, skip, limit }) => {
-            return wss.call('store:playcanvas:search', {
+            return wss.call('store:playcanvas:list', {
                 search,
                 order: order ? orderEnum[order] : undefined,
                 skip,
