@@ -49,7 +49,7 @@ The MCP Server can be driven by Cursor (using Claude Sonnet 3.5 or 3.7) or Claud
 
 #### Claude Desktop
 
-1. Install Claude Desktop.
+1. Install [Claude Desktop](https://claude.ai/download).
 2. Go to `Claude` > `Settings`.
 3. Select `Developer` and then `Edit Config`.
 4. This will open `claude_desktop_config.json`, your MCP Config JSON file.
