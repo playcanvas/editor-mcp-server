@@ -2,7 +2,7 @@ import { type McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 
 import { type WSS } from '../wss.ts';
-import { AudioListenerSchema, CameraSchema, CollisionSchema, ElementSchema, LightSchema, RenderSchema, RigidBodySchema, ScreenSchema, ScriptSchema, SoundSlotSchema, SoundSchema } from './schema/entity.ts';
+import { AudioListenerSchema, CameraSchema, CollisionSchema, ElementSchema, LightSchema, RenderSchema, RigidBodySchema, ScreenSchema, ScriptSchema, SoundSchema } from './schema/entity.ts';
 
 export const register = (server: McpServer, wss: WSS) => {
     server.tool(
