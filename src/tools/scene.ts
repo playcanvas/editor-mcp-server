@@ -48,7 +48,7 @@ const SceneSettingsSchema = z.object({
         lightingCookiesEnabled: z.boolean().default(false).describe('Cluster lights support cookies.'),
         lightingAreaLightsEnabled: z.boolean().default(false).describe('Cluster lights support area lights.'),
         lightingShadowsEnabled: z.boolean().default(true).describe('Cluster lights support shadows.')
-    }).describe('Render settings for the scene.'),
+    }).describe('Render settings for the scene.')
 }).describe('Scene settings.');
 
 export const register = (server: McpServer, wss: WSS) => {
