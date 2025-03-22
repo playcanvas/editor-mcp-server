@@ -10,7 +10,7 @@ An MCP Server for automating the [PlayCanvas Editor](https://playcanvas.com/prod
 ## Available Tools
 
 * `create_entity`
-* `modify_entity`
+* `modify_entities`
 * `duplicate_entities`
 * `reparent_entity`
 * `delete_entities`
@@ -25,7 +25,6 @@ An MCP Server for automating the [PlayCanvas Editor](https://playcanvas.com/prod
 * `script_parse`
 * `create_material`
 * `set_material_diffuse`
-* `set_render_component_material`
 * `add_script_component_script`
 * `modify_scene_settings`
 * `query_scene_settings`
