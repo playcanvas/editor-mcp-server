@@ -17,7 +17,7 @@ export const register = (server: McpServer, wss: WSS) => {
     );
 
     server.tool(
-        'modify_entity',
+        'modify_entities',
         'Modify one or more entity\'s properties',
         {
             edits: z.array(z.object({
