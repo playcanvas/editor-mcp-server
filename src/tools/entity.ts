@@ -6,13 +6,13 @@ import { ComponentsSchema, EntitySchema } from './schema/entity.ts';
 
 export const register = (server: McpServer, wss: WSS) => {
     server.tool(
-        'create_entity',
-        'Create a new entity',
+        'create_entities',
+        'Create one or more entities',
         {
-            entity: EntitySchema
+            entities: z.array(EntitySchema)
         },
-        ({ entity }) => {
-            return wss.call('entities:create', entity);
+        ({ entities }) => {
+            return wss.call('entities:create', entities);
         }
     );
 
