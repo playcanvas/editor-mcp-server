@@ -233,7 +233,7 @@ const EntitySchema = z.object({
     name: z.string().optional().describe('The name of the entity.'),
     enabled: z.boolean().default(true).describe('Whether the entity is enabled.'),
     tags: z.array(z.string()).default([]).describe('The tags of the entity.'),
-    parent: z.string().describe('The `resource_id` of the parent entity.'),
+    parent: z.string().optional().describe('The ID of the parent entity.'),
     children: z.array(z.string()).default([]).describe('An array that contains the `resource_id`s of the entity\'s children.'),
     position: Vec3Schema.default([0, 0, 0]).describe('The position of the entity in local space (x, y, z).'),
     rotation: Vec3Schema.default([0, 0, 0]).describe('The rotation of the entity in local space (rx, ry, rz euler angles in degrees)'),
