@@ -21,7 +21,7 @@ An MCP Server for automating the [PlayCanvas Editor](https://playcanvas.com/prod
 
 ## Available Tools
 
-* `create_entity`
+* `create_entities`
 * `modify_entities`
 * `duplicate_entities`
 * `reparent_entity`
