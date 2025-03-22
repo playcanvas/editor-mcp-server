@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from 'zod';
 
 const MaterialSchema = z.object({
     ambient: z.array(z.number()).length(3).optional(),
