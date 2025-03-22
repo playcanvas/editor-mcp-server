@@ -18,18 +18,16 @@ export const register = (server: McpServer, wss: WSS) => {
 
     server.tool(
         'modify_entity',
-        'Modify an entity\'s properties',
+        'Modify one or more entity\'s properties',
         {
-            id: z.string(),
-            name: z.string().optional(),
-            enabled: z.boolean().optional(),
-            position: z.array(z.number()).length(3).optional(),
-            rotation: z.array(z.number()).length(3).optional(),
-            scale: z.array(z.number()).length(3).optional(),
-            tags: z.array(z.string()).optional()
+            edits: z.array(z.object({
+                id: z.string().describe('The ID of the entity to modify.'),
+                path: z.string().describe('The path to the property to modify. Use dot notation to access nested properties.'),
+                value: z.any().describe('The value to set the property to.')
+            })).describe('An array of objects containing the ID of the entity to modify, the path to the property to modify, and the value to set the property to.')
         },
-        (options) => {
-            return wss.call('entities:modify', options.id, options);
+        ({ edits }) => {
+            return wss.call('entities:modify', edits);
         }
     );
 
@@ -100,18 +98,6 @@ export const register = (server: McpServer, wss: WSS) => {
         },
         ({ id, components }) => {
             return wss.call('entities:components:remove', id, components);
-        }
-    );
-
-    server.tool(
-        'set_render_component_material',
-        'Set the material on a render component',
-        {
-            id: z.string(),
-            assetId: z.number()
-        },
-        ({ id, assetId }) => {
-            return wss.call('entities:components:property:set', id, 'render', 'materialAssets', [assetId]);
         }
     );
 

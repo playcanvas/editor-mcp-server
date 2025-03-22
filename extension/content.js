@@ -134,31 +134,16 @@ wsc.method('entities:create', (options = {}) => {
     wsc.log(`Created entity(${entity.get('resource_id')})`);
     return { data: entity.json() };
 });
-wsc.method('entities:modify', (id, options = {}) => {
-    const entity = editorApi.entities.get(id);
-    if (!entity) {
-        return { error: 'Entity not found' };
-    }
-    if (Object.hasOwn(options, 'name')) {
-        entity.set('name', options.name);
-    }
-    if (Object.hasOwn(options, 'position')) {
-        entity.set('position', options.position);
-    }
-    if (Object.hasOwn(options, 'rotation')) {
-        entity.set('rotation', options.rotation);
-    }
-    if (Object.hasOwn(options, 'scale')) {
-        entity.set('scale', options.scale);
-    }
-    if (Object.hasOwn(options, 'enabled')) {
-        entity.set('enabled', options.enabled);
-    }
-    if (Object.hasOwn(options, 'tags')) {
-        entity.set('tags', options.tags);
-    }
-    wsc.log(`Modified entity(${id})`);
-    return { data: entity.json() };
+wsc.method('entities:modify', (edits) => {
+    edits.forEach(({ id, path, value }) => {
+        const entity = editorApi.entities.get(id);
+        if (!entity) {
+            return { error: 'Entity not found' };
+        }
+        entity.set(path, value);
+        wsc.log(`Set property(${path}) of entity(${id}) to: ${JSON.stringify(value)}`);
+    });
+    return { data: true };
 });
 wsc.method('entities:duplicate', async (ids, options = {}) => {
     const entities = ids.map(id => editorApi.entities.get(id));
@@ -224,18 +209,6 @@ wsc.method('entities:components:remove', (id, components) => {
     });
     wsc.log(`Removed components(${components.join(', ')}) from entity(${id})`);
     return { data: entity.json() };
-});
-wsc.method('entities:components:property:set', (id, name, prop, value) => {
-    const entity = editorApi.entities.get(id);
-    if (!entity) {
-        return { error: 'Entity not found' };
-    }
-    if (!entity.get(`components.${name}`)) {
-        return { error: 'Component not found' };
-    }
-    entity.set(`components.${name}.${prop}`, value);
-    wsc.log(`Set component(${name}) property(${prop}) of entity(${id}) to: ${JSON.stringify(value)}`);
-    return { data: entity.get(`components.${name}`) };
 });
 wsc.method('entities:components:script:add', (id, scriptName) => {
     const entity = editorApi.entities.get(id);
