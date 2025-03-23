@@ -20,9 +20,6 @@ export default [
                 ...globals.node
             }
         },
-        plugins: {
-            import: importPlugin
-        },
         settings: {
             'import/resolver': {
                 typescript: {
@@ -30,15 +27,6 @@ export default [
                     project: './tsconfig.json'
                 }
             }
-        },
-        rules: {
-            'jsdoc/require-jsdoc': 'off',
-            'jsdoc/require-param': 'off',
-            'jsdoc/require-param-type': 'off',
-            'jsdoc/require-returns': 'off',
-            'jsdoc/require-returns-type': 'off',
-            'no-use-before-define': 'off',
-            'import/no-unresolved': 'off'
         }
     }
 ];
