@@ -9,6 +9,7 @@
   },
   "devDependencies": {
     "@playcanvas/eslint-config": "^2.0.9",
+    "@types/node": "^22.13.11",
     "@types/ws": "^8.18.0",
     "@typescript-eslint/parser": "^8.27.0",
     "eslint": "^9.22.0",
