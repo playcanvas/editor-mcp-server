@@ -1,7 +1,7 @@
 import { type McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 
-import { type WSS } from '../wss.ts';
+import { type WSS } from '../wss';
 
 export const register = (server: McpServer, wss: WSS) => {
     server.tool(
@@ -25,10 +25,10 @@ export const register = (server: McpServer, wss: WSS) => {
     );
 
     server.tool(
-        'instantiate_assets',
-        'Instantiate one or more asset',
+        'instantiate_template_assets',
+        'Instantiate one or more template assets',
         {
-            ids: z.array(z.number())
+            ids: z.array(z.number()).describe('The asset IDs of the template assets to instantiate')
         },
         ({ ids }) => {
             return wss.call('assets:instantiate', ids);

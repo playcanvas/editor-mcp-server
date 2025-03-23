@@ -31,7 +31,7 @@ An MCP Server for automating the [PlayCanvas Editor](https://playcanvas.com/prod
 * `remove_components`
 * `list_assets`
 * `delete_assets`
-* `instantiate_assets`
+* `instantiate_template_assets`
 * `create_script`
 * `set_script_text`
 * `script_parse`

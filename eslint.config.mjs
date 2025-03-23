@@ -19,14 +19,13 @@ export default [
                 ...globals.node
             }
         },
-        rules: {
-            'jsdoc/require-jsdoc': 'off',
-            'jsdoc/require-param': 'off',
-            'jsdoc/require-param-type': 'off',
-            'jsdoc/require-returns': 'off',
-            'jsdoc/require-returns-type': 'off',
-            'no-use-before-define': 'off',
-            'import/no-unresolved': 'off'
+        settings: {
+            'import/resolver': {
+                typescript: {
+                    alwaysTryTypes: true,
+                    project: './tsconfig.json'
+                }
+            }
         }
     }
 ];

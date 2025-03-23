@@ -3,13 +3,13 @@ import child_process, { execSync } from 'child_process';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 
-import { register as registerAsset } from './tools/asset.ts';
-import { register as registerAssetMaterial } from './tools/assets/material.ts';
-import { register as registerAssetScript } from './tools/assets/script.ts';
-import { register as registerEntity } from './tools/entity.ts';
-import { register as registerScene } from './tools/scene.ts';
-import { register as registerStore } from './tools/store.ts';
-import { WSS } from './wss.ts';
+import { register as registerAsset } from './tools/asset';
+import { register as registerAssetMaterial } from './tools/assets/material';
+import { register as registerAssetScript } from './tools/assets/script';
+import { register as registerEntity } from './tools/entity';
+import { register as registerScene } from './tools/scene';
+import { register as registerStore } from './tools/store';
+import { WSS } from './wss';
 
 const PORT = 52000;
 

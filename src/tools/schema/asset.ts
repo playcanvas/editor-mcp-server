@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 const MaterialSchema = z.object({
+    name: z.string().optional(),
     ambient: z.array(z.number()).length(3).optional(),
     aoMap: z.number().nullable().optional(),
     aoMapChannel: z.enum(['r', 'g', 'b', 'a', 'rgb']).optional(),
