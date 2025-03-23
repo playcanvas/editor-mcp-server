@@ -264,10 +264,10 @@ wsc.method('assets:delete', (ids) => {
     wsc.log(`Deleted assets: ${ids.join(', ')}`);
     return { data: true };
 });
-wsc.method('assets:list', () => {
-    const assets = editorApi.assets.list();
-    if (!assets.length) {
-        return { error: 'No assets found' };
+wsc.method('assets:list', (type) => {
+    let assets = editorApi.assets.list();
+    if (type) {
+        assets = assets.filter(asset => asset.get('type') === type);
     }
     wsc.log('Listed assets');
     return { data: assets.map(asset => asset.json()) };
