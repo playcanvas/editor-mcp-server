@@ -1,19 +1,19 @@
 import { type McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 
-import { type WSS } from '../../wss.ts';
-import { MaterialSchema } from '../schema/asset.ts';
+import { type WSS } from '../../wss';
+import { MaterialSchema } from '../schema/asset';
 
 export const register = (server: McpServer, wss: WSS) => {
     server.tool(
         'create_material',
         'Create a new material',
         {
-            name: z.string().optional(),
-            data: MaterialSchema.optional()
+            data: MaterialSchema.optional().describe('The material data to initialize the new material with.'),
+            folder: z.number().optional().describe('The asset ID of the folder asset to create the material in. If not specified, the material will be created in the root folder.')
         },
-        (params) => {
-            return wss.call('assets:create', 'material', params);
+        (data) => {
+            return wss.call('assets:create', 'material', data);
         }
     );
 

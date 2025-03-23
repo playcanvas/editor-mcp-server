@@ -58,7 +58,7 @@ class WSS {
                 reject(new Error('No socket'));
                 return;
             }
-            this._socket?.send(JSON.stringify({ id, name, args }));
+            this._socket.send(JSON.stringify({ id, name, args }));
         });
     }
 

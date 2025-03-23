@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { Vec2Schema, Vec3Schema, Vec4Schema } from './common.ts';
+import { Vec2Schema, Vec3Schema, Vec4Schema } from './common';
 
 const AudioListenerSchema = z.object({
     enabled: z.boolean().default(true).describe('Whether the component is enabled.')
@@ -238,7 +238,7 @@ const EntitySchema = z.object({
     position: Vec3Schema.default([0, 0, 0]).describe('The position of the entity in local space (x, y, z).'),
     rotation: Vec3Schema.default([0, 0, 0]).describe('The rotation of the entity in local space (rx, ry, rz euler angles in degrees)'),
     scale: Vec3Schema.default([1, 1, 1]).describe('The scale of the entity in local space (sx, sy, sz).'),
-    components: ComponentsSchema
+    components: ComponentsSchema.optional().describe('The components of the entity and their data.')
 }).optional();
 
 export {

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { Vec3Schema } from './common.ts';
+import { Vec3Schema } from './common';
 
 const SceneSettingsSchema = z.object({
     physics: z.object({
