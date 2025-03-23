@@ -12,8 +12,8 @@ export const register = (server: McpServer, wss: WSS) => {
             data: MaterialSchema.optional().describe('The material data to initialize the new material with.'),
             folder: z.number().optional().describe('The asset ID of the folder asset to create the material in. If not specified, the material will be created in the root folder.')
         },
-        (data) => {
-            return wss.call('assets:create', 'material', data);
+        (params) => {
+            return wss.call('assets:create', 'material', params);
         }
     );
 
