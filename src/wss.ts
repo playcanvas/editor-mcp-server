@@ -12,7 +12,11 @@ class WSS {
     private _debug = false;
 
     constructor(port: number, debug = false) {
-        this._server = new WebSocketServer({ port });
+        try {
+            this._server = new WebSocketServer({ port });
+        } catch (e) {
+            console.error('[WSS] Failed to create server', e);
+        }
         this._debug = debug;
         this._waitForSocket();
     }
