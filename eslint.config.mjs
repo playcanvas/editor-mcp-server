@@ -1,6 +1,7 @@
 import playcanvasConfig from '@playcanvas/eslint-config';
 import typescriptParser from '@typescript-eslint/parser';
 import globals from 'globals';
+import importPlugin from 'eslint-plugin-import';
 
 export default [
     ...playcanvasConfig,
@@ -17,6 +18,17 @@ export default [
                 ...globals.browser,
                 ...globals.mocha,
                 ...globals.node
+            }
+        },
+        plugins: {
+            import: importPlugin
+        },
+        settings: {
+            'import/resolver': {
+                typescript: {
+                    alwaysTryTypes: true,
+                    project: './tsconfig.json'
+                }
             }
         },
         rules: {

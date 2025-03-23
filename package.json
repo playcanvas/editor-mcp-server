@@ -12,6 +12,7 @@
     "@types/ws": "^8.18.0",
     "@typescript-eslint/parser": "^8.27.0",
     "eslint": "^9.22.0",
+    "eslint-import-resolver-typescript": "^4.2.2",
     "globals": "^16.0.0",
     "tsx": "^4.19.3",
     "typescript": "^5.8.2"
