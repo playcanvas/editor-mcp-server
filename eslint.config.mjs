@@ -1,7 +1,6 @@
 import playcanvasConfig from '@playcanvas/eslint-config';
 import typescriptParser from '@typescript-eslint/parser';
 import globals from 'globals';
-import importPlugin from 'eslint-plugin-import';
 
 export default [
     ...playcanvasConfig,
