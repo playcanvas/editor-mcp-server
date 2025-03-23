@@ -229,6 +229,12 @@ wsc.method('entities:components:script:add', (id, scriptName) => {
 
 // assets
 wsc.method('assets:create', async (type, options = {}) => {
+    if (options?.data?.name) {
+        options.name = options.data.name;
+    }
+    if (options?.folder) {
+        options.folder = editorApi.assets.get(options.folder);
+    }
     let asset;
     switch (type) {
         case 'material':
