@@ -1,4 +1,4 @@
-import child_process, { execSync } from 'child_process';
+import { execSync } from 'child_process';
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
@@ -13,22 +13,48 @@ import { WSS } from './wss';
 
 const PORT = 52000;
 
-// Kill existing processes
-if (process.platform === 'win32') {
-    const cmd = `netstat -ano | findstr 0.0.0.0:${PORT}`;
-    const proc = child_process.spawnSync('cmd', ['/c', cmd], { shell: true });
-    const pid = proc.stdout.toString().replace(/\s+/g, ' ').trim().split(' ').pop();
-    if (pid) {
-        child_process.spawnSync('taskkill', ['/F', '/PID', pid, '/T']);
+const poll = (cond: () => boolean, rate: number = 1000) => {
+    return new Promise<void>((resolve) => {
+        const id = setInterval(() => {
+            if (cond()) {
+                clearInterval(id);
+                resolve();
+            }
+        }, rate);
+    });
+};
+
+const findPid = (port: number) => {
+    if (process.platform === 'win32') {
+        try {
+            return execSync(`netstat -ano | findstr 0.0.0.0:${PORT}`).toString().trim().split(' ').pop();
+        } catch (e) {
+            return '';
+        }
     }
-} else {
-    // Kill any process using the port
-    try {
-        execSync(`lsof -ti :${PORT} | xargs kill -9`);
-    } catch (err) {
-        // Do nothing
+    return execSync(`lsof -i :${port} | grep LISTEN | awk '{print $2}'`).toString().trim();
+};
+
+const kill = (pid: string) => {
+    if (process.platform === 'win32') {
+        try {
+            execSync(`taskkill /F /PID ${pid}`);
+        } catch (e) {
+            // Ignore
+        }
+        return;
     }
+    execSync(`kill -9 ${pid}`);
+};
+
+// Kill the existing server
+const pid = findPid(PORT);
+if (pid) {
+    kill(pid);
 }
+
+// Wait for the server to stop
+await poll(() => !findPid(PORT));
 
 // Create a WebSocket server
 const wss = new WSS(PORT);
