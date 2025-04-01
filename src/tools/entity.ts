@@ -4,8 +4,8 @@ import { z } from 'zod';
 import { type WSS } from '../wss';
 import { ComponentsSchema, EntitySchema } from './schema/entity';
 
-export const register = (server: McpServer, wss: WSS) => {
-    server.tool(
+export const register = (mcp: McpServer, wss: WSS) => {
+    mcp.tool(
         'create_entities',
         'Create one or more entities',
         {
@@ -16,7 +16,7 @@ export const register = (server: McpServer, wss: WSS) => {
         }
     );
 
-    server.tool(
+    mcp.tool(
         'modify_entities',
         'Modify one or more entity\'s properties',
         {
@@ -31,7 +31,7 @@ export const register = (server: McpServer, wss: WSS) => {
         }
     );
 
-    server.tool(
+    mcp.tool(
         'duplicate_entities',
         'Duplicate one or more entities',
         {
@@ -43,7 +43,7 @@ export const register = (server: McpServer, wss: WSS) => {
         }
     );
 
-    server.tool(
+    mcp.tool(
         'reparent_entity',
         'Reparent an entity',
         {
@@ -57,7 +57,7 @@ export const register = (server: McpServer, wss: WSS) => {
         }
     );
 
-    server.tool(
+    mcp.tool(
         'delete_entities',
         'Delete one or more entities. The root entity cannot be deleted.',
         {
@@ -68,7 +68,7 @@ export const register = (server: McpServer, wss: WSS) => {
         }
     );
 
-    server.tool(
+    mcp.tool(
         'list_entities',
         'List all entities',
         {},
@@ -77,7 +77,7 @@ export const register = (server: McpServer, wss: WSS) => {
         }
     );
 
-    server.tool(
+    mcp.tool(
         'add_components',
         'Add components to an entity',
         {
@@ -89,7 +89,7 @@ export const register = (server: McpServer, wss: WSS) => {
         }
     );
 
-    server.tool(
+    mcp.tool(
         'remove_components',
         'Remove components from an entity',
         {
@@ -101,7 +101,7 @@ export const register = (server: McpServer, wss: WSS) => {
         }
     );
 
-    server.tool(
+    mcp.tool(
         'add_script_component_script',
         'Add a script to a script component',
         {

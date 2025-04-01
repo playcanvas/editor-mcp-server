@@ -8,8 +8,8 @@ const orderEnum = {
     'desc': -1
 };
 
-export const register = (server: McpServer, wss: WSS) => {
-    server.tool(
+export const register = (mcp: McpServer, wss: WSS) => {
+    mcp.tool(
         'store_search',
         'Search for an asset in the store',
         {
@@ -29,7 +29,7 @@ export const register = (server: McpServer, wss: WSS) => {
         }
     );
 
-    server.tool(
+    mcp.tool(
         'store_get',
         'Get an asset from the store',
         {
@@ -41,7 +41,7 @@ export const register = (server: McpServer, wss: WSS) => {
         }
     );
 
-    server.tool(
+    mcp.tool(
         'store_download',
         'Download an asset from the store',
         {

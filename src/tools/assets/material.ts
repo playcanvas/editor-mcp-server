@@ -4,8 +4,8 @@ import { z } from 'zod';
 import { type WSS } from '../../wss';
 import { MaterialSchema } from '../schema/asset';
 
-export const register = (server: McpServer, wss: WSS) => {
-    server.tool(
+export const register = (mcp: McpServer, wss: WSS) => {
+    mcp.tool(
         'create_material',
         'Create a new material',
         {
@@ -17,7 +17,7 @@ export const register = (server: McpServer, wss: WSS) => {
         }
     );
 
-    server.tool(
+    mcp.tool(
         'set_material_diffuse',
         'Set diffuse property on a material',
         {
