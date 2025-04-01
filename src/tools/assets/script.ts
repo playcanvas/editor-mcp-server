@@ -3,8 +3,8 @@ import { z } from 'zod';
 
 import { type WSS } from '../../wss';
 
-export const register = (server: McpServer, wss: WSS) => {
-    server.tool(
+export const register = (mcp: McpServer, wss: WSS) => {
+    mcp.tool(
         'create_script',
         'Create a new script',
         {
@@ -16,7 +16,7 @@ export const register = (server: McpServer, wss: WSS) => {
         }
     );
 
-    server.tool(
+    mcp.tool(
         'set_script_text',
         'Set script text',
         {
@@ -28,7 +28,7 @@ export const register = (server: McpServer, wss: WSS) => {
         }
     );
 
-    server.tool(
+    mcp.tool(
         'script_parse',
         'Parse the script after modification',
         {

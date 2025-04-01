@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "start": "tsx src/server.ts",
+    "watch": "tsx watch src/server.ts",
     "debug": "npx @modelcontextprotocol/inspector tsx src/server.ts",
     "lint": "eslint src"
   },

@@ -3,8 +3,8 @@ import { z } from 'zod';
 
 import { type WSS } from '../wss';
 
-export const register = (server: McpServer, wss: WSS) => {
-    server.tool(
+export const register = (mcp: McpServer, wss: WSS) => {
+    mcp.tool(
         'list_assets',
         'List all assets with the option to filter by type',
         {
@@ -15,7 +15,7 @@ export const register = (server: McpServer, wss: WSS) => {
         }
     );
 
-    server.tool(
+    mcp.tool(
         'delete_assets',
         'Delete one or more assets',
         {
@@ -26,7 +26,7 @@ export const register = (server: McpServer, wss: WSS) => {
         }
     );
 
-    server.tool(
+    mcp.tool(
         'instantiate_template_assets',
         'Instantiate one or more template assets',
         {

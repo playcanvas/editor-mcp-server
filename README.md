@@ -94,7 +94,10 @@ Windows
         "npx",
         "tsx",
         "C:\\path\\to\\mcp-editor\\src\\server.ts"
-      ]
+      ],
+      "env": {
+        "PORT": "52000"
+      }
     }
   }
 }
@@ -110,7 +113,10 @@ macOS
       "args": [
         "tsx",
         "/path/to/mcp-editor/src/server.ts"
-      ]
+      ],
+      "env": {
+        "PORT": "52000"
+      }
     }
   }
 }
