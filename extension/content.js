@@ -9,6 +9,7 @@ class WSC {
 
     /**
      * @param {string} address - The address to connect to.
+     * @param {number} retryTimeout - The timeout to retry the connection.
      */
     _connect(address, retryTimeout = 3000) {
         this._ws = new WebSocket(address);
