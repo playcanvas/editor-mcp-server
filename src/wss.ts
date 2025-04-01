@@ -17,6 +17,7 @@ class WSS {
 
     constructor(port: number) {
         this._server = new WebSocketServer({ port });
+        console.error('[WSS] Listening on port', port);
         this._waitForSocket();
     }
 
