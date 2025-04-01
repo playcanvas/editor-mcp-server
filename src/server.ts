@@ -58,9 +58,6 @@ await poll(() => !findPid(PORT));
 
 // Create a WebSocket server
 const wss = new WSS(PORT);
-setInterval(() => {
-    wss.call('ping');
-}, 1000);
 
 // Create an MCP server
 const server = new McpServer({
@@ -78,4 +75,18 @@ registerStore(server, wss);
 
 // Start receiving messages on stdin and sending messages on stdout
 const transport = new StdioServerTransport();
-await server.connect(transport);
+server.connect(transport).then(() => {
+    console.error('[MCP] Connected');
+}).catch((e) => {
+    console.error('[MCP] Error', e);
+    process.exit(1);
+});
+
+// Clean up on exit
+process.stdin.on('close', () => {
+    server.close().finally(() => {
+        console.error('[MCP] Closed');
+        wss.close();
+        process.exit(0);
+    });
+});

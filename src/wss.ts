@@ -1,4 +1,6 @@
-import { WebSocketServer, type WebSocket } from 'ws';
+import { WebSocketServer, WebSocket } from 'ws';
+
+const PING_DELAY = 1000;
 
 class WSS {
     private _server: WebSocketServer;
@@ -9,22 +11,13 @@ class WSS {
 
     private _id = 0;
 
-    private _debug = false;
+    private _pingInterval: ReturnType<typeof setInterval> | null = null;
 
-    constructor(port: number, debug = false) {
-        try {
-            this._server = new WebSocketServer({ port });
-        } catch (e) {
-            console.error('[WSS] Failed to create server', e);
-        }
-        this._debug = debug;
+    private _closing: boolean = false;
+
+    constructor(port: number) {
+        this._server = new WebSocketServer({ port });
         this._waitForSocket();
-    }
-
-    private _log(...args: any) {
-        if (this._debug) {
-            console.log(...arguments);
-        }
     }
 
     private _waitForSocket() {
@@ -32,7 +25,7 @@ class WSS {
             if (this._socket) {
                 return;
             }
-            this._log('[WSS] Connected');
+            console.error('[WSS] Connected');
             ws.on('message', (data) => {
                 try {
                     const { id, res } = JSON.parse(data.toString());
@@ -45,12 +38,21 @@ class WSS {
                 }
             });
             ws.on('close', () => {
-                this._log('[WSS] Disconnected');
+                console.error('[WSS] Disconnected');
                 this._socket = undefined;
-                this._waitForSocket();
+                if (!this._closing) {
+                    this._waitForSocket();
+                }
             });
 
             this._socket = ws;
+
+            if (this._pingInterval) {
+                clearInterval(this._pingInterval);
+            }
+            this._pingInterval = setInterval(() => {
+                this.call('ping').then(() => console.error('[WSS] Ping'));
+            }, PING_DELAY);
         });
     }
 
@@ -60,6 +62,10 @@ class WSS {
             this._callbacks.set(id, resolve);
             if (!this._socket) {
                 reject(new Error('No socket'));
+                return;
+            }
+            if (this._socket.readyState !== WebSocket.OPEN) {
+                reject(new Error('Socket not open'));
                 return;
             }
             this._socket.send(JSON.stringify({ id, name, args }));
@@ -87,6 +93,19 @@ class WSS {
                 isError: true
             };
         }
+    }
+
+    close() {
+        this._closing = true;
+        if (this._pingInterval) {
+            clearInterval(this._pingInterval);
+        }
+        if (this._socket) {
+            this._socket.close();
+        }
+        this._server.close();
+        this._closing = false;
+        console.error('[WSS] Closed');
     }
 }
 
