@@ -230,14 +230,14 @@ const ComponentsSchema = z.object({
 }).describe('A dictionary that contains the components of the entity and their data.');
 
 const EntitySchema: z.ZodOptional<ZodTypeAny> = z.lazy(() => z.object({
-    name: z.string().optional().describe('The name of the entity.'),
-    enabled: z.boolean().default(true).describe('Whether the entity is enabled.'),
-    tags: z.array(z.string()).default([]).describe('The tags of the entity.'),
-    children: z.array(EntitySchema).optional().describe('An array that contains the child entities.'),
-    position: Vec3Schema.default([0, 0, 0]).describe('The position of the entity in local space (x, y, z).'),
-    rotation: Vec3Schema.default([0, 0, 0]).describe('The rotation of the entity in local space (rx, ry, rz euler angles in degrees)'),
-    scale: Vec3Schema.default([1, 1, 1]).describe('The scale of the entity in local space (sx, sy, sz).'),
-    components: ComponentsSchema.optional().describe('The components of the entity and their data.')
+    name: z.string().optional().describe('The name of the entity. Default: "Untitled"'),
+    enabled: z.boolean().optional().describe('Whether the entity is enabled. Default: true'),
+    tags: z.array(z.string()).optional().describe('The tags of the entity. Default: []'),
+    children: z.array(EntitySchema).optional().describe('An array that contains the child entities. Default: []'),
+    position: Vec3Schema.optional().describe('The position of the entity in local space (x, y, z). Default: [0, 0, 0]'),
+    rotation: Vec3Schema.optional().describe('The rotation of the entity in local space (rx, ry, rz euler angles in degrees). Default: [0, 0, 0]'),
+    scale: Vec3Schema.optional().describe('The scale of the entity in local space (sx, sy, sz). Default: [1, 1, 1]'),
+    components: ComponentsSchema.optional().describe('The components of the entity and their data. Default: {}')
 })).optional();
 
 export {
