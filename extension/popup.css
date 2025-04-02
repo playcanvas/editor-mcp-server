@@ -1,0 +1,136 @@
+:root {
+    --color-primary: #364346;
+    --color-secondary: #2c393c;
+    --color-text: #b1b8ba;
+    --color-hover: rgba(255,102,0,.3);
+    --color-red: #e74c3c;
+    --color-orange: #f1c40f;
+    --color-green: #2ecc71;
+}
+
+* {
+    font-family: 'Proxima Nova Regular", "Helvetica Neue", Arial, Helvetica, sans-serif;
+}
+
+html, body {
+    margin: 0;
+    width: 300px;
+    height: 100%;
+}
+
+#root {
+    background-color: var(--color-primary);
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+}
+
+.header {
+    text-transform: uppercase;
+    font-size: 12px;
+    color: white;
+    font-weight: bold;
+    background-color: var(--color-secondary);
+    padding: 10px;
+}
+
+.body {
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.input {
+    background-color: var(--color-secondary);
+    border: 1px solid #293538;
+    border-radius: 2px;
+    box-sizing: border-box;
+    color: var(--color-text);
+    font-family: inconsolatamedium, Monaco, Menlo, "Ubuntu Mono", Consolas, source-code-pro, monospace;
+    font-size: 12px;
+    padding: 6px;
+    outline: none;
+    width: 100%;
+}
+.input:hover {
+    box-shadow: 0 0 2px 1px var(--color-hover);
+}
+.input.disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+.input.disabled:hover {
+    box-shadow: none;
+}
+
+.button {
+    background-color: var(--color-secondary);
+    border: 1px solid #20292b;
+    border-radius: 2px;
+    color: var(--color-text);
+    cursor: pointer;
+    font-size: 12px;
+    padding: 5px;
+}
+.button:hover {
+    color: white;
+    box-shadow: 0 0 2px 1px var(--color-hover);
+}
+.button.disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+.button.disabled:hover {
+    color: var(--color-text);
+    box-shadow: none;
+}
+
+.group {
+    display: flex;
+    gap: 10px;
+}
+
+.checkbox {
+    background-color: #20292b;
+    cursor: pointer;
+    width: 14px;
+    height: 14px;
+}
+.checkbox:hover {
+    box-shadow: 0 0 2px 1px var(--color-hover);
+}
+.checkbox.checked {
+    color: #20292b;
+    background-color: #b1b8ba;
+}
+.checkbox.checked:before {
+    font-size: 14px;
+    font-weight: bold;
+    content: '\2713';
+    width: 100%;
+    height: 100%;
+    line-height: 14px;
+    margin-left: 1px;
+}
+
+.indicator {
+    background-color: var(--color-red);
+    border-radius: 50%;
+    width: 14px;
+    height: 14px;
+}
+.indicator.connecting {
+    background-color: var(--color-orange);
+}
+.indicator.connected {
+    background-color: var(--color-green);
+}
+
+.label {
+    color: var(--color-text);
+    font-size: 12px;
+    line-height: 14px;
+    user-select: none;
+}
