@@ -219,7 +219,7 @@ const SoundSchema = z.object({
     refDistance: z.number().optional().describe('The reference distance for reducing volume as the sound source moves further from the listener. Default: 1'),
     maxDistance: z.number().optional().describe('The maximum distance from the listener at which audio falloff stops. Note the volume of the audio is not 0 after this distance, but just doesn\'t fall off anymore. Default: 10000'),
     rollOffFactor: z.number().optional().describe('The rate at which volume fall-off occurs. Default: 1'),
-    distanceModel: z.enum(['linear', 'inverse', 'exponential']).describe('Determines which algorithm to use to reduce the volume of the audio as it moves away from the listener. Can be one of: "inverse", "linear", "exponential". Default: "linear"'),
+    distanceModel: z.enum(['linear', 'inverse', 'exponential']).optional().describe('Determines which algorithm to use to reduce the volume of the audio as it moves away from the listener. Can be one of: "inverse", "linear", "exponential". Default: "linear"'),
     slots: z.record(SoundSlotSchema).default({
         '1': {
             name: 'Slot 1',
