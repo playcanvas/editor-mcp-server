@@ -1,3 +1,5 @@
+const DEFAULT_PORT = 52000;
+
 // UI
 const root = document.createElement('div');
 root.id = 'root';
@@ -29,7 +31,7 @@ const portInput = document.createElement('input');
 portInput.classList.add('input');
 portInput.type = 'text';
 portInput.placeholder = 'Enter port number';
-portInput.value = '52000';
+portInput.value = DEFAULT_PORT;
 body.appendChild(portInput);
 
 const autoGroup = document.createElement('div');
@@ -101,9 +103,31 @@ const useState = (defaultState) => {
 const [getState, setState] = useState('disconnected');
 
 // Dummy connection logic
-const connect = async () => {
+const connect = async (auto = false) => {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tab) {
+        throw new Error('No active tab found');
+    }
+    const res = await chrome.tabs.sendMessage(tab.id, {
+        type: 'connect',
+        auto,
+        port: parseInt(portInput.value, 10) ?? DEFAULT_PORT
+    });
+    if (res.error) {
+        throw new Error(res.error);
+    }
 };
 const disconnect = async () => {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tab) {
+        throw new Error('No active tab found');
+    }
+    const res = await chrome.tabs.sendMessage(tab.id, {
+        type: 'disconnect'
+    });
+    if (res.error) {
+        throw new Error(res.error);
+    }
 };
 
 // Event listeners
@@ -115,6 +139,8 @@ autoCheckbox.addEventListener('click', () => {
         setState('connecting');
         connect().then(() => {
             setState('connected');
+        }).catch(() => {
+            setState('disconnected');
         });
     }
 });
@@ -123,9 +149,13 @@ connectBtn.addEventListener('click', () => {
         setState('connecting');
         connect().then(() => {
             setState('connected');
+        }).catch(() => {
+            setState('disconnected');
         });
     } else {
         disconnect().then(() => {
+            setState('disconnected');
+        }).catch(() => {
             setState('disconnected');
         });
     }
