@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z, ZodTypeAny } from 'zod';
 
 import { Vec2Schema, Vec3Schema, Vec4Schema } from './common';
 
@@ -229,17 +229,16 @@ const ComponentsSchema = z.object({
     sound: SoundSchema
 }).describe('A dictionary that contains the components of the entity and their data.');
 
-const EntitySchema = z.object({
+const EntitySchema: z.ZodOptional<ZodTypeAny> = z.lazy(() => z.object({
     name: z.string().optional().describe('The name of the entity.'),
     enabled: z.boolean().default(true).describe('Whether the entity is enabled.'),
     tags: z.array(z.string()).default([]).describe('The tags of the entity.'),
-    parent: z.string().optional().describe('The ID of the parent entity.'),
-    children: z.array(z.string()).default([]).describe('An array that contains the `resource_id`s of the entity\'s children.'),
+    children: z.array(EntitySchema).optional().describe('An array that contains the child entities.'),
     position: Vec3Schema.default([0, 0, 0]).describe('The position of the entity in local space (x, y, z).'),
     rotation: Vec3Schema.default([0, 0, 0]).describe('The rotation of the entity in local space (rx, ry, rz euler angles in degrees)'),
     scale: Vec3Schema.default([1, 1, 1]).describe('The scale of the entity in local space (sx, sy, sz).'),
     components: ComponentsSchema.optional().describe('The components of the entity and their data.')
-}).optional();
+})).optional();
 
 export {
     AudioListenerSchema,
