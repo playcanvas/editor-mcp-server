@@ -53,7 +53,8 @@ body.appendChild(connectBtn);
 // state management
 const useState = (defaultState) => {
     let state = defaultState;
-    return (value) => {
+    const get = () => state;
+    const set = (value) => {
         state = value;
         switch (state) {
             case 'disconnected': {
@@ -95,23 +96,14 @@ const useState = (defaultState) => {
             }
         }
     };
+    return [get, set];
 };
-const setState = useState('disconnected');
+const [getState, setState] = useState('disconnected');
 
 // Dummy connection logic
-let timeout;
-const connect = () => {
-    return new Promise((resolve) => {
-        timeout = setTimeout(() => {
-            resolve();
-        }, 2000);
-    });
+const connect = async () => {
 };
-const disconnect = () => {
-    return new Promise((resolve) => {
-        clearTimeout(timeout);
-        resolve();
-    });
+const disconnect = async () => {
 };
 
 // Event listeners
@@ -119,7 +111,7 @@ autoCheckbox.addEventListener('click', () => {
     autoCheckbox.classList.toggle('checked');
     connectBtn.classList.toggle('disabled');
 
-    if (status === 'disconnected') {
+    if (getState() === 'disconnected') {
         setState('connecting');
         connect().then(() => {
             setState('connected');
@@ -127,7 +119,7 @@ autoCheckbox.addEventListener('click', () => {
     }
 });
 connectBtn.addEventListener('click', () => {
-    if (status === 'disconnected') {
+    if (getState() === 'disconnected') {
         setState('connecting');
         connect().then(() => {
             setState('connected');

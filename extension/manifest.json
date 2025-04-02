@@ -15,9 +15,14 @@
     "host_permissions": ["http://playcanvas.com/*", "https://playcanvas.com/*"],
     "content_scripts": [
         {
-            "matches": ["http://playcanvas.com/*", "https://playcanvas.com/*"],
-            "js": ["content.js"],
+            "matches": ["http://playcanvas.com/editor*", "https://playcanvas.com/editor*"],
+            "js": ["main.js"],
             "world": "MAIN"
+        },
+        {
+            "matches": ["http://playcanvas.com/editor*", "https://playcanvas.com/editor*"],
+            "js": ["isolated.js"],
+            "world": "ISOLATED"
         }
     ]
 }
