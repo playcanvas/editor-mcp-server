@@ -21,28 +21,32 @@ An MCP Server for automating the [PlayCanvas Editor](https://playcanvas.com/prod
 
 ## Available Tools
 
-* `create_entities`
-* `modify_entities`
-* `duplicate_entities`
-* `reparent_entity`
-* `delete_entities`
-* `list_entities`
-* `add_components`
-* `remove_components`
-* `list_assets`
-* `delete_assets`
-* `instantiate_template_assets`
-* `create_script`
-* `set_script_text`
-* `script_parse`
-* `create_material`
-* `set_material_diffuse`
-* `add_script_component_script`
-* `modify_scene_settings`
-* `query_scene_settings`
-* `store_search`
-* `store_get`
-* `store_download`
+* Entity
+  * `list_entities`
+  * `create_entities`
+  * `delete_entities`
+  * `modify_entities`
+  * `duplicate_entities`
+  * `reparent_entity`
+  * `add_components`
+  * `remove_components`
+  * `add_script_component_script`
+* Asset
+  * `list_assets`
+  * `delete_assets`
+  * `instantiate_template_assets`
+  * `create_script`
+  * `set_script_text`
+  * `script_parse`
+  * `create_material`
+  * `set_material_diffuse`
+* Scene
+  * `query_scene_settings`
+  * `modify_scene_settings`
+* Store
+  * `store_search`
+  * `store_get`
+  * `store_download`
 
 ## Installation
 
