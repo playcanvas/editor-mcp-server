@@ -24,10 +24,10 @@ An MCP Server for automating the [PlayCanvas Editor](https://playcanvas.com/prod
 * Entity
   * `list_entities`
   * `create_entities`
-  * `delete_entities`
-  * `modify_entities`
   * `duplicate_entities`
+  * `modify_entities`
   * `reparent_entity`
+  * `delete_entities`
   * `add_components`
   * `remove_components`
   * `add_script_component_script`
