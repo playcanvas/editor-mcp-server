@@ -1,5 +1,4 @@
-import { z } from 'zod';
-import type { ZodTypeAny } from 'zod';
+import { z, type ZodTypeAny } from 'zod';
 
 import { Vec2Schema, Vec3Schema, Vec4Schema } from './common';
 
