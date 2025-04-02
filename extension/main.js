@@ -494,4 +494,53 @@ wsc.method('store:sketchfab:clone', async (uid, name, license) => {
     }
 });
 
-wsc.connect('ws://localhost:52000');
+// wsc.connect('ws://localhost:52000');
+
+
+class MSGC {
+    _ctx;
+
+    _methods = new Map();
+
+    constructor(ctx) {
+        this._ctx = ctx;
+
+        window.addEventListener('message', async (event) => {
+            if (event.data?.ctx === this._ctx) {
+                return;
+            }
+            const { id, name, args } = event.data;
+            const res = await this.call(name, ...args);
+            window.postMessage({ id, res, ctx: this._ctx });
+        });
+    }
+
+    /**
+     * @param {string} name - The name of the method to add.
+     * @param {(...args: any[]) => { data?: any, error?: string }} fn - The function to call when the method is called.
+     */
+    method(name, fn) {
+        if (this._methods.get(name)) {
+            UTILS.error(`Method already exists: ${name}`);
+            return;
+        }
+        this._methods.set(name, fn);
+    }
+
+    /**
+     * @param {string} name - The name of the method to call.
+     * @param {...*} args - The arguments to pass to the method.
+     * @returns {{ data?: any, error?: string }} The response data.
+     */
+    call(name, ...args) {
+        return this._methods.get(name)?.(...args);
+    }
+}
+
+const msgc = new MSGC('main');
+msgc.method('connect', () => {
+    return { status: 'ok' };
+});
+msgc.method('disconnect', () => {
+    return { status: 'ok' };
+});

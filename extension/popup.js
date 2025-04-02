@@ -52,7 +52,12 @@ connectBtn.classList.add('button');
 connectBtn.textContent = 'CONNECT';
 body.appendChild(connectBtn);
 
-// state management
+/**
+ * Creates a state management hook.
+ *
+ * @param {string} defaultState - The default state.
+ * @returns {[function(): string, function(string): void]} The state getter and setter.
+ */
 const useState = (defaultState) => {
     let state = defaultState;
     const get = () => state;
@@ -102,60 +107,51 @@ const useState = (defaultState) => {
 };
 const [getState, setState] = useState('disconnected');
 
-// Dummy connection logic
-const connect = async (auto = false) => {
+/**
+ * Sends a message to the content script.
+ *
+ * @param {string} name - The name of the message to send.
+ * @param {...*} args - The arguments to pass to the message.
+ * @returns {Promise<any>} The response from the content script.
+ */
+const send = async (name, ...args) => {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (!tab) {
         throw new Error('No active tab found');
     }
-    const res = await chrome.tabs.sendMessage(tab.id, {
-        type: 'connect',
-        auto,
-        port: parseInt(portInput.value, 10) ?? DEFAULT_PORT
+    return new Promise((resolve, reject) => {
+        chrome.tabs.sendMessage(tab.id, { name, args }, (res) => {
+            if (chrome.runtime.lastError) {
+                reject(chrome.runtime.lastError.message);
+            } else {
+                resolve(res);
+            }
+        });
     });
-    if (res.error) {
-        throw new Error(res.error);
-    }
-};
-const disconnect = async () => {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    if (!tab) {
-        throw new Error('No active tab found');
-    }
-    const res = await chrome.tabs.sendMessage(tab.id, {
-        type: 'disconnect'
-    });
-    if (res.error) {
-        throw new Error(res.error);
-    }
 };
 
 // Event listeners
 autoCheckbox.addEventListener('click', () => {
     autoCheckbox.classList.toggle('checked');
     connectBtn.classList.toggle('disabled');
-
-    if (getState() === 'disconnected') {
-        setState('connecting');
-        connect().then(() => {
-            setState('connected');
-        }).catch(() => {
-            setState('disconnected');
-        });
-    }
 });
 connectBtn.addEventListener('click', () => {
     if (getState() === 'disconnected') {
         setState('connecting');
-        connect().then(() => {
+        send('connect', {
+            port: portInput.value,
+            auto: autoCheckbox.classList.contains('checked')
+        }).then(() => {
             setState('connected');
-        }).catch(() => {
+        }).catch((e) => {
+            console.error('SEND ERROR:', e);
             setState('disconnected');
         });
     } else {
-        disconnect().then(() => {
+        send('disconnect').then(() => {
             setState('disconnected');
-        }).catch(() => {
+        }).catch((e) => {
+            console.error('SEND ERROR:', e);
             setState('disconnected');
         });
     }
