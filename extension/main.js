@@ -98,6 +98,9 @@ class WSC extends observer.Events {
      */
     _status = WSC.STATUS_DISCONNECTED;
 
+    /**
+     * @type {WSC.STATUS_CONNECTING | WSC.STATUS_CONNECTED | WSC.STATUS_DISCONNECTED}
+     */
     get status() {
         return this._status;
     }
