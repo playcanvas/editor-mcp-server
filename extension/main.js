@@ -199,14 +199,11 @@ class WSC extends observer.Events {
 }
 
 class Messenger extends observer.Events {
-    _ctx;
-
-    constructor(ctx) {
+    constructor() {
         super();
-        this._ctx = ctx;
 
         window.addEventListener('message', (event) => {
-            if (event.data?.ctx === this._ctx) {
+            if (event.data?.ctx !== 'isolated') {
                 return;
             }
             const { name, args } = event.data;
@@ -215,7 +212,7 @@ class Messenger extends observer.Events {
     }
 
     send(name, ...args) {
-        window.postMessage({ name, args, ctx: this._ctx });
+        window.postMessage({ name, args, ctx: 'main' });
     }
 }
 

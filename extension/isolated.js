@@ -1,6 +1,5 @@
-const ctx = 'isolated';
 window.addEventListener('message', (event) => {
-    if (event.data?.ctx === ctx) {
+    if (event.data?.ctx !== 'main') {
         return;
     }
     const { name, args } = event.data;
@@ -8,5 +7,5 @@ window.addEventListener('message', (event) => {
 });
 chrome.runtime.onMessage.addListener((data) => {
     const { name, args } = data;
-    window.postMessage({ name, args, ctx });
+    window.postMessage({ name, args, ctx: 'isolated' });
 });
