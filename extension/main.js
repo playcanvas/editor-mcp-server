@@ -138,7 +138,8 @@ class WSC extends observer.Events {
     /**
      * @param {string} address - The address to connect to.
      * @param {number} retryTimeout - The timeout to retry the connection.
-     * @param {Function} resolve - The function to call when the connection is established.
+     * @param {Function} resolve - The function to call when the connection is established
+     * @private
      */
     _connect(address, retryTimeout, resolve) {
         this._ws = new WebSocket(address);
