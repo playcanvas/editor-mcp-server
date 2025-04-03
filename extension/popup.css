@@ -92,29 +92,6 @@ html, body {
     gap: 10px;
 }
 
-.checkbox {
-    background-color: #20292b;
-    cursor: pointer;
-    width: 14px;
-    height: 14px;
-}
-.checkbox:hover {
-    box-shadow: 0 0 2px 1px var(--color-hover);
-}
-.checkbox.checked {
-    color: #20292b;
-    background-color: #b1b8ba;
-}
-.checkbox.checked:before {
-    font-size: 14px;
-    font-weight: bold;
-    content: '\2713';
-    width: 100%;
-    height: 100%;
-    line-height: 14px;
-    margin-left: 1px;
-}
-
 .indicator {
     background-color: var(--color-red);
     border-radius: 50%;
@@ -133,4 +110,15 @@ html, body {
     font-size: 12px;
     line-height: 14px;
     user-select: none;
+}
+
+.error {
+    color: var(--color-red);
+    background-color: var(--color-secondary);
+    padding: 5px;
+    font-size: 12px;
+    user-select: none;
+}
+.error.hidden {
+    display: none;
 }

@@ -34,18 +34,10 @@ portInput.placeholder = 'Enter port number';
 portInput.value = DEFAULT_PORT;
 body.appendChild(portInput);
 
-const autoGroup = document.createElement('div');
-autoGroup.classList.add('group');
-body.appendChild(autoGroup);
-
-const autoCheckbox = document.createElement('div');
-autoCheckbox.classList.add('checkbox');
-autoGroup.appendChild(autoCheckbox);
-
-const autoLabel = document.createElement('label');
-autoLabel.classList.add('label');
-autoLabel.textContent = 'Auto connect';
-autoGroup.appendChild(autoLabel);
+const errorLabel = document.createElement('label');
+errorLabel.classList.add('label', 'error');
+errorLabel.textContent = 'No Errors';
+body.appendChild(errorLabel);
 
 const connectBtn = document.createElement('button');
 connectBtn.classList.add('button');
@@ -59,9 +51,9 @@ body.appendChild(connectBtn);
  * @returns {[function(): string, function(string): void]} The state getter and setter.
  */
 const useState = (defaultState) => {
-    let state = defaultState;
+    let state;
     const get = () => state;
-    const set = (value) => {
+    const set = (value, error) => {
         state = value;
         switch (state) {
             case 'disconnected': {
@@ -73,6 +65,7 @@ const useState = (defaultState) => {
                 portInput.classList.remove('disabled');
 
                 connectBtn.textContent = 'CONNECT';
+
                 break;
             }
             case 'connecting': {
@@ -102,57 +95,111 @@ const useState = (defaultState) => {
                 break;
             }
         }
+
+        if (error) {
+            errorLabel.textContent = error;
+            errorLabel.classList.remove('hidden');
+        } else {
+            errorLabel.classList.add('hidden');
+        }
     };
+    set(defaultState);
     return [get, set];
 };
 const [getState, setState] = useState('disconnected');
+
+/**
+ * Event handler
+ */
+class EventHandler {
+    _handlers = new Map();
+
+    /**
+     * @param {string} name - The name of the event to add.
+     * @param {(...args: any[]) => void} fn - The function to call when the event is triggered.
+     */
+    on(name, fn) {
+        if (!this._handlers.has(name)) {
+            this._handlers.set(name, []);
+        }
+        this._handlers.get(name).push(fn);
+    }
+
+    /**
+     * @param {string} name - The name of the event to remove.
+     * @param {(...args: any[]) => void} fn - The function to remove.
+     */
+    off(name, fn) {
+        if (!this._handlers.has(name)) {
+            return;
+        }
+        const methods = this._handlers.get(name);
+        const index = methods.indexOf(fn);
+        if (index !== -1) {
+            methods.splice(index, 1);
+        }
+        if (methods.length === 0) {
+            this._handlers.delete(name);
+        }
+    }
+
+    /**
+     * @param {string} name - The name of the event to trigger.
+     * @param {...*} args - The arguments to pass to the event.
+     */
+    fire(name, ...args) {
+        if (!this._handlers.has(name)) {
+            return;
+        }
+        const handlers = this._handlers.get(name);
+        for (let i = 0; i < handlers.length; i++) {
+            handlers[i](...args);
+        }
+    }
+}
+
+// Listen for messages from the content script
+const listener = new EventHandler();
+listener.on('status', (status) => {
+    setState(status);
+});
+chrome.runtime.onMessage.addListener((data) => {
+    const { name, args } = data;
+    listener.fire(name, ...args);
+});
 
 /**
  * Sends a message to the content script.
  *
  * @param {string} name - The name of the message to send.
  * @param {...*} args - The arguments to pass to the message.
- * @returns {Promise<any>} The response from the content script.
+ * @returns {Promise<void>} A promise that resolves when the message is sent.
  */
 const send = async (name, ...args) => {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (!tab) {
-        throw new Error('No active tab found');
+        console.warn('No active tab found');
+        return;
     }
-    return new Promise((resolve, reject) => {
-        chrome.tabs.sendMessage(tab.id, { name, args }, (res) => {
-            if (chrome.runtime.lastError) {
-                reject(chrome.runtime.lastError.message);
-            } else {
-                resolve(res);
-            }
-        });
-    });
+    chrome.tabs.sendMessage(tab.id, { name, args });
 };
 
 // Event listeners
-autoCheckbox.addEventListener('click', () => {
-    autoCheckbox.classList.toggle('checked');
-    connectBtn.classList.toggle('disabled');
-});
 connectBtn.addEventListener('click', () => {
     if (getState() === 'disconnected') {
         setState('connecting');
         send('connect', {
-            port: portInput.value,
-            auto: autoCheckbox.classList.contains('checked')
-        }).then(() => {
-            setState('connected');
+            port: portInput.value
         }).catch((e) => {
             console.error('SEND ERROR:', e);
-            setState('disconnected');
+            setState('disconnected', e.message);
         });
     } else {
-        send('disconnect').then(() => {
-            setState('disconnected');
-        }).catch((e) => {
+        send('disconnect').catch((e) => {
             console.error('SEND ERROR:', e);
-            setState('disconnected');
+            setState('disconnected', e.message);
         });
     }
 });
+
+send('sync');

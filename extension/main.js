@@ -65,19 +65,108 @@ class UTILS {
     }
 }
 
-class WSC {
+class EventHandler {
+    _handlers = new Map();
+
+    /**
+     * @param {string} name - The name of the event to add.
+     * @param {(...args: any[]) => void} fn - The function to call when the event is triggered.
+     */
+    on(name, fn) {
+        if (!this._handlers.has(name)) {
+            this._handlers.set(name, []);
+        }
+        this._handlers.get(name).push(fn);
+    }
+
+    /**
+     * @param {string} name - The name of the event to remove.
+     * @param {(...args: any[]) => void} fn - The function to remove.
+     */
+    off(name, fn) {
+        if (!this._handlers.has(name)) {
+            return;
+        }
+        const methods = this._handlers.get(name);
+        const index = methods.indexOf(fn);
+        if (index !== -1) {
+            methods.splice(index, 1);
+        }
+        if (methods.length === 0) {
+            this._handlers.delete(name);
+        }
+    }
+
+    /**
+     * @param {string} name - The name of the event to trigger.
+     * @param {...*} args - The arguments to pass to the event.
+     */
+    fire(name, ...args) {
+        if (!this._handlers.has(name)) {
+            return;
+        }
+        const handlers = this._handlers.get(name);
+        for (let i = 0; i < handlers.length; i++) {
+            handlers[i](...args);
+        }
+    }
+}
+
+class WSClient extends EventHandler {
+    static STATUS_CONNECTING = 'connecting';
+
+    static STATUS_CONNECTED = 'connected';
+
+    static STATUS_DISCONNECTED = 'disconnected';
+
     _ws;
 
     _methods = new Map();
 
+    _connectTimeout = null;
+
+    _status = WSClient.STATUS_DISCONNECTED;
+
+    get status() {
+        return this._status;
+    }
+
+    /**
+     * @param {string} address - The address to connect to.
+     * @param {Function} resolve - The function to call when the connection is established.
+     * @param {number} [retryTimeout] - The timeout to retry the connection.
+     */
+    connect(address, retryTimeout = 1000) {
+        this._status = WSClient.STATUS_CONNECTING;
+        this.fire('status', this._status);
+        UTILS.log(`Connecting to ${address}`);
+
+        if (this._connectTimeout) {
+            clearTimeout(this._connectTimeout);
+        }
+
+        this._connect(address, retryTimeout, () => {
+            this._ws.onclose = () => {
+                this._status = WSClient.STATUS_DISCONNECTED;
+                this.fire('status', this._status);
+                UTILS.log('Disconnected');
+            };
+
+            this._status = WSClient.STATUS_CONNECTED;
+            this.fire('status', this._status);
+            UTILS.log('Connected');
+        });
+    }
+
     /**
      * @param {string} address - The address to connect to.
      * @param {number} retryTimeout - The timeout to retry the connection.
+     * @param {Function} resolve - The function to call when the connection is established.
      */
-    connect(address, retryTimeout = 3000) {
+    _connect(address, retryTimeout, resolve) {
         this._ws = new WebSocket(address);
         this._ws.onopen = () => {
-            UTILS.log(`Connected to: ${address}`);
+            resolve();
         };
         this._ws.onmessage = async (event) => {
             try {
@@ -89,9 +178,28 @@ class WSC {
             }
         };
         this._ws.onclose = () => {
-            UTILS.log(`Disconnected from: ${address}`);
-            setTimeout(() => this.connect(address), retryTimeout);
+            this._connectTimeout = setTimeout(() => {
+                this._connectTimeout = null;
+                this._connect(address, retryTimeout, resolve);
+            }, retryTimeout);
         };
+    }
+
+    disconnect() {
+        if (this._connectResolver) {
+            this._connectResolver();
+            this._connectResolver = null;
+        }
+        if (this._connectTimeout) {
+            clearTimeout(this._connectTimeout);
+        }
+        if (this._ws) {
+            this._ws.close();
+            this._ws = null;
+        }
+        this._status = WSClient.STATUS_DISCONNECTED;
+        this.fire('status', this._status);
+        UTILS.log('Disconnected');
     }
 
     /**
@@ -116,7 +224,7 @@ class WSC {
     }
 }
 
-const wsc = new WSC();
+const wsc = new WSClient();
 
 // general
 wsc.method('ping', () => 'pong');
@@ -494,53 +602,38 @@ wsc.method('store:sketchfab:clone', async (uid, name, license) => {
     }
 });
 
-// wsc.connect('ws://localhost:52000');
-
-
-class MSGC {
+class MsgClient extends EventHandler {
     _ctx;
 
-    _methods = new Map();
-
     constructor(ctx) {
+        super();
         this._ctx = ctx;
 
-        window.addEventListener('message', async (event) => {
+        window.addEventListener('message', (event) => {
             if (event.data?.ctx === this._ctx) {
                 return;
             }
-            const { id, name, args } = event.data;
-            const res = await this.call(name, ...args);
-            window.postMessage({ id, res, ctx: this._ctx });
+            const { name, args } = event.data;
+            this.fire(name, ...args);
         });
     }
 
-    /**
-     * @param {string} name - The name of the method to add.
-     * @param {(...args: any[]) => { data?: any, error?: string }} fn - The function to call when the method is called.
-     */
-    method(name, fn) {
-        if (this._methods.get(name)) {
-            UTILS.error(`Method already exists: ${name}`);
-            return;
-        }
-        this._methods.set(name, fn);
-    }
-
-    /**
-     * @param {string} name - The name of the method to call.
-     * @param {...*} args - The arguments to pass to the method.
-     * @returns {{ data?: any, error?: string }} The response data.
-     */
-    call(name, ...args) {
-        return this._methods.get(name)?.(...args);
+    send(name, ...args) {
+        window.postMessage({ name, args, ctx: this._ctx });
     }
 }
 
-const msgc = new MSGC('main');
-msgc.method('connect', () => {
-    return { status: 'ok' };
+const msgc = new MsgClient('main');
+msgc.on('sync', () => {
+    msgc.send('status', wsc.status);
 });
-msgc.method('disconnect', () => {
-    return { status: 'ok' };
+msgc.on('connect', () => {
+    wsc.connect('ws://localhost:52000');
+});
+msgc.on('disconnect', () => {
+    wsc.disconnect();
+});
+
+wsc.on('status', (status) => {
+    msgc.send('status', status);
 });
