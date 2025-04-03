@@ -1,7 +1,12 @@
 {
     "manifest_version": 3,
-    "name": "PlayCanvas Editor Interface",
-    "description": "This extension allows you to interact with the PlayCanvas Editor",
+    "name": "PlayCanvas Editor MCP Extension",
+    "description": "This extension allows the MCP Server to communicate with the PlayCanvas Editor.",
+    "icons": {
+        "16": "images/icon16.png",
+        "48": "images/icon48.png",
+        "128": "images/icon128.png"
+    },
     "version": "1.0",
     "permissions": ["activeTab"],
     "action": {
@@ -10,9 +15,14 @@
     "host_permissions": ["http://playcanvas.com/*", "https://playcanvas.com/*"],
     "content_scripts": [
         {
-            "matches": ["http://playcanvas.com/*", "https://playcanvas.com/*"],
-            "js": ["content.js"],
+            "matches": ["http://playcanvas.com/editor*", "https://playcanvas.com/editor*"],
+            "js": ["main.js"],
             "world": "MAIN"
+        },
+        {
+            "matches": ["http://playcanvas.com/editor*", "https://playcanvas.com/editor*"],
+            "js": ["isolated.js"],
+            "world": "ISOLATED"
         }
     ]
 }

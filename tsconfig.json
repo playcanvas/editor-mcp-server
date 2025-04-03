@@ -2,6 +2,7 @@
   "compilerOptions": {
     // Enable latest features
     "lib": ["ESNext", "DOM"],
+    "types": ["node", "chrome"],
     "target": "ESNext",
     "module": "ESNext",
     "moduleDetection": "force",

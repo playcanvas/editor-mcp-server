@@ -16,7 +16,8 @@ export default [
             globals: {
                 ...globals.browser,
                 ...globals.mocha,
-                ...globals.node
+                ...globals.node,
+                ...globals.webextensions
             }
         },
         settings: {
