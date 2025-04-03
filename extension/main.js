@@ -1,5 +1,5 @@
 if (!window.editor) {
-    throw new Error('PlayCanvas Editor API not found');
+    throw new Error('PlayCanvas Editor not found');
 }
 
 /**
