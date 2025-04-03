@@ -111,14 +111,3 @@ html, body {
     line-height: 14px;
     user-select: none;
 }
-
-.error {
-    color: var(--color-red);
-    background-color: var(--color-secondary);
-    padding: 5px;
-    font-size: 12px;
-    user-select: none;
-}
-.error.hidden {
-    display: none;
-}

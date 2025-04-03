@@ -34,11 +34,6 @@ portInput.placeholder = 'Enter port number';
 portInput.value = DEFAULT_PORT;
 body.appendChild(portInput);
 
-const errorLabel = document.createElement('label');
-errorLabel.classList.add('label', 'error');
-errorLabel.textContent = 'No Errors';
-body.appendChild(errorLabel);
-
 const connectBtn = document.createElement('button');
 connectBtn.classList.add('button');
 connectBtn.textContent = 'CONNECT';
@@ -53,7 +48,7 @@ body.appendChild(connectBtn);
 const useState = (defaultState) => {
     let state;
     const get = () => state;
-    const set = (value, error) => {
+    const set = (value) => {
         state = value;
         switch (state) {
             case 'disconnected': {
@@ -94,13 +89,6 @@ const useState = (defaultState) => {
                 console.warn('Unknown status:', status);
                 break;
             }
-        }
-
-        if (error) {
-            errorLabel.textContent = error;
-            errorLabel.classList.remove('hidden');
-        } else {
-            errorLabel.classList.add('hidden');
         }
     };
     set(defaultState);
@@ -192,12 +180,10 @@ connectBtn.addEventListener('click', () => {
             port: portInput.value
         }).catch((e) => {
             console.error('SEND ERROR:', e);
-            setState('disconnected', e.message);
         });
     } else {
         send('disconnect').catch((e) => {
             console.error('SEND ERROR:', e);
-            setState('disconnected', e.message);
         });
     }
 });
