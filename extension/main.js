@@ -164,10 +164,6 @@ class WSC extends observer.Events {
     }
 
     disconnect() {
-        if (this._connectResolver) {
-            this._connectResolver();
-            this._connectResolver = null;
-        }
         if (this._connectTimeout) {
             clearTimeout(this._connectTimeout);
         }
