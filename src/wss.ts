@@ -13,8 +13,6 @@ class WSS {
 
     private _pingInterval: ReturnType<typeof setInterval> | null = null;
 
-    private _closing: boolean = false;
-
     constructor(port: number) {
         this._server = new WebSocketServer({ port });
         console.error('[WSS] Listening on port', port);
@@ -38,10 +36,10 @@ class WSS {
                     console.error('[WSS]', e);
                 }
             });
-            ws.on('close', () => {
+            ws.on('close', (_code, reason) => {
                 console.error('[WSS] Disconnected');
                 this._socket = undefined;
-                if (!this._closing) {
+                if (reason.toString() !== 'FORCE') {
                     this._waitForSocket();
                 }
             });
@@ -97,15 +95,13 @@ class WSS {
     }
 
     close() {
-        this._closing = true;
         if (this._pingInterval) {
             clearInterval(this._pingInterval);
         }
         if (this._socket) {
-            this._socket.close();
+            this._socket.close(1000, 'FORCE');
         }
         this._server.close();
-        this._closing = false;
         console.error('[WSS] Closed');
     }
 }
