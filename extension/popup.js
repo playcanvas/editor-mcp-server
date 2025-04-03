@@ -85,10 +85,6 @@ const useState = (defaultState) => {
                 connectBtn.textContent = 'DISCONNECT';
                 break;
             }
-            default: {
-                console.warn('Unknown status:', status);
-                break;
-            }
         }
     };
     set(defaultState);
@@ -161,18 +157,20 @@ chrome.runtime.onMessage.addListener((data) => {
  *
  * @param {string} name - The name of the message to send.
  * @param {...*} args - The arguments to pass to the message.
- * @returns {Promise<void>} A promise that resolves when the message is sent.
+ * @returns {Promise<boolean>} - A promise that resolves to true if the message was sent successfully, false otherwise.
  */
 const send = async (name, ...args) => {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (!tab) {
-        console.warn('No active tab found');
-        return;
+        return false;
+    }
+    if (!/playcanvas\.com\/editor/.test(tab.url)) {
+        return false;
     }
     chrome.tabs.sendMessage(tab.id, { name, args });
+    return true;
 };
 
-// Event listeners
 connectBtn.addEventListener('click', () => {
     if (getState() === 'disconnected') {
         setState('connecting');
@@ -188,4 +186,14 @@ connectBtn.addEventListener('click', () => {
     }
 });
 
-send('sync');
+send('sync').then((success) => {
+    if (!success) {
+        portInput.disabled = true;
+        portInput.classList.add('disabled');
+
+        connectBtn.disabled = true;
+        connectBtn.classList.add('disabled');
+    }
+}).catch((e) => {
+    console.error('SEND ERROR:', e);
+});
