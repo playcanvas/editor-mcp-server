@@ -2,14 +2,14 @@ import { type McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 
 import { type WSS } from '../wss';
-import { ComponentsSchema, EntitySchema } from './schema/entity';
+import { ComponentsSchema, ComponentNameSchema, EntityIdSchema, EntitySchema } from './schema/entity';
 
 export const register = (mcp: McpServer, wss: WSS) => {
     mcp.tool(
         'create_entities',
         'Create one or more entities',
         {
-            entities: z.array(EntitySchema)
+            entities: z.array(EntitySchema).min(1).describe('Array of entity heirarchies to create.')
         },
         ({ entities }) => {
             return wss.call('entities:create', entities);
@@ -21,7 +21,7 @@ export const register = (mcp: McpServer, wss: WSS) => {
         'Modify one or more entity\'s properties',
         {
             edits: z.array(z.object({
-                id: z.string().describe('The ID of the entity to modify.'),
+                id: EntityIdSchema,
                 path: z.string().describe('The path to the property to modify. Use dot notation to access nested properties.'),
                 value: z.any().describe('The value to set the property to.')
             })).describe('An array of objects containing the ID of the entity to modify, the path to the property to modify, and the value to set the property to.')
@@ -35,7 +35,7 @@ export const register = (mcp: McpServer, wss: WSS) => {
         'duplicate_entities',
         'Duplicate one or more entities',
         {
-            ids: z.array(z.string()),
+            ids: z.array(EntityIdSchema).min(1).describe('Array of entity IDs to duplicate. The root entity cannot be duplicated.'),
             rename: z.boolean().optional()
         },
         ({ ids, rename }) => {
@@ -47,8 +47,8 @@ export const register = (mcp: McpServer, wss: WSS) => {
         'reparent_entity',
         'Reparent an entity',
         {
-            id: z.string(),
-            parent: z.string(),
+            id: EntityIdSchema,
+            parent: EntityIdSchema,
             index: z.number().optional(),
             preserveTransform: z.boolean().optional()
         },
@@ -61,7 +61,7 @@ export const register = (mcp: McpServer, wss: WSS) => {
         'delete_entities',
         'Delete one or more entities. The root entity cannot be deleted.',
         {
-            ids: z.array(z.string()).describe('Array of entity IDs to delete. The root entity cannot be deleted.')
+            ids: z.array(EntityIdSchema).min(1).describe('Array of entity IDs to delete. The root entity cannot be deleted.')
         },
         ({ ids }) => {
             return wss.call('entities:delete', ids);
@@ -81,7 +81,7 @@ export const register = (mcp: McpServer, wss: WSS) => {
         'add_components',
         'Add components to an entity',
         {
-            id: z.string(),
+            id: EntityIdSchema,
             components: ComponentsSchema
         },
         ({ id, components }) => {
@@ -93,8 +93,8 @@ export const register = (mcp: McpServer, wss: WSS) => {
         'remove_components',
         'Remove components from an entity',
         {
-            id: z.string(),
-            components: z.array(z.string())
+            id: EntityIdSchema,
+            components: z.array(ComponentNameSchema).min(1).describe('Array of component names to remove from the entity.')
         },
         ({ id, components }) => {
             return wss.call('entities:components:remove', id, components);
@@ -105,7 +105,7 @@ export const register = (mcp: McpServer, wss: WSS) => {
         'add_script_component_script',
         'Add a script to a script component',
         {
-            id: z.string(),
+            id: EntityIdSchema,
             scriptName: z.string()
         },
         ({ id, scriptName }) => {
