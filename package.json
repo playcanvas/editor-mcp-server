@@ -13,11 +13,11 @@
     "@types/chrome": "^0.0.313",
     "@types/ws": "^8.18.1",
     "@typescript-eslint/parser": "^8.29.0",
-    "eslint": "^9.23.0",
+    "eslint": "^9.24.0",
     "eslint-import-resolver-typescript": "^4.3.1",
     "globals": "^16.0.0",
     "tsx": "^4.19.3",
-    "typescript": "^5.8.2"
+    "typescript": "^5.8.3"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.8.0",
