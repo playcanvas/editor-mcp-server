@@ -247,6 +247,29 @@ const ComponentsSchema = z.object({
     sound: SoundSchema.optional()
 }).describe('A dictionary that contains the components of the entity and their data.');
 
+const ComponentNameSchema = z.enum([
+    'anim',
+    'animation',
+    'audiolistener',
+    'button',
+    'camera',
+    'collision',
+    'element',
+    'layoutchild',
+    'layoutgroup',
+    'light',
+    'model',
+    'particlesystem',
+    'render',
+    'rigidbody',
+    'screen',
+    'script',
+    'scrollbar',
+    'scrollview',
+    'sound',
+    'sprite'
+]);
+
 const EntitySchema: z.ZodOptional<ZodTypeAny> = z.lazy(() => z.object({
     name: z.string().optional().describe('The name of the entity. Default: "Untitled"'),
     enabled: z.boolean().optional().describe('Whether the entity is enabled. Default: true'),
@@ -258,12 +281,16 @@ const EntitySchema: z.ZodOptional<ZodTypeAny> = z.lazy(() => z.object({
     components: ComponentsSchema.optional().describe('The components of the entity and their data. Default: {}')
 })).optional();
 
+const EntityIdSchema = z.string().uuid().describe('The ID of the entity.');
+
 export {
     AudioListenerSchema,
     CameraSchema,
     CollisionSchema,
     ComponentsSchema,
+    ComponentNameSchema,
     ElementSchema,
+    EntityIdSchema,
     EntitySchema,
     LightSchema,
     RenderSchema,
