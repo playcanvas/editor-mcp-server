@@ -1,6 +1,6 @@
 import { z, type ZodTypeAny } from 'zod';
 
-import { Vec2Schema, Vec3Schema, Vec4Schema } from './common';
+import { RgbSchema, RgbaSchema, Vec2Schema, Vec3Schema, Vec4Schema } from './common';
 
 const AudioListenerSchema = z.object({
     enabled: z.boolean().optional().describe('Whether the component is enabled. Default: true')
@@ -9,7 +9,7 @@ const AudioListenerSchema = z.object({
 const CameraSchema = z.object({
     enabled: z.boolean().optional().describe('Whether the component is enabled. Default: true'),
     clearColorBuffer: z.boolean().optional().describe('If true, the camera will explicitly clear its render target to the chosen clear color before rendering the scene. Default: true'),
-    clearColor: Vec4Schema.optional().describe('The color used to clear the camera\'s render target. Default: [0.118, 0.118, 0.118, 1]'),
+    clearColor: RgbaSchema.optional().describe('The color used to clear the camera\'s render target. Default: [0.118, 0.118, 0.118, 1]'),
     clearDepthBuffer: z.boolean().optional().describe('If true, the camera will explicitly clear the depth buffer of its render target before rendering the scene. Default: true'),
     renderSceneDepthMap: z.boolean().optional().describe('If true, the camera will render the scene depth map. Default: false'),
     renderSceneColorMap: z.boolean().optional().describe('If true, the camera will render the scene color map. Default: false'),
@@ -61,7 +61,7 @@ const ElementSchema = z.object({
     lineHeight: z.number().optional().describe('The height of each line of text. Default: 32'),
     wrapLines: z.boolean().optional().describe('Automatically wrap lines based on the element width. Default: true'),
     spacing: z.number().optional().describe('The spacing between each letter of the text. Default: 1'),
-    color: Vec3Schema.optional().describe('The RGB color of the element. Default: [1, 1, 1]'),
+    color: RgbSchema.optional().describe('The RGB color of the element. Default: [1, 1, 1]'),
     opacity: z.number().min(0).max(1).optional().describe('The opacity of the element. Default: 1'),
     textureAsset: z.number().nullable().optional().describe('The `id` of the texture asset to be used by the element. Default: null'),
     spriteAsset: z.number().nullable().optional().describe('The `id` of the sprite asset to be used by the element. Default: null'),
@@ -71,9 +71,9 @@ const ElementSchema = z.object({
     height: z.number().optional().describe('The height of the element. Default: 32'),
     margin: Vec4Schema.optional().describe('Spacing between each edge of the element and the respective anchor. Default: [-16, -16, -16, -16]'),
     alignment: Vec2Schema.optional().describe('Horizontal and vertical alignment of the text relative to its element transform. Default: [0.5, 0.5]'),
-    outlineColor: Vec4Schema.optional().describe('Text outline effect color and opacity. Default: [0, 0, 0, 1]'),
+    outlineColor: RgbaSchema.optional().describe('Text outline effect color and opacity. Default: [0, 0, 0, 1]'),
     outlineThickness: z.number().optional().describe('Text outline effect width (0–1). Default: 0'),
-    shadowColor: Vec4Schema.optional().describe('Text shadow color and opacity. Default: [0, 0, 0, 1]'),
+    shadowColor: RgbaSchema.optional().describe('Text shadow color and opacity. Default: [0, 0, 0, 1]'),
     shadowOffset: Vec2Schema.optional().describe('Horizontal and vertical offset of the text shadow. Default: [0.0, 0.0]'),
     rect: Vec4Schema.optional().describe('Texture rect for the image element (u, v, width, height). Default: [0, 0, 1, 1]'),
     materialAsset: z.number().nullable().optional().describe('The `id` of the material asset used by this element. Default: null'),
@@ -97,7 +97,7 @@ const LightSchema = z.object({
     affectDynamic: z.boolean().optional().describe('If true the light will affect non-lightmapped objects. Default: true'),
     affectLightmapped: z.boolean().optional().describe('If true the light will affect lightmapped objects. Default: false'),
     affectSpecularity: z.boolean().optional().describe('If true the light will affect material specularity. For directional light only. Default: true.'),
-    color: Vec3Schema.optional().describe('An array of 3 numbers that represents the color of the emitted light. Default: [1, 1, 1]'),
+    color: RgbSchema.optional().describe('An array of 3 numbers that represents the color of the emitted light. Default: [1, 1, 1]'),
     intensity: z.number().min(0).max(32).optional().describe('The intensity of the light, this acts as a scalar value for the light\'s color. This value can exceed 1. Default: 1'),
     castShadows: z.boolean().optional().describe('If true, the light will cause shadow casting models to cast shadows. Default: false'),
     shadowUpdateMode: z.union([
