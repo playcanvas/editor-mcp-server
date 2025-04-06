@@ -1,8 +1,6 @@
 import { z } from 'zod';
 
-import { RgbSchema, Vec2Schema, Vec3Schema } from './common';
-
-const AssetIdSchema = z.number().int().nullable().describe('An asset ID.');
+import { AssetIdSchema, EntityIdSchema, RgbSchema, Vec2Schema, Vec3Schema } from './common';
 
 const MaterialSchema = z.object({
     name: z.string().optional(),
@@ -222,4 +220,71 @@ const MaterialSchema = z.object({
     twoSidedLighting: z.boolean().optional()
 });
 
-export { AssetIdSchema, MaterialSchema };
+export const CssCreateSchema = z.object({
+    type: z.literal('css'),
+    options: z.object({
+        folder: AssetIdSchema.optional(),
+        name: z.string().optional(),
+        text: z.string().optional(),
+        preload: z.boolean().optional()
+    }).optional()
+});
+
+export const HtmlCreateSchema = z.object({
+    type: z.literal('html'),
+    options: z.object({
+        folder: AssetIdSchema.optional(),
+        name: z.string().optional(),
+        text: z.string().optional(),
+        preload: z.boolean().optional()
+    }).optional()
+});
+
+export const FolderCreateSchema = z.object({
+    type: z.literal('folder'),
+    options: z.object({
+        folder: AssetIdSchema.optional(),
+        name: z.string().optional(),
+        preload: z.boolean().optional()
+    }).optional()
+});
+
+export const MaterialCreateSchema = z.object({
+    type: z.literal('material'),
+    options: z.object({
+        data: MaterialSchema.optional(),
+        folder: AssetIdSchema.optional(),
+        preload: z.boolean().optional()
+    }).optional()
+});
+
+export const ScriptCreateSchema = z.object({
+    type: z.literal('script'),
+    options: z.object({
+        filename: z.string().optional(),
+        folder: AssetIdSchema.optional(),
+        preload: z.boolean().optional(),
+        text: z.string().optional()
+    }).optional()
+});
+
+export const TemplateCreateSchema = z.object({
+    type: z.literal('template'),
+    options: z.object({
+        entity: EntityIdSchema,
+        folder: AssetIdSchema.optional(),
+        name: z.string().optional(),
+        preload: z.boolean().optional(),
+        text: z.string().optional()
+    })
+});
+
+export const TextCreateSchema = z.object({
+    type: z.literal('text'),
+    options: z.object({
+        folder: AssetIdSchema.optional(),
+        name: z.string().optional(),
+        preload: z.boolean().optional(),
+        text: z.string().optional()
+    }).optional()
+});

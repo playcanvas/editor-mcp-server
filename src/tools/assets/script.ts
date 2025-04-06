@@ -5,18 +5,6 @@ import { type WSS } from '../../wss';
 
 export const register = (mcp: McpServer, wss: WSS) => {
     mcp.tool(
-        'create_script',
-        'Create a new script',
-        {
-            name: z.string(),
-            text: z.string().optional()
-        },
-        ({ name, text }) => {
-            return wss.call('assets:create', 'script', { filename: `${name}.js`, text });
-        }
-    );
-
-    mcp.tool(
         'set_script_text',
         'Set script text',
         {

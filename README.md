@@ -24,21 +24,20 @@ An MCP Server for automating the [PlayCanvas Editor](https://playcanvas.com/prod
 * Entity
   * `list_entities`
   * `create_entities`
+  * `delete_entities`
   * `duplicate_entities`
   * `modify_entities`
   * `reparent_entity`
-  * `delete_entities`
   * `add_components`
   * `remove_components`
   * `add_script_component_script`
 * Asset
   * `list_assets`
+  * `create_assets`
   * `delete_assets`
   * `instantiate_template_assets`
-  * `create_script`
   * `set_script_text`
   * `script_parse`
-  * `create_material`
   * `set_material_diffuse`
 * Scene
   * `query_scene_settings`

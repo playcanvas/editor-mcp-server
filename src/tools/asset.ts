@@ -2,9 +2,30 @@ import { type McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 
 import { type WSS } from '../wss';
-import { AssetIdSchema } from './schema/asset';
+import { AssetIdSchema } from './schema/common';
+import { CssCreateSchema, FolderCreateSchema, HtmlCreateSchema, MaterialCreateSchema, ScriptCreateSchema, TemplateCreateSchema, TextCreateSchema } from './schema/asset';
 
 export const register = (mcp: McpServer, wss: WSS) => {
+    mcp.tool(
+        'create_assets',
+        'Create one or more assets',
+        {
+            assets: z.array(
+                z.union([
+                    CssCreateSchema,
+                    FolderCreateSchema,
+                    HtmlCreateSchema,
+                    MaterialCreateSchema,
+                    ScriptCreateSchema,
+                    TemplateCreateSchema,
+                    TextCreateSchema
+                ])
+            ).min(1).describe('Array of assets to create.')
+        },
+        ({ assets }) => {
+            return wss.call('assets:create', assets);
+        }
+    );
     mcp.tool(
         'list_assets',
         'List all assets with the option to filter by type',

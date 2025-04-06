@@ -2,7 +2,8 @@ import { type McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 
 import { type WSS } from '../wss';
-import { ComponentsSchema, ComponentNameSchema, EntityIdSchema, EntitySchema } from './schema/entity';
+import { EntityIdSchema } from './schema/common';
+import { ComponentsSchema, ComponentNameSchema, EntitySchema } from './schema/entity';
 
 export const register = (mcp: McpServer, wss: WSS) => {
     mcp.tool(

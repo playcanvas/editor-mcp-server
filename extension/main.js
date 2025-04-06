@@ -348,32 +348,48 @@ wsc.method('entities:components:script:add', (id, scriptName) => {
 });
 
 // assets
-wsc.method('assets:create', async (type, options = {}) => {
-    if (options?.data?.name) {
-        options.name = options.data.name;
-    }
-    if (options?.folder) {
-        options.folder = api.assets.get(options.folder);
-    }
-    let asset;
-    switch (type) {
-        case 'material':
-            asset = await api.assets.createMaterial(options);
-            break;
-        case 'texture':
-            asset = await api.assets.createTexture(options);
-            break;
-        case 'script':
-            asset = await api.assets.createScript(options);
-            break;
-        default:
-            return { error: 'Invalid asset type' };
-    }
-    if (!asset) {
-        return { error: 'Failed to create asset' };
-    }
-    log(`Created asset(${asset.get('id')})`);
-    return { data: asset.json() };
+wsc.method('assets:create', async (assets) => {
+    const data = [];
+    assets.forEach(async ({ type, options }) => {
+        if (options?.folder) {
+            options.folder = api.assets.get(options.folder);
+        }
+
+        let asset;
+
+        switch (type) {
+            case 'css':
+                asset = await api.assets.createCss(options);
+                break;
+            case 'folder':
+                asset = await api.assets.createFolder(options);
+                break;
+            case 'html':
+                asset = await api.assets.createHtml(options);
+                break;
+            case 'material':
+                asset = await api.assets.createMaterial(options);
+                break;
+            case 'script':
+                asset = await api.assets.createScript(options);
+                break;
+            case 'template':
+                asset = await api.assets.createTemplate(options);
+                break;
+            case 'text':
+                asset = await api.assets.createText(options);
+                break;
+            default:
+                return { error: 'Invalid asset type' };
+        }
+
+        if (!asset) {
+            return { error: 'Failed to create asset' };
+        }
+        log(`Created asset(${asset.get('id')})`);
+        data.push(asset.json());
+    });
+    return { data };
 });
 wsc.method('assets:delete', (ids) => {
     const assets = ids.map(id => api.assets.get(id));

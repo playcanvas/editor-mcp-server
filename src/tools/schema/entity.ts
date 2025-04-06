@@ -1,7 +1,6 @@
 import { z, type ZodTypeAny } from 'zod';
 
-import { AssetIdSchema } from './asset';
-import { RgbSchema, RgbaSchema, Vec2Schema, Vec3Schema, Vec4Schema } from './common';
+import { AssetIdSchema, RgbSchema, RgbaSchema, Vec2Schema, Vec3Schema, Vec4Schema } from './common';
 
 const AudioListenerSchema = z.object({
     enabled: z.boolean().optional().describe('Whether the component is enabled. Default: true')
@@ -266,7 +265,7 @@ const SoundSchema = z.object({
     }).describe('A dictionary of sound slots. Each sound slot controls playback of an audio asset. Each key in the dictionary is a number representing the index of each sound slot.')
 }).describe('The data for the sound component.');
 
-const ComponentsSchema = z.object({
+export const ComponentsSchema = z.object({
     audiolistener: AudioListenerSchema.optional(),
     camera: CameraSchema.optional(),
     collision: CollisionSchema.optional(),
@@ -279,7 +278,7 @@ const ComponentsSchema = z.object({
     sound: SoundSchema.optional()
 }).describe('A dictionary that contains the components of the entity and their data.');
 
-const ComponentNameSchema = z.enum([
+export const ComponentNameSchema = z.enum([
     'anim',
     'animation',
     'audiolistener',
@@ -302,7 +301,7 @@ const ComponentNameSchema = z.enum([
     'sprite'
 ]);
 
-const EntitySchema: z.ZodOptional<ZodTypeAny> = z.lazy(() => z.object({
+export const EntitySchema: z.ZodOptional<ZodTypeAny> = z.lazy(() => z.object({
     name: z.string().optional().describe('The name of the entity. Default: "Untitled"'),
     enabled: z.boolean().optional().describe('Whether the entity is enabled. Default: true'),
     tags: z.array(z.string()).optional().describe('The tags of the entity. Default: []'),
@@ -312,22 +311,3 @@ const EntitySchema: z.ZodOptional<ZodTypeAny> = z.lazy(() => z.object({
     scale: Vec3Schema.optional().describe('The scale of the entity in local space (sx, sy, sz). Default: [1, 1, 1]'),
     components: ComponentsSchema.optional().describe('The components of the entity and their data. Default: {}')
 })).optional();
-
-const EntityIdSchema = z.string().uuid().describe('The ID of the entity.');
-
-export {
-    AudioListenerSchema,
-    CameraSchema,
-    CollisionSchema,
-    ComponentsSchema,
-    ComponentNameSchema,
-    ElementSchema,
-    EntityIdSchema,
-    EntitySchema,
-    LightSchema,
-    RenderSchema,
-    RigidBodySchema,
-    ScreenSchema,
-    ScriptSchema,
-    SoundSchema
-};
