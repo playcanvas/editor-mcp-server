@@ -1,5 +1,6 @@
 import { z, type ZodTypeAny } from 'zod';
 
+import { AssetIdSchema } from './asset';
 import { RgbSchema, RgbaSchema, Vec2Schema, Vec3Schema, Vec4Schema } from './common';
 
 const AudioListenerSchema = z.object({
@@ -13,7 +14,10 @@ const CameraSchema = z.object({
     clearDepthBuffer: z.boolean().optional().describe('If true, the camera will explicitly clear the depth buffer of its render target before rendering the scene. Default: true'),
     renderSceneDepthMap: z.boolean().optional().describe('If true, the camera will render the scene depth map. Default: false'),
     renderSceneColorMap: z.boolean().optional().describe('If true, the camera will render the scene color map. Default: false'),
-    projection: z.number().int().min(0).max(1).optional().describe('The projection type of the camera. Can be `pc.PROJECTION_PERSPECTIVE` or `pc.PROJECTION_ORTHOGRAPHIC`. Default: 0 (pc.PROJECTION_PERSPECTIVE)'),
+    projection: z.union([
+        z.literal(0).describe('PROJECTION_PERSPECTIVE'),
+        z.literal(1).describe('PROJECTION_ORTHOGRAPHIC')
+    ]).optional().describe('The projection type of the camera. Default: 0 (PROJECTION_PERSPECTIVE)'),
     fov: z.number().optional().describe('The angle (in degrees) between top and bottom clip planes of a perspective camera. Default: 45'),
     frustumCulling: z.boolean().optional().describe('Controls the culling of mesh instances against the camera frustum. If true, culling is enabled. If false, all mesh instances in the scene are rendered by the camera, regardless of visibility. Default: true'),
     orthoHeight: z.number().optional().describe('The distance in world units between the top and bottom clip planes of an orthographic camera. Default: 4'),
@@ -22,8 +26,19 @@ const CameraSchema = z.object({
     priority: z.number().optional().describe('A number that defines the order in which camera views are rendered by the engine. Smaller numbers are rendered first. Default: 0'),
     rect: Vec4Schema.optional().describe('An array of 4 numbers that represents the rectangle that specifies the viewport onto the camera\'s attached render target. This allows you to implement features like split-screen or picture-in-picture. It is defined by normalized coordinates (0 to 1) in the following format: [The lower left x coordinate, The lower left y coordinate, The width of the rectangle, The height of the rectangle]. Default: [0, 0, 1, 1]'),
     layers: z.array(z.number().int().min(0)).optional().describe('An array of layer id\'s that this camera will render. Default: [0, 1, 2, 3, 4]'),
-    toneMapping: z.number().int().min(0).max(6).optional().describe('The tonemapping transform to apply to the final color of the camera. Can be: 0 (TONEMAP_LINEAR), 1 (TONEMAP_FILMIC), 2 (TONEMAP_HEJL), 3 (TONEMAP_ACES), 4 (TONEMAP_ACES2), 5 (TONEMAP_NEUTRAL) or 6 (TONEMAP_NONE). Default: 0 (pc.TONEMAP_LINEAR)'),
-    gammaCorrection: z.number().int().min(0).max(1).optional().describe('The gamma correction to apply to the final color of the camera. Can be: `pc.GAMMA_NONE`, `pc.GAMMA_SRGB`. Default: 1 (pc.GAMMA_SRGB)')
+    toneMapping: z.union([
+        z.literal(0).describe('TONEMAP_LINEAR'),
+        z.literal(1).describe('TONEMAP_FILMIC'),
+        z.literal(2).describe('TONEMAP_HEJL'),
+        z.literal(3).describe('TONEMAP_ACES'),
+        z.literal(4).describe('TONEMAP_ACES2'),
+        z.literal(5).describe('TONEMAP_NEUTRAL'),
+        z.literal(6).describe('TONEMAP_NONE')
+    ]).optional().describe('The tonemapping transform to apply to the final color of the camera. Default: 0 (TONEMAP_LINEAR)'),
+    gammaCorrection: z.union([
+        z.literal(0).describe('GAMMA_NONE'),
+        z.literal(1).describe('GAMMA_SRGB')
+    ]).optional().describe('The gamma correction to apply to the final color of the camera. Default: 1 (GAMMA_SRGB)')
 }).describe('The data for the camera component.');
 
 const CollisionSchema = z.object({
@@ -38,8 +53,8 @@ const CollisionSchema = z.object({
     ]).optional().describe('Aligns the capsule/cylinder with the local-space X, Y or Z axis of the entity. Default: 1'),
     height: z.number().min(0).optional().describe('The tip-to-tip height of the capsule/cylinder. Default: 2'),
     convexHull: z.boolean().optional().describe('If true, the collision shape will be a convex hull. Default: false'),
-    asset: z.number().int().nullable().optional().describe('The `id` of the model asset that will be used as a source for the triangle-based collision mesh. Default: null'),
-    renderAsset: z.number().int().nullable().optional().describe('The `id` of the render asset that will be used as a source for the triangle-based collision mesh. Default: null'),
+    asset: AssetIdSchema.optional().describe('The `id` of the model asset that will be used as a source for the triangle-based collision mesh. Default: null'),
+    renderAsset: AssetIdSchema.optional().describe('The `id` of the render asset that will be used as a source for the triangle-based collision mesh. Default: null'),
     linearOffset: Vec3Schema.optional().describe('The positional offset of the collision shape from the Entity position along the local axes. Default: [0, 0, 0]'),
     angularOffset: Vec3Schema.optional().describe('The rotational offset of the collision shape from the Entity rotation in local space. Default: [0, 0, 0]')
 }).describe('The data for the collision component.');
@@ -51,7 +66,7 @@ const ElementSchema = z.object({
     pivot: Vec2Schema.optional().describe('An array of 2 numbers controlling the origin of the element. Default: [0.5, 0.5]'),
     text: z.string().optional().describe('The text content of the element. Default: ""'),
     key: z.string().nullable().optional().describe('The localization key of the element. Default: null'),
-    fontAsset: z.number().nullable().optional().describe('The `id` of the font asset used by the element. Default: null'),
+    fontAsset: AssetIdSchema.optional().describe('The `id` of the font asset used by the element. Default: null'),
     fontSize: z.number().optional().describe('The size of the font used by the element. Default: 32'),
     minFontSize: z.number().optional().describe('The minimum size of the font when using `autoFitWidth` or `autoFitHeight`. Default: 8'),
     maxFontSize: z.number().optional().describe('The maximum size of the font when using `autoFitWidth` or `autoFitHeight`. Default: 32'),
@@ -63,8 +78,8 @@ const ElementSchema = z.object({
     spacing: z.number().optional().describe('The spacing between each letter of the text. Default: 1'),
     color: RgbSchema.optional().describe('The RGB color of the element. Default: [1, 1, 1]'),
     opacity: z.number().min(0).max(1).optional().describe('The opacity of the element. Default: 1'),
-    textureAsset: z.number().nullable().optional().describe('The `id` of the texture asset to be used by the element. Default: null'),
-    spriteAsset: z.number().nullable().optional().describe('The `id` of the sprite asset to be used by the element. Default: null'),
+    textureAsset: AssetIdSchema.optional().describe('The `id` of the texture asset to be used by the element. Default: null'),
+    spriteAsset: AssetIdSchema.optional().describe('The `id` of the sprite asset to be used by the element. Default: null'),
     spriteFrame: z.number().optional().describe('The frame from the sprite asset to render. Default: 0'),
     pixelsPerUnit: z.number().nullable().optional().describe('Number of pixels per PlayCanvas unit (used for 9-sliced sprites). Default: null'),
     width: z.number().optional().describe('The width of the element. Default: 32'),
@@ -76,7 +91,7 @@ const ElementSchema = z.object({
     shadowColor: RgbaSchema.optional().describe('Text shadow color and opacity. Default: [0, 0, 0, 1]'),
     shadowOffset: Vec2Schema.optional().describe('Horizontal and vertical offset of the text shadow. Default: [0.0, 0.0]'),
     rect: Vec4Schema.optional().describe('Texture rect for the image element (u, v, width, height). Default: [0, 0, 1, 1]'),
-    materialAsset: z.number().nullable().optional().describe('The `id` of the material asset used by this element. Default: null'),
+    materialAsset: AssetIdSchema.optional().describe('The `id` of the material asset used by this element. Default: null'),
     autoWidth: z.boolean().optional().describe('Automatically size width to match text content. Default: false'),
     autoHeight: z.boolean().optional().describe('Automatically size height to match text content. Default: false'),
     fitMode: z.enum(['stretch', 'contain', 'cover']).optional().describe('Set how the content should be fitted and preserve the aspect ratio. Default: "stretch"'),
@@ -151,9 +166,8 @@ const LightSchema = z.object({
         z.literal(2).describe('LIGHTSHAPE_DISK'),
         z.literal(3).describe('LIGHTSHAPE_SPHERE')
     ]).optional().describe('The shape of the light source. Default: 0 (LIGHTSHAPE_PUNCTUAL)'),
-    cookieAsset: z.number().int().nullable().optional().describe('The id of a texture asset that represents that light cookie. Default: null'),
-    cookie: z.number().int().nullable().optional().describe('The id of a projection texture asset. Must be 2D for spot and cubemap for omni (ignored if incorrect type is used). Default: null'),
-    cookieIntensity: z.number().optional().describe('Projection texture intensity. Default: 1.0'),
+    cookieAsset: AssetIdSchema.optional().describe('The id of a texture asset that represents that light cookie. Default: null'),
+    cookieIntensity: z.number().min(0).max(1).optional().describe('Projection texture intensity. Default: 1.0'),
     cookieFalloff: z.boolean().optional().describe('Toggle normal spotlight falloff when projection texture is used. Default: true'),
     cookieChannel: z.enum(['r', 'g', 'b', 'a', 'rgb']).optional().describe('Color channels of the projection texture to use. Can be "r", "g", "b", "a", "rgb" or any swizzled combination. Default: "rgb"'),
     cookieAngle: z.number().optional().describe('Angle for spotlight cookie rotation. Default: 0.0'),
@@ -218,9 +232,9 @@ const ScriptSchema = z.object({
 
 const SoundSlotSchema = z.object({
     name: z.string().optional().describe('The name of the sound slot. Default: "Slot 1"'),
-    volume: z.number().optional().describe('The volume modifier to play the audio with. Default: 1'),
-    pitch: z.number().optional().describe('The pitch to playback the audio at. A value of 1 means the audio is played back at the original pitch. Default: 1'),
-    asset: z.number().nullable().optional().describe('The `id` of the audio asset that can be played from this sound slot. Default: null'),
+    volume: z.number().min(0).max(1).optional().describe('The volume modifier to play the audio with. Default: 1'),
+    pitch: z.number().min(0).optional().describe('The pitch to playback the audio at. A value of 1 means the audio is played back at the original pitch. Default: 1'),
+    asset: AssetIdSchema.optional().describe('The `id` of the audio asset that can be played from this sound slot. Default: null'),
     startTime: z.number().optional().describe('The start time from which the sound will start playing. Default: 0'),
     duration: z.number().nullable().optional().describe('The duration of the sound that the slot will play starting from startTime. Default: null'),
     loop: z.boolean().optional().describe('If true, the slot will loop playback continuously. Otherwise, it will be played once to completion. Default: false'),
@@ -230,12 +244,12 @@ const SoundSlotSchema = z.object({
 
 const SoundSchema = z.object({
     enabled: z.boolean().optional().describe('Whether the component is enabled. Default: true'),
-    volume: z.number().optional().describe('The volume modifier to play the audio with. The volume of each slot is multiplied with this value. Default: 1'),
-    pitch: z.number().optional().describe('The pitch to playback the audio at. A value of 1 means the audio is played back at the original pitch. The pitch of each slot is multiplied with this value. Default: 1'),
+    volume: z.number().min(0).max(1).optional().describe('The volume modifier to play the audio with. The volume of each slot is multiplied with this value. Default: 1'),
+    pitch: z.number().min(0).optional().describe('The pitch to playback the audio at. A value of 1 means the audio is played back at the original pitch. The pitch of each slot is multiplied with this value. Default: 1'),
     positional: z.boolean().optional().describe('If true, the component will play back audio assets as if played from the location of the entity in 3D space. Default: true'),
-    refDistance: z.number().optional().describe('The reference distance for reducing volume as the sound source moves further from the listener. Default: 1'),
-    maxDistance: z.number().optional().describe('The maximum distance from the listener at which audio falloff stops. Note the volume of the audio is not 0 after this distance, but just doesn\'t fall off anymore. Default: 10000'),
-    rollOffFactor: z.number().optional().describe('The rate at which volume fall-off occurs. Default: 1'),
+    refDistance: z.number().min(0).optional().describe('The reference distance for reducing volume as the sound source moves further from the listener. Default: 1'),
+    maxDistance: z.number().min(0).optional().describe('The maximum distance from the listener at which audio falloff stops. Note the volume of the audio is not 0 after this distance, but just doesn\'t fall off anymore. Default: 10000'),
+    rollOffFactor: z.number().min(0).optional().describe('The rate at which volume fall-off occurs. Default: 1'),
     distanceModel: z.enum(['linear', 'inverse', 'exponential']).optional().describe('Determines which algorithm to use to reduce the volume of the audio as it moves away from the listener. Can be one of: "inverse", "linear", "exponential". Default: "linear"'),
     slots: z.record(SoundSlotSchema).default({
         '1': {
