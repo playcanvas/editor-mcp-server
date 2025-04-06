@@ -1,4 +1,5 @@
 import { z } from 'zod';
+
 import { RgbSchema, Vec2Schema, Vec3Schema } from './common';
 
 const MaterialSchema = z.object({
