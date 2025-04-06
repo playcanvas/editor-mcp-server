@@ -240,23 +240,11 @@ wsc.method('ping', () => 'pong');
 wsc.method('entities:create', (entityDataArray) => {
     const entities = [];
     entityDataArray.forEach((entityData) => {
-        // FIXME: Requires patch of editor
-        let collision;
-        if (entityData?.components?.collision) {
-            collision = entityData.components.collision;
-            delete entityData.components.collision;
-        }
-
         const entity = api.entities.create(entityData);
         if (!entity) {
             return { error: 'Failed to create entity' };
         }
         entities.push(entity);
-
-        // FIXME: Requires patch of editor
-        if (collision) {
-            entity.addComponent('collision', collision);
-        }
 
         log(`Created entity(${entity.get('resource_id')})`);
     });
