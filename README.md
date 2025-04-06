@@ -133,8 +133,12 @@ macOS
 
 The PlayCanvas Editor does not connect to the MCP Server automatically. To connect:
 
-1. Select the Extensions icon to the right of the address bar in Chrome.
+1. Activate a Chrome tab running the PlayCanvas Editor.
+1. Select the Extensions icon to the right of the address bar.
 2. Select PlayCanvas Editor MCP Extension to open the extension popup.
-3. Select `CONNECT`.
+3. Select `CONNECT` (the port number should match what is set in your MCP Config JSON File).
+
+> [!NOTE]
+> You can currently only connect one instance of the PlayCanvas Editor to the MCP Server at any one time.
 
 You should now be able to issue commands in Claude Desktop or Cursor.
