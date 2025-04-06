@@ -350,7 +350,7 @@ wsc.method('entities:components:script:add', (id, scriptName) => {
 // assets
 wsc.method('assets:create', async (assets) => {
     const data = [];
-    assets.forEach(async ({ type, options }) => {
+    await Promise.all(assets.map(async ({ type, options }) => {
         if (options?.folder) {
             options.folder = api.assets.get(options.folder);
         }
