@@ -12,7 +12,7 @@ export const register = (mcp: McpServer, wss: WSS) => {
             entities: z.array(z.object({
                 entity: EntitySchema,
                 parent: EntityIdSchema.optional().describe('The parent entity to create the entity under. If not provided, the root entity will be used.')
-            })).min(1).describe('Array of entity heirarchies to create.')
+            })).min(1).describe('Array of entity hierarchies to create.')
         },
         ({ entities }) => {
             return wss.call('entities:create', entities);
