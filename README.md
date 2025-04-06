@@ -57,7 +57,6 @@ Run `npm install` to install all dependencies.
 1. Visit `chrome://extensions/` and enable Developer mode
 2. Click `Load unpacked` and select the `extensions` folder
 3. Load the PlayCanvas Editor. The extension should be loaded.
-4. Click the Extensions icon to the right of the address bar. Select PlayCanvas Editor MCP. Click `Connect` in the popup.
 
 ### Run MCP Server
 
@@ -82,6 +81,9 @@ The MCP Server can be driven by Cursor or Claude Desktop.
 
 > [!TIP]  
 > Also in `Cursor Settings`, select `Features` and scroll to the `Chat` section. Activate `Enable auto-run mode` to allow the LLM to run MCP tools without requiring constant authorization. You do this at your own risk (but we prefer it)!
+
+> [!IMPORTANT]  
+> In Cursor, ensure you have `Agent` selected. `Ask` and `Edit` modes will not recognize the MCP Server.
 
 #### MCP Config JSON File
 
@@ -127,8 +129,12 @@ macOS
 }
 ```
 
-The MCP server and Chrome extension should now be running. You can enter a command!
+## Connecting the Editor to the MCP Server
 
-> [!IMPORTANT]  
-> In Cursor, ensure you have `Agent` selected. `Ask` and `Edit` modes will not recognize the MCP Server.
+The PlayCanvas Editor does not connect to the MCP Server automatically. To connect:
 
+1. Select the Extensions icon to the right of the address bar in Chrome.
+2. Select PlayCanvas Editor MCP Extension to open the extension popup.
+3. Select `CONNECT`.
+
+You should now be able to issue commands in Claude Desktop or Cursor.
