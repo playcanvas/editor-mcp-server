@@ -2,8 +2,8 @@ import { type McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 
 import { type WSS } from '../wss';
-import { AssetIdSchema } from './schema/common';
 import { CssCreateSchema, FolderCreateSchema, HtmlCreateSchema, MaterialCreateSchema, ScriptCreateSchema, TemplateCreateSchema, TextCreateSchema } from './schema/asset';
+import { AssetIdSchema } from './schema/common';
 
 export const register = (mcp: McpServer, wss: WSS) => {
     mcp.tool(
