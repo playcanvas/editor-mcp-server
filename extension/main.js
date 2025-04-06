@@ -349,47 +349,69 @@ wsc.method('entities:components:script:add', (id, scriptName) => {
 
 // assets
 wsc.method('assets:create', async (assets) => {
-    const data = [];
-    await Promise.all(assets.map(async ({ type, options }) => {
-        if (options?.folder) {
-            options.folder = api.assets.get(options.folder);
-        }
+    try {
+        // Map each asset definition to a promise that handles its creation
+        const assetCreationPromises = assets.map(async ({ type, options }) => {
+            if (options?.folder) {
+                options.folder = api.assets.get(options.folder);
+            }
 
-        let asset;
+            let createPromise;
 
-        switch (type) {
-            case 'css':
-                asset = await api.assets.createCss(options);
-                break;
-            case 'folder':
-                asset = await api.assets.createFolder(options);
-                break;
-            case 'html':
-                asset = await api.assets.createHtml(options);
-                break;
-            case 'material':
-                asset = await api.assets.createMaterial(options);
-                break;
-            case 'script':
-                asset = await api.assets.createScript(options);
-                break;
-            case 'template':
-                asset = await api.assets.createTemplate(options);
-                break;
-            case 'text':
-                asset = await api.assets.createText(options);
-                break;
-            default:
-                return { error: 'Invalid asset type' };
-        }
+            // Determine the correct API call based on the asset type
+            switch (type) {
+                case 'css':
+                    createPromise = api.assets.createCss(options);
+                    break;
+                case 'folder':
+                    createPromise = api.assets.createFolder(options);
+                    break;
+                case 'html':
+                    createPromise = api.assets.createHtml(options);
+                    break;
+                case 'material':
+                    createPromise = api.assets.createMaterial(options);
+                    break;
+                case 'script':
+                    createPromise = api.assets.createScript(options);
+                    break;
+                case 'template':
+                    // Ensure createTemplate handles the entity ID within options correctly
+                    createPromise = api.assets.createTemplate(options);
+                    break;
+                case 'text':
+                    createPromise = api.assets.createText(options);
+                    break;
+                default:
+                    // Throw an error for this specific promise if type is invalid
+                    throw new Error(`Invalid asset type: ${type}`);
+            }
 
-        if (!asset) {
-            return { error: 'Failed to create asset' };
-        }
-        log(`Created asset(${asset.get('id')})`);
-        data.push(asset.json());
-    });
-    return { data };
+            // Await the specific asset creation promise
+            const asset = await createPromise;
+
+            // Check for creation failure and throw an error
+            if (!asset) {
+                throw new Error(`Failed to create asset of type ${type}`);
+            }
+
+            // Log success and return the asset data for this promise
+            log(`Created asset(${asset.get('id')}) - Type: ${type}`);
+            return asset.json();
+        });
+
+        // Wait for all creation promises to resolve concurrently
+        const createdAssetsData = await Promise.all(assetCreationPromises);
+
+        // Return the collected data if all promises succeeded
+        return { data: createdAssetsData };
+
+    } catch (error) {
+        // Catch any error thrown during the mapping or from Promise.all
+        const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred during asset creation.';
+        log(`Error creating assets: ${errorMessage}`);
+        return { error: errorMessage };
+    }
 });
 wsc.method('assets:delete', (ids) => {
     const assets = ids.map(id => api.assets.get(id));
@@ -494,129 +516,4 @@ wsc.method('store:playcanvas:list', async (options = {}) => {
     params.push('regexp=true');
 
     if (options.order) {
-        params.push(`order=${options.order}`);
-    }
-
-    if (options.skip) {
-        params.push(`skip=${options.skip}`);
-    }
-
-    if (options.limit) {
-        params.push(`limit=${options.limit}`);
-    }
-
-    try {
-        const data = await rest('GET', `store?${params.join('&')}`);
-        if (data.error) {
-            return { error: data.error };
-        }
-        log(`Searched store: ${JSON.stringify(options)}`);
-        return { data };
-    } catch (e) {
-        return { error: e.message };
-    }
-});
-wsc.method('store:playcanvas:get', async (id) => {
-    try {
-        const data = await rest('GET', `store/${id}`);
-        if (data.error) {
-            return { error: data.error };
-        }
-        log(`Got store item(${id})`);
-        return { data };
-    } catch (e) {
-        return { error: e.message };
-    }
-});
-wsc.method('store:playcanvas:clone', async (id, name, license) => {
-    try {
-        const data = await rest('POST', `store/${id}/clone`, {
-            scope: {
-                type: 'project',
-                id: window.config.project.id
-            },
-            name,
-            store: 'playcanvas',
-            targetFolderId: null,
-            license
-        });
-        if (data.error) {
-            return { error: data.error };
-        }
-        log(`Cloned store item(${id})`);
-        return { data };
-    } catch (e) {
-        return { error: e.message };
-    }
-});
-
-// sketchfab
-wsc.method('store:sketchfab:list', async (options = {}) => {
-    const params = [
-        'restricted=0',
-        'type=models',
-        'downloadable=true'
-    ];
-
-    if (options.search) {
-        params.push(`q=${options.search}`);
-    }
-
-    if (options.order) {
-        params.push(`sort_by=${options.order}`);
-    }
-
-    if (options.skip) {
-        params.push(`cursor=${options.skip}`);
-    }
-
-    if (options.limit) {
-        params.push(`count=${Math.min(options.limit ?? 0, 24)}`);
-    }
-
-    try {
-        const res = await fetch(`https://api.sketchfab.com/v3/search?${params.join('&')}`);
-        const data = await res.json();
-        if (data.error) {
-            return { error: data.error };
-        }
-        log(`Searched Sketchfab: ${JSON.stringify(options)}`);
-        return { data };
-    } catch (e) {
-        return { error: e.message };
-    }
-});
-wsc.method('store:sketchfab:get', async (uid) => {
-    try {
-        const res = await fetch(`https://api.sketchfab.com/v3/models/${uid}`);
-        const data = await res.json();
-        if (data.error) {
-            return { error: data.error };
-        }
-        log(`Got Sketchfab model(${uid})`);
-        return { data };
-    } catch (e) {
-        return { error: e.message };
-    }
-});
-wsc.method('store:sketchfab:clone', async (uid, name, license) => {
-    try {
-        const data = await rest('POST', `store/${uid}/clone`, {
-            scope: {
-                type: 'project',
-                id: window.config.project.id
-            },
-            name,
-            store: 'sketchfab',
-            targetFolderId: null,
-            license
-        });
-        if (data.error) {
-            return { error: data.error };
-        }
-        log(`Cloned sketchfab item(${uid})`);
-        return { data };
-    } catch (e) {
-        return { error: e.message };
-    }
-});
+        params.push(`
