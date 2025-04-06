@@ -57,6 +57,7 @@ Run `npm install` to install all dependencies.
 1. Visit `chrome://extensions/` and enable Developer mode
 2. Click `Load unpacked` and select the `extensions` folder
 3. Load the PlayCanvas Editor. The extension should be loaded.
+4. Click the Extensions icon to the right of the address bar. Select PlayCanvas Editor MCP. Click `Connect` in the popup.
 
 ### Run MCP Server
 
