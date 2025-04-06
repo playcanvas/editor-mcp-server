@@ -240,7 +240,15 @@ wsc.method('ping', () => 'pong');
 wsc.method('entities:create', (entityDataArray) => {
     const entities = [];
     entityDataArray.forEach((entityData) => {
-        const entity = api.entities.create(entityData);
+        if (Object.hasOwn(entityData, 'parent')) {
+            const parent = api.entities.get(entityData.parent);
+            if (!parent) {
+                return { error: `Parent entity not found: ${entityData.parent}` };
+            }
+            entityData.entity.parent = parent;
+        }
+
+        const entity = api.entities.create(entityData.entity);
         if (!entity) {
             return { error: 'Failed to create entity' };
         }
