@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
-import { RgbSchema, Vec3Schema } from './common';
 import { AssetIdSchema } from './asset';
+import { RgbSchema, Vec3Schema } from './common';
 
 const PhysicsSchema = z.object({
     gravity: Vec3Schema.default([0, -9.8, 0]).describe('An array of 3 numbers that represents the gravity force.')
