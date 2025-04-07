@@ -253,6 +253,7 @@ export const MaterialCreateSchema = z.object({
     options: z.object({
         data: MaterialSchema.optional(),
         folder: AssetIdSchema.optional(),
+        name: z.string().optional(),
         preload: z.boolean().optional()
     }).optional()
 }).describe('Material asset creation options.');
