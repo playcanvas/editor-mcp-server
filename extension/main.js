@@ -348,32 +348,70 @@ wsc.method('entities:components:script:add', (id, scriptName) => {
 });
 
 // assets
-wsc.method('assets:create', async (type, options = {}) => {
-    if (options?.data?.name) {
-        options.name = options.data.name;
+wsc.method('assets:create', async (assets) => {
+    try {
+        // Map each asset definition to a promise that handles its creation
+        const assetCreationPromises = assets.map(async ({ type, options }) => {
+            if (options?.folder) {
+                options.folder = api.assets.get(options.folder);
+            }
+
+            let createPromise;
+
+            // Determine the correct API call based on the asset type
+            switch (type) {
+                case 'css':
+                    createPromise = api.assets.createCss(options);
+                    break;
+                case 'folder':
+                    createPromise = api.assets.createFolder(options);
+                    break;
+                case 'html':
+                    createPromise = api.assets.createHtml(options);
+                    break;
+                case 'material':
+                    createPromise = api.assets.createMaterial(options);
+                    break;
+                case 'script':
+                    createPromise = api.assets.createScript(options);
+                    break;
+                case 'template':
+                    // Ensure createTemplate handles the entity ID within options correctly
+                    createPromise = api.assets.createTemplate(options);
+                    break;
+                case 'text':
+                    createPromise = api.assets.createText(options);
+                    break;
+                default:
+                    // Throw an error for this specific promise if type is invalid
+                    throw new Error(`Invalid asset type: ${type}`);
+            }
+
+            // Await the specific asset creation promise
+            const asset = await createPromise;
+
+            // Check for creation failure and throw an error
+            if (!asset) {
+                throw new Error(`Failed to create asset of type ${type}`);
+            }
+
+            // Log success and return the asset data for this promise
+            log(`Created asset(${asset.get('id')}) - Type: ${type}`);
+            return asset.json();
+        });
+
+        // Wait for all creation promises to resolve concurrently
+        const createdAssetsData = await Promise.all(assetCreationPromises);
+
+        // Return the collected data if all promises succeeded
+        return { data: createdAssetsData };
+
+    } catch (error) {
+        // Catch any error thrown during the mapping or from Promise.all
+        const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred during asset creation.';
+        log(`Error creating assets: ${errorMessage}`);
+        return { error: errorMessage };
     }
-    if (options?.folder) {
-        options.folder = api.assets.get(options.folder);
-    }
-    let asset;
-    switch (type) {
-        case 'material':
-            asset = await api.assets.createMaterial(options);
-            break;
-        case 'texture':
-            asset = await api.assets.createTexture(options);
-            break;
-        case 'script':
-            asset = await api.assets.createScript(options);
-            break;
-        default:
-            return { error: 'Invalid asset type' };
-    }
-    if (!asset) {
-        return { error: 'Failed to create asset' };
-    }
-    log(`Created asset(${asset.get('id')})`);
-    return { data: asset.json() };
 });
 wsc.method('assets:delete', (ids) => {
     const assets = ids.map(id => api.assets.get(id));
