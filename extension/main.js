@@ -370,13 +370,21 @@ wsc.method('assets:create', async (assets) => {
                     createPromise = api.assets.createHtml(options);
                     break;
                 case 'material':
+                    if (options?.data?.name) {
+                        options.name = options.data.name;
+                    }
                     createPromise = api.assets.createMaterial(options);
                     break;
                 case 'script':
                     createPromise = api.assets.createScript(options);
                     break;
+                case 'shader':
+                    createPromise = api.assets.createShader(options);
+                    break;
                 case 'template':
-                    // Ensure createTemplate handles the entity ID within options correctly
+                    if (options?.entity) {
+                        options.entity = api.entities.get(options.entity);
+                    }
                     createPromise = api.assets.createTemplate(options);
                     break;
                 case 'text':
