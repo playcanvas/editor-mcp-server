@@ -21,7 +21,7 @@ export const register = (mcp: McpServer, wss: WSS) => {
                     TemplateCreateSchema,
                     TextCreateSchema
                 ])
-            ).min(1).describe('Array of assets to create.')
+            ).nonempty().describe('Array of assets to create.')
         },
         ({ assets }) => {
             return wss.call('assets:create', assets);
@@ -43,7 +43,7 @@ export const register = (mcp: McpServer, wss: WSS) => {
         'delete_assets',
         'Delete one or more assets',
         {
-            ids: z.array(AssetIdSchema).describe('The asset IDs of the assets to delete')
+            ids: z.array(AssetIdSchema).nonempty().describe('The asset IDs of the assets to delete')
         },
         ({ ids }) => {
             return wss.call('assets:delete', ids);
@@ -54,7 +54,7 @@ export const register = (mcp: McpServer, wss: WSS) => {
         'instantiate_template_assets',
         'Instantiate one or more template assets',
         {
-            ids: z.array(AssetIdSchema).describe('The asset IDs of the template assets to instantiate')
+            ids: z.array(AssetIdSchema).nonempty().describe('The asset IDs of the template assets to instantiate')
         },
         ({ ids }) => {
             return wss.call('assets:instantiate', ids);
