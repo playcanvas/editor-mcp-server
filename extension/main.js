@@ -352,6 +352,9 @@ wsc.method('assets:create', async (assets) => {
     try {
         // Map each asset definition to a promise that handles its creation
         const assetCreationPromises = assets.map(async ({ type, options }) => {
+            if (options?.data?.name) {
+                options.name = options.data.name;
+            }
             if (options?.folder) {
                 options.folder = api.assets.get(options.folder);
             }

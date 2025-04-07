@@ -225,29 +225,28 @@ export const CssCreateSchema = z.object({
     options: z.object({
         folder: AssetIdSchema.optional(),
         name: z.string().optional(),
-        text: z.string().optional(),
-        preload: z.boolean().optional()
+        preload: z.boolean().optional(),
+        text: z.string().optional()
     }).optional()
-});
+}).describe('CSS asset creation options.');
 
 export const HtmlCreateSchema = z.object({
     type: z.literal('html'),
     options: z.object({
         folder: AssetIdSchema.optional(),
         name: z.string().optional(),
-        text: z.string().optional(),
-        preload: z.boolean().optional()
+        preload: z.boolean().optional(),
+        text: z.string().optional()
     }).optional()
-});
+}).describe('HTML asset creation options.');
 
 export const FolderCreateSchema = z.object({
     type: z.literal('folder'),
     options: z.object({
         folder: AssetIdSchema.optional(),
-        name: z.string().optional(),
-        preload: z.boolean().optional()
+        name: z.string().optional()
     }).optional()
-});
+}).describe('Folder asset creation options.');
 
 export const MaterialCreateSchema = z.object({
     type: z.literal('material'),
@@ -256,7 +255,7 @@ export const MaterialCreateSchema = z.object({
         folder: AssetIdSchema.optional(),
         preload: z.boolean().optional()
     }).optional()
-});
+}).describe('Material asset creation options.');
 
 export const ScriptCreateSchema = z.object({
     type: z.literal('script'),
@@ -266,7 +265,17 @@ export const ScriptCreateSchema = z.object({
         preload: z.boolean().optional(),
         text: z.string().optional()
     }).optional()
-});
+}).describe('Script asset creation options.');
+
+export const ShaderCreateSchema = z.object({
+    type: z.literal('shader'),
+    options: z.object({
+        folder: AssetIdSchema.optional(),
+        name: z.string().optional(),
+        preload: z.boolean().optional(),
+        text: z.string().optional()
+    }).optional()
+}).describe('Shader asset creation options.');
 
 export const TemplateCreateSchema = z.object({
     type: z.literal('template'),
@@ -274,10 +283,9 @@ export const TemplateCreateSchema = z.object({
         entity: EntityIdSchema,
         folder: AssetIdSchema.optional(),
         name: z.string().optional(),
-        preload: z.boolean().optional(),
-        text: z.string().optional()
+        preload: z.boolean().optional()
     })
-});
+}).describe('Template asset creation options.');
 
 export const TextCreateSchema = z.object({
     type: z.literal('text'),
@@ -287,4 +295,4 @@ export const TextCreateSchema = z.object({
         preload: z.boolean().optional(),
         text: z.string().optional()
     }).optional()
-});
+}).describe('Text asset creation options.');

@@ -2,7 +2,7 @@ import { type McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 
 import { type WSS } from '../wss';
-import { CssCreateSchema, FolderCreateSchema, HtmlCreateSchema, MaterialCreateSchema, ScriptCreateSchema, TemplateCreateSchema, TextCreateSchema } from './schema/asset';
+import { CssCreateSchema, FolderCreateSchema, HtmlCreateSchema, MaterialCreateSchema, ScriptCreateSchema, ShaderCreateSchema, TemplateCreateSchema, TextCreateSchema } from './schema/asset';
 import { AssetIdSchema } from './schema/common';
 
 export const register = (mcp: McpServer, wss: WSS) => {
@@ -17,6 +17,7 @@ export const register = (mcp: McpServer, wss: WSS) => {
                     HtmlCreateSchema,
                     MaterialCreateSchema,
                     ScriptCreateSchema,
+                    ShaderCreateSchema,
                     TemplateCreateSchema,
                     TextCreateSchema
                 ])
