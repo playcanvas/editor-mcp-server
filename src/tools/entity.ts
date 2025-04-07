@@ -13,7 +13,7 @@ export const register = (mcp: McpServer, wss: WSS) => {
             entities: z.array(z.object({
                 entity: EntitySchema,
                 parent: EntityIdSchema.optional().describe('The parent entity to create the entity under. If not provided, the root entity will be used.')
-            })).min(1).describe('Array of entity hierarchies to create.')
+            })).nonempty().describe('Array of entity hierarchies to create.')
         },
         ({ entities }) => {
             return wss.call('entities:create', entities);
@@ -28,7 +28,7 @@ export const register = (mcp: McpServer, wss: WSS) => {
                 id: EntityIdSchema,
                 path: z.string().describe('The path to the property to modify. Use dot notation to access nested properties.'),
                 value: z.any().describe('The value to set the property to.')
-            })).describe('An array of objects containing the ID of the entity to modify, the path to the property to modify, and the value to set the property to.')
+            })).nonempty().describe('An array of objects containing the ID of the entity to modify, the path to the property to modify, and the value to set the property to.')
         },
         ({ edits }) => {
             return wss.call('entities:modify', edits);
@@ -39,7 +39,7 @@ export const register = (mcp: McpServer, wss: WSS) => {
         'duplicate_entities',
         'Duplicate one or more entities',
         {
-            ids: z.array(EntityIdSchema).min(1).describe('Array of entity IDs to duplicate. The root entity cannot be duplicated.'),
+            ids: z.array(EntityIdSchema).nonempty().describe('Array of entity IDs to duplicate. The root entity cannot be duplicated.'),
             rename: z.boolean().optional()
         },
         ({ ids, rename }) => {
@@ -65,7 +65,7 @@ export const register = (mcp: McpServer, wss: WSS) => {
         'delete_entities',
         'Delete one or more entities. The root entity cannot be deleted.',
         {
-            ids: z.array(EntityIdSchema).min(1).describe('Array of entity IDs to delete. The root entity cannot be deleted.')
+            ids: z.array(EntityIdSchema).nonempty().describe('Array of entity IDs to delete. The root entity cannot be deleted.')
         },
         ({ ids }) => {
             return wss.call('entities:delete', ids);
@@ -98,7 +98,7 @@ export const register = (mcp: McpServer, wss: WSS) => {
         'Remove components from an entity',
         {
             id: EntityIdSchema,
-            components: z.array(ComponentNameSchema).min(1).describe('Array of component names to remove from the entity.')
+            components: z.array(ComponentNameSchema).nonempty().describe('Array of component names to remove from the entity.')
         },
         ({ id, components }) => {
             return wss.call('entities:components:remove', id, components);
