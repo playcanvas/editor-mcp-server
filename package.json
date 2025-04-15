@@ -23,7 +23,7 @@
     "src"
   ],
   "bin": {
-    "mcp-server": "src/cli.ts"
+    "mcp-server": "cli.mjs"
   },
   "scripts": {
     "start": "tsx src/server.ts",
