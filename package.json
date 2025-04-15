@@ -20,9 +20,7 @@
     "url": "git+https://github.com/playcanvas/editor-mcp-server.git"
   },
   "files": [
-    "src",
-    "README.md",
-    "LICENSE.md"
+    "src"
   ],
   "bin": {
     "mcp-server": "src/cli.ts"
