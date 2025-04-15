@@ -11,7 +11,7 @@ import commandLineUsage from 'command-line-usage';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const pkg = JSON.parse(readFileSync('./package.json', 'utf-8'));
+const pkg = JSON.parse(readFileSync(resolve(__dirname, 'package.json'), 'utf-8'));
 
 const options = [
     {
@@ -54,10 +54,15 @@ const main = (argv) => {
     }
 
     process.env.PORT = args.port.toString();
-    execSync(`npx tsx ${resolve(__dirname, 'src', 'server.ts')}`, {
-        stdio: 'inherit',
-        env: process.env
-    });
+    try {
+        execSync(`npx tsx ${resolve(__dirname, 'src', 'server.ts')}`, {
+            stdio: 'inherit',
+            env: process.env
+        });
+    } catch (error) {
+        console.error('[CLI ERROR]', error.message);
+        process.exit(1);
+    }
 };
 
 main(process.argv.slice(2));
