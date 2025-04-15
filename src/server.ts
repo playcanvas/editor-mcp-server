@@ -85,7 +85,7 @@ registerStore(mcp, wss);
 // Start receiving messages on stdin and sending messages on stdout
 const transport = new StdioServerTransport();
 mcp.connect(transport).then(() => {
-    console.error('[MCP] Connected');
+    console.error('[MCP] Listening');
 }).catch((e) => {
     console.error('[MCP] Error', e);
     process.exit(1);
