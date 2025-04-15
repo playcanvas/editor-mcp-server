@@ -1,8 +1,32 @@
 {
   "name": "@playcanvas/editor-mcp-server",
   "version": "0.0.1",
-  "module": "src/server.ts",
+  "author": "PlayCanvas <support@playcanvas.com>",
+  "homepage": "https://github.com/playcanvas/editor-mcp-server#readme",
+  "description": "The PlayCanvas Editor MCP Server",
+  "keywords": [
+    "playcanvas",
+    "editor",
+    "mcp",
+    "cli"
+  ],
+  "license": "MIT",
   "type": "module",
+  "bugs": {
+    "url": "https://github.com/playcanvas/editor-mcp-server/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/playcanvas/editor-mcp-server.git"
+  },
+  "files": [
+    "src",
+    "README.md",
+    "LICENSE.md"
+  ],
+  "bin": {
+    "mcp-server": "src/cli.ts"
+  },
   "scripts": {
     "start": "tsx src/server.ts",
     "watch": "tsx watch src/server.ts",
@@ -12,16 +36,18 @@
   "devDependencies": {
     "@playcanvas/eslint-config": "^2.0.9",
     "@types/chrome": "^0.0.315",
+    "@types/command-line-args": "^5.2.3",
     "@types/ws": "^8.18.1",
     "@typescript-eslint/parser": "^8.29.1",
+    "command-line-args": "^6.0.1",
     "eslint": "^9.24.0",
     "eslint-import-resolver-typescript": "^4.3.2",
     "globals": "^16.0.0",
-    "tsx": "^4.19.3",
     "typescript": "^5.8.3"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.9.0",
+    "tsx": "^4.19.3",
     "ws": "^8.18.1",
     "zod": "^3.24.2"
   }
