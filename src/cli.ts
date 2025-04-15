@@ -22,7 +22,7 @@ const options = [
         name: 'port',
         alias: 'p',
         type: Number,
-        defaultValue: false
+        defaultValue: 52000
     }
 ];
 
