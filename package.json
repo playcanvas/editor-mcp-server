@@ -1,6 +1,6 @@
 {
   "name": "@playcanvas/editor-mcp-server",
-  "version": "0.0.1",
+  "version": "0.0.0",
   "author": "PlayCanvas <support@playcanvas.com>",
   "homepage": "https://github.com/playcanvas/editor-mcp-server#readme",
   "description": "The PlayCanvas Editor MCP Server",
