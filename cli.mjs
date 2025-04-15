@@ -1,9 +1,17 @@
-#!/usr/bin/env tsx
+#!/usr/bin/env node
+
+import { execSync } from 'child_process';
+import { readFileSync } from 'fs';
+import { dirname, resolve } from 'path';
+import { fileURLToPath } from 'url';
 
 import commandLineArgs from 'command-line-args';
 import commandLineUsage from 'command-line-usage';
 
-import pkg from '../package.json';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+const pkg = JSON.parse(readFileSync('./package.json', 'utf-8'));
 
 const options = [
     {
@@ -34,7 +42,7 @@ const help = commandLineUsage([{
     optionList: options
 }]);
 
-const main = async (argv: string[]) => {
+const main = (argv) => {
     const args = commandLineArgs(options, { argv });
     if (args.help) {
         console.log(help);
@@ -46,7 +54,10 @@ const main = async (argv: string[]) => {
     }
 
     process.env.PORT = args.port.toString();
-    await import('./server');
+    execSync(`npx tsx ${resolve(__dirname, 'src', 'server.ts')}`, {
+        stdio: 'inherit',
+        env: process.env
+    });
 };
 
 main(process.argv.slice(2));
