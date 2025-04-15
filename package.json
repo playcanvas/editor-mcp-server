@@ -1,5 +1,6 @@
 {
   "name": "mcp-editor",
+  "version": "0.0.1",
   "module": "src/server.ts",
   "type": "module",
   "scripts": {
