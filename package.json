@@ -29,7 +29,8 @@
     "start": "tsx src/server.ts",
     "watch": "tsx watch src/server.ts",
     "debug": "npx @modelcontextprotocol/inspector tsx src/server.ts",
-    "lint": "eslint src"
+    "lint": "eslint src",
+    "publint": "publint"
   },
   "devDependencies": {
     "@playcanvas/eslint-config": "^2.1.0",
@@ -41,6 +42,7 @@
     "eslint": "^9.36.0",
     "eslint-import-resolver-typescript": "^4.4.4",
     "globals": "^16.4.0",
+    "publint": "^0.3.16",
     "typescript": "^5.9.2"
   },
   "dependencies": {
