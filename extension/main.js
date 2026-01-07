@@ -260,14 +260,14 @@
         return { data: entities.map((entity) => entity.json()) };
     });
     wsc.method('entities:modify', (edits) => {
-        edits.forEach(({ id, path, value }) => {
+        for (const { id, path, value } of edits) {
             const entity = api.entities.get(id);
             if (!entity) {
-                return { error: 'Entity not found' };
+                return { error: `Entity not found: ${id}` };
             }
             entity.set(path, value);
             log(`Set property(${path}) of entity(${id}) to: ${JSON.stringify(value)}`);
-        });
+        }
         return { data: true };
     });
     wsc.method('entities:duplicate', async (ids, options = {}) => {
