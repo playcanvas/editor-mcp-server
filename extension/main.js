@@ -297,9 +297,9 @@
             const dstCtx = dstCanvas.getContext('2d');
             dstCtx.drawImage(srcCanvas, 0, 0, dstWidth, dstHeight);
 
-            // Convert to base64 WebP for smaller file size
+            // Convert to base64 WebP for smaller file size (falls back to PNG if unsupported)
             const dataUrl = dstCanvas.toDataURL('image/webp', 0.8);
-            const base64 = dataUrl.replace('data:image/webp;base64,', '');
+            const base64 = dataUrl.split(',')[1];
 
             log(`Captured viewport screenshot (${dstWidth}x${dstHeight})`);
             return { data: base64 };
