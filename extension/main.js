@@ -629,6 +629,11 @@
         log('Modified scene settings');
         return { data: true };
     });
+    wsc.method('scene:settings:query', () => {
+        const scene = api.settings.scene;
+        log('Queried scene settings');
+        return { data: scene.json() };
+    });
 
     // store
 
