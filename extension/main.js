@@ -240,7 +240,7 @@
     // entities
     wsc.method('entities:create', (entityDataArray) => {
         const entities = [];
-        entityDataArray.forEach((entityData) => {
+        for (const entityData of entityDataArray) {
             if (Object.hasOwn(entityData, 'parent')) {
                 const parent = api.entities.get(entityData.parent);
                 if (!parent) {
@@ -256,7 +256,7 @@
             entities.push(entity);
 
             log(`Created entity(${entity.get('resource_id')})`);
-        });
+        }
         return { data: entities.map((entity) => entity.json()) };
     });
     wsc.method('entities:modify', (edits) => {
