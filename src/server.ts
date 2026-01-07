@@ -10,6 +10,7 @@ import { register as registerAssetScript } from './tools/assets/script';
 import { register as registerEntity } from './tools/entity';
 import { register as registerScene } from './tools/scene';
 import { register as registerStore } from './tools/store';
+import { register as registerViewport } from './tools/viewport';
 import { WSS } from './wss';
 
 const PORT = parseInt(process.env.PORT || '52000', 10);
@@ -81,6 +82,7 @@ registerAssetMaterial(mcp, wss);
 registerAssetScript(mcp, wss);
 registerScene(mcp, wss);
 registerStore(mcp, wss);
+registerViewport(mcp, wss);
 
 // Start receiving messages on stdin and sending messages on stdout
 const transport = new StdioServerTransport();
