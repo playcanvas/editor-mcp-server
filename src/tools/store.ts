@@ -8,16 +8,18 @@ const orderEnum = {
     'desc': -1
 };
 
-export const register = (mcp: McpServer, wss: WSS) => {
-    mcp.tool(
+export const register = (server: McpServer, wss: WSS) => {
+    server.registerTool(
         'store_search',
-        'Search for an asset in the store',
         {
-            // store: z.enum(['playcanvas', 'sketchfab']).optional(),
-            search: z.string(),
-            order: z.enum(['asc', 'desc']).optional(),
-            skip: z.number().optional(),
-            limit: z.number().optional()
+            description: 'Search for an asset in the store',
+            inputSchema: {
+                // store: z.enum(['playcanvas', 'sketchfab']).optional(),
+                search: z.string(),
+                order: z.enum(['asc', 'desc']).optional(),
+                skip: z.number().optional(),
+                limit: z.number().optional()
+            }
         },
         ({ search, order, skip, limit }) => {
             return wss.call('store:playcanvas:list', {
@@ -29,30 +31,34 @@ export const register = (mcp: McpServer, wss: WSS) => {
         }
     );
 
-    mcp.tool(
+    server.registerTool(
         'store_get',
-        'Get an asset from the store',
         {
-            // store: z.enum(['playcanvas', 'sketchfab']).optional(),
-            id: z.string()
+            description: 'Get an asset from the store',
+            inputSchema: {
+                // store: z.enum(['playcanvas', 'sketchfab']).optional(),
+                id: z.string()
+            }
         },
         ({ id }) => {
             return wss.call('store:playcanvas:get', id);
         }
     );
 
-    mcp.tool(
+    server.registerTool(
         'store_download',
-        'Download an asset from the store',
         {
-            // store: z.enum(['playcanvas', 'sketchfab']).optional(),
-            id: z.string(),
-            name: z.string(),
-            license: z.object({
-                author: z.string(),
-                authorUrl: z.string().url(),
-                license: z.string()
-            })
+            description: 'Download an asset from the store',
+            inputSchema: {
+                // store: z.enum(['playcanvas', 'sketchfab']).optional(),
+                id: z.string(),
+                name: z.string(),
+                license: z.object({
+                    author: z.string(),
+                    authorUrl: z.string().url(),
+                    license: z.string()
+                })
+            }
         },
         ({ id, name, license }) => {
             return wss.call('store:playcanvas:clone', id, name, license);
