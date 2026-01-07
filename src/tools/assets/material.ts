@@ -7,7 +7,7 @@ export const register = (server: McpServer, wss: WSS) => {
     server.registerTool(
         'set_material_diffuse',
         {
-            description: 'Set diffuse property on a material',
+            description: 'Set material diffuse color',
             inputSchema: {
                 assetId: AssetIdSchema,
                 color: RgbSchema

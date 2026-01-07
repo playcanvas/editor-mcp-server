@@ -9,7 +9,7 @@ export const register = (server: McpServer, wss: WSS) => {
     server.registerTool(
         'create_assets',
         {
-            description: 'Create one or more assets',
+            description: 'Create assets',
             inputSchema: {
                 assets: z.array(
                     z.union([
@@ -22,7 +22,7 @@ export const register = (server: McpServer, wss: WSS) => {
                         TemplateCreateSchema,
                         TextCreateSchema
                     ])
-                ).nonempty().describe('Array of assets to create.')
+                ).nonempty()
             }
         },
         ({ assets }) => {
@@ -33,9 +33,9 @@ export const register = (server: McpServer, wss: WSS) => {
     server.registerTool(
         'list_assets',
         {
-            description: 'List all assets with the option to filter by type',
+            description: 'List assets',
             inputSchema: {
-                type: z.enum(['css', 'cubemap', 'folder', 'font', 'html', 'json', 'material', 'render', 'script', 'shader', 'template', 'text', 'texture']).optional().describe('The type of assets to list. If not specified, all assets will be listed.')
+                type: z.enum(['css', 'cubemap', 'folder', 'font', 'html', 'json', 'material', 'render', 'script', 'shader', 'template', 'text', 'texture']).optional().describe('Filter by type')
             }
         },
         ({ type }) => {
@@ -46,9 +46,9 @@ export const register = (server: McpServer, wss: WSS) => {
     server.registerTool(
         'delete_assets',
         {
-            description: 'Delete one or more assets',
+            description: 'Delete assets',
             inputSchema: {
-                ids: z.array(AssetIdSchema).nonempty().describe('The asset IDs of the assets to delete')
+                ids: z.array(AssetIdSchema).nonempty()
             }
         },
         ({ ids }) => {
@@ -59,9 +59,9 @@ export const register = (server: McpServer, wss: WSS) => {
     server.registerTool(
         'instantiate_template_assets',
         {
-            description: 'Instantiate one or more template assets',
+            description: 'Instantiate templates',
             inputSchema: {
-                ids: z.array(AssetIdSchema).nonempty().describe('The asset IDs of the template assets to instantiate')
+                ids: z.array(AssetIdSchema).nonempty().describe('Template asset IDs')
             }
         },
         ({ ids }) => {
