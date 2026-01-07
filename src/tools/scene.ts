@@ -23,7 +23,7 @@ export const register = (server: McpServer, wss: WSS) => {
             description: 'Query the scene settings'
         },
         () => {
-            return wss.call('scene:settings:modify', {});
+            return wss.call('scene:settings:query');
         }
     );
 };
