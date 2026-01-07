@@ -12,9 +12,8 @@ export const register = (server: McpServer, wss: WSS) => {
     server.registerTool(
         'store_search',
         {
-            description: 'Search for an asset in the store',
+            description: 'Search store assets',
             inputSchema: {
-                // store: z.enum(['playcanvas', 'sketchfab']).optional(),
                 search: z.string(),
                 order: z.enum(['asc', 'desc']).optional(),
                 skip: z.number().optional(),
@@ -34,9 +33,8 @@ export const register = (server: McpServer, wss: WSS) => {
     server.registerTool(
         'store_get',
         {
-            description: 'Get an asset from the store',
+            description: 'Get store asset',
             inputSchema: {
-                // store: z.enum(['playcanvas', 'sketchfab']).optional(),
                 id: z.string()
             }
         },
@@ -48,9 +46,8 @@ export const register = (server: McpServer, wss: WSS) => {
     server.registerTool(
         'store_download',
         {
-            description: 'Download an asset from the store',
+            description: 'Download store asset',
             inputSchema: {
-                // store: z.enum(['playcanvas', 'sketchfab']).optional(),
                 id: z.string(),
                 name: z.string(),
                 license: z.object({

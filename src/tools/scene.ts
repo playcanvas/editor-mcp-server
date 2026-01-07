@@ -7,7 +7,7 @@ export const register = (server: McpServer, wss: WSS) => {
     server.registerTool(
         'modify_scene_settings',
         {
-            description: 'Modify the scene settings',
+            description: 'Modify scene settings',
             inputSchema: {
                 settings: SceneSettingsSchema
             }
@@ -20,7 +20,7 @@ export const register = (server: McpServer, wss: WSS) => {
     server.registerTool(
         'query_scene_settings',
         {
-            description: 'Query the scene settings'
+            description: 'Query scene settings'
         },
         () => {
             return wss.call('scene:settings:query');

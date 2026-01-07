@@ -7,7 +7,7 @@ export const register = (server: McpServer, wss: WSS) => {
     server.registerTool(
         'set_script_text',
         {
-            description: 'Set script text',
+            description: 'Set script content',
             inputSchema: {
                 assetId: z.number(),
                 text: z.string()
@@ -21,7 +21,7 @@ export const register = (server: McpServer, wss: WSS) => {
     server.registerTool(
         'script_parse',
         {
-            description: 'Parse the script after modification',
+            description: 'Parse script',
             inputSchema: {
                 assetId: z.number()
             }

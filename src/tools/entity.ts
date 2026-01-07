@@ -9,12 +9,12 @@ export const register = (server: McpServer, wss: WSS) => {
     server.registerTool(
         'create_entities',
         {
-            description: 'Create one or more entities',
+            description: 'Create entities',
             inputSchema: {
                 entities: z.array(z.object({
                     entity: EntitySchema,
-                    parent: EntityIdSchema.optional().describe('The parent entity to create the entity under. If not provided, the root entity will be used.')
-                })).nonempty().describe('Array of entity hierarchies to create.')
+                    parent: EntityIdSchema.optional().describe('Parent entity ID')
+                })).nonempty().describe('Entity hierarchies to create')
             }
         },
         ({ entities }) => {
@@ -25,13 +25,13 @@ export const register = (server: McpServer, wss: WSS) => {
     server.registerTool(
         'modify_entities',
         {
-            description: 'Modify one or more entity\'s properties',
+            description: 'Modify entity properties',
             inputSchema: {
                 edits: z.array(z.object({
                     id: EntityIdSchema,
-                    path: z.string().describe('The path to the property to modify. Use dot notation to access nested properties.'),
-                    value: z.any().describe('The value to set the property to.')
-                })).nonempty().describe('An array of objects containing the ID of the entity to modify, the path to the property to modify, and the value to set the property to.')
+                    path: z.string().describe('Property path (dot notation)'),
+                    value: z.any().describe('New value')
+                })).nonempty()
             }
         },
         ({ edits }) => {
@@ -42,9 +42,9 @@ export const register = (server: McpServer, wss: WSS) => {
     server.registerTool(
         'duplicate_entities',
         {
-            description: 'Duplicate one or more entities',
+            description: 'Duplicate entities',
             inputSchema: {
-                ids: z.array(EntityIdSchema).nonempty().describe('Array of entity IDs to duplicate. The root entity cannot be duplicated.'),
+                ids: z.array(EntityIdSchema).nonempty().describe('Entity IDs to duplicate'),
                 rename: z.boolean().optional()
             }
         },
@@ -56,7 +56,7 @@ export const register = (server: McpServer, wss: WSS) => {
     server.registerTool(
         'reparent_entity',
         {
-            description: 'Reparent an entity',
+            description: 'Reparent entity',
             inputSchema: {
                 id: EntityIdSchema,
                 parent: EntityIdSchema,
@@ -72,9 +72,9 @@ export const register = (server: McpServer, wss: WSS) => {
     server.registerTool(
         'delete_entities',
         {
-            description: 'Delete one or more entities. The root entity cannot be deleted.',
+            description: 'Delete entities (not root)',
             inputSchema: {
-                ids: z.array(EntityIdSchema).nonempty().describe('Array of entity IDs to delete. The root entity cannot be deleted.')
+                ids: z.array(EntityIdSchema).nonempty()
             }
         },
         ({ ids }) => {
@@ -95,7 +95,7 @@ export const register = (server: McpServer, wss: WSS) => {
     server.registerTool(
         'add_components',
         {
-            description: 'Add components to an entity',
+            description: 'Add components to entity',
             inputSchema: {
                 id: EntityIdSchema,
                 components: ComponentsSchema
@@ -109,10 +109,10 @@ export const register = (server: McpServer, wss: WSS) => {
     server.registerTool(
         'remove_components',
         {
-            description: 'Remove components from an entity',
+            description: 'Remove components from entity',
             inputSchema: {
                 id: EntityIdSchema,
-                components: z.array(ComponentNameSchema).nonempty().describe('Array of component names to remove from the entity.')
+                components: z.array(ComponentNameSchema).nonempty()
             }
         },
         ({ id, components }) => {
@@ -123,7 +123,7 @@ export const register = (server: McpServer, wss: WSS) => {
     server.registerTool(
         'add_script_component_script',
         {
-            description: 'Add a script to a script component',
+            description: 'Add script to script component',
             inputSchema: {
                 id: EntityIdSchema,
                 scriptName: z.string()
