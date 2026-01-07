@@ -57,7 +57,7 @@ Run `npm install` to install all dependencies.
 ### Install Chrome Extension
 
 1. Visit `chrome://extensions/` and enable Developer mode
-2. Click `Load unpacked` and select the `extensions` folder
+2. Click `Load unpacked` and select the `extension` folder
 3. Load the PlayCanvas Editor. The extension should be loaded.
 
 ### Run MCP Server
@@ -102,7 +102,7 @@ Windows
         "/c",
         "npx",
         "tsx",
-        "C:\\path\\to\\mcp-editor\\src\\server.ts"
+        "C:\\path\\to\\editor-mcp-server\\src\\server.ts"
       ],
       "env": {
         "PORT": "52000"
@@ -121,7 +121,7 @@ macOS
       "command": "npx",
       "args": [
         "tsx",
-        "/path/to/mcp-editor/src/server.ts"
+        "/path/to/editor-mcp-server/src/server.ts"
       ],
       "env": {
         "PORT": "52000"
@@ -136,9 +136,9 @@ macOS
 The PlayCanvas Editor does not connect to the MCP Server automatically. To connect:
 
 1. Activate a Chrome tab running the PlayCanvas Editor.
-1. Select the Extensions icon to the right of the address bar.
-2. Select PlayCanvas Editor MCP Extension to open the extension popup.
-3. Select `CONNECT` (the port number should match what is set in your MCP Config JSON File).
+2. Select the Extensions icon to the right of the address bar.
+3. Select PlayCanvas Editor MCP Extension to open the extension popup.
+4. Select `CONNECT` (the port number should match what is set in your MCP Config JSON File).
 
 > [!NOTE]
 > You can currently only connect one instance of the PlayCanvas Editor to the MCP Server at any one time.
