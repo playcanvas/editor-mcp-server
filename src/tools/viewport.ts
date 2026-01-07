@@ -16,13 +16,19 @@ export const register = (mcp: McpServer, wss: WSS) => {
 
     mcp.tool(
         'focus_viewport',
-        'Select entities and focus the Editor viewport camera on them',
+        'Select entities and focus the Editor viewport camera on them. Optionally specify a camera viewpoint.',
         {
             ids: z.array(EntityIdSchema).nonempty()
-            .describe('Array of entity IDs to select and focus on')
+                .describe('Array of entity IDs to select and focus on'),
+            view: z.enum(['top', 'bottom', 'front', 'back', 'left', 'right', 'perspective']).optional()
+                .describe('Preset camera view. Mutually exclusive with yaw/pitch.'),
+            yaw: z.number().min(-180).max(180).optional()
+                .describe('Horizontal angle in degrees (-180 to 180). 0=front, 90=right, -90=left, 180=back'),
+            pitch: z.number().min(-90).max(90).optional()
+                .describe('Vertical angle in degrees (-90 to 90). 0=level, -90=top-down, 90=bottom-up')
         },
-        ({ ids }) => {
-            return wss.call('viewport:focus', ids);
+        ({ ids, view, yaw, pitch }) => {
+            return wss.call('viewport:focus', ids, { view, yaw, pitch });
         }
     );
 };

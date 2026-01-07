@@ -307,13 +307,49 @@
             return { error: `Failed to capture viewport: ${e.message}` };
         }
     });
-    wsc.method('viewport:focus', (ids) => {
+    wsc.method('viewport:focus', (ids, options = {}) => {
         const entities = ids.map((id) => api.entities.get(id)).filter(Boolean);
         if (!entities.length) {
             return { error: 'No valid entities found' };
         }
         api.selection.set(entities, { history: true });
-        window.editor.call('viewport:focus');
+
+        // Get camera and calculate target
+        const camera = window.editor.call('camera:current');
+        const aabb = window.editor.call('selection:aabb');
+        if (!aabb) {
+            return { error: 'Could not calculate selection bounds' };
+        }
+
+        // Calculate distance based on bounding box and FOV
+        let distance = Math.max(aabb.halfExtents.x, aabb.halfExtents.y, aabb.halfExtents.z);
+        distance /= Math.tan(0.5 * camera.camera.fov * Math.PI / 180.0);
+        distance = distance * 1.1 + 1;
+
+        // Apply orientation if specified
+        if (options.view) {
+            // Preset view angles (pitch, yaw)
+            const views = {
+                top: [-90, 0],
+                bottom: [90, 0],
+                front: [0, 0],
+                back: [0, 180],
+                left: [0, -90],
+                right: [0, 90],
+                perspective: [-25, 45]
+            };
+            const angles = views[options.view];
+            if (angles) {
+                camera.setEulerAngles(angles[0], angles[1], 0);
+            }
+        } else if (options.yaw !== undefined || options.pitch !== undefined) {
+            const yaw = options.yaw ?? 45;
+            const pitch = options.pitch ?? -25;
+            camera.setEulerAngles(pitch, yaw, 0);
+        }
+
+        // Focus camera on target
+        window.editor.call('camera:focus', aabb.center, distance);
         log(`Focused viewport on entities: ${ids.join(', ')}`);
         return { data: true };
     });
