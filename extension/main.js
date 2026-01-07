@@ -377,7 +377,7 @@
 
             log(`Created entity(${entity.get('resource_id')})`);
         }
-        return { data: entities.map((entity) => entity.json()) };
+        return { data: entities.map((entity) => entity.get('resource_id')) };
     });
     wsc.method('entities:modify', (edits) => {
         for (const { id, path, value } of edits) {
@@ -397,7 +397,7 @@
         }
         const res = await api.entities.duplicate(entities, options);
         log(`Duplicated entities: ${res.map((entity) => entity.get('resource_id')).join(', ')}`);
-        return { data: res.map((entity) => entity.json()) };
+        return { data: res.map((entity) => entity.get('resource_id')) };
     });
     wsc.method('entities:reparent', (options) => {
         const entity = api.entities.get(options.id);
@@ -412,7 +412,7 @@
             preserveTransform: options.preserveTransform
         });
         log(`Reparented entity(${options.id}) to entity(${options.parent})`);
-        return { data: entity.json() };
+        return { data: true };
     });
     wsc.method('entities:delete', async (ids) => {
         const entities = ids.map((id) => api.entities.get(id)).filter((entity) => entity !== api.entities.root);
@@ -440,7 +440,7 @@
             entity.addComponent(name, data);
         });
         log(`Added components(${Object.keys(components).join(', ')}) to entity(${id})`);
-        return { data: entity.json() };
+        return { data: true };
     });
     wsc.method('entities:components:remove', (id, components) => {
         const entity = api.entities.get(id);
@@ -451,7 +451,7 @@
             entity.removeComponent(component);
         });
         log(`Removed components(${components.join(', ')}) from entity(${id})`);
-        return { data: entity.json() };
+        return { data: true };
     });
     wsc.method('entities:components:script:add', (id, scriptName) => {
         const entity = api.entities.get(id);
@@ -522,9 +522,9 @@
                     throw new Error(`Failed to create asset of type ${type}`);
                 }
 
-                // Log success and return the asset data for this promise
+                // Log success and return the asset ID for this promise
                 log(`Created asset(${asset.get('id')}) - Type: ${type}`);
-                return asset.json();
+                return asset.get('id');
             });
 
             // Wait for all creation promises to resolve concurrently
@@ -567,7 +567,7 @@
         }
         const entities = await api.assets.instantiateTemplates(assets);
         log(`Instantiated assets: ${ids.join(', ')}`);
-        return { data: entities.map((entity) => entity.json()) };
+        return { data: entities.map((entity) => entity.get('resource_id')) };
     });
     wsc.method('assets:property:set', (id, prop, value) => {
         const asset = api.assets.get(id);
@@ -576,7 +576,7 @@
         }
         asset.set(`data.${prop}`, value);
         log(`Set asset(${id}) property(${prop}) to: ${JSON.stringify(value)}`);
-        return { data: asset.json() };
+        return { data: true };
     });
     wsc.method('assets:script:text:set', async (id, text) => {
         const asset = api.assets.get(id);
@@ -627,7 +627,7 @@
         });
 
         log('Modified scene settings');
-        return { data: scene.json() };
+        return { data: true };
     });
 
     // store
