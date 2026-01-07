@@ -316,6 +316,9 @@
 
         // Get camera and calculate target
         const camera = window.editor.call('camera:current');
+        if (!camera) {
+            return { error: 'Could not retrieve current camera' };
+        }
         const aabb = window.editor.call('selection:aabb');
         if (!aabb) {
             return { error: 'Could not calculate selection bounds' };
