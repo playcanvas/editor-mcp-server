@@ -94,6 +94,30 @@ class WSS {
         }
     }
 
+    async callImage(name: string, ...args: any[]): Promise<{ content: any[], isError?: boolean }> {
+        try {
+            const { data, error } = await this._send(name, ...args);
+            if (error) {
+                throw new Error(error);
+            }
+            return {
+                content: [{
+                    type: 'image',
+                    data: data,
+                    mimeType: 'image/jpeg'
+                }]
+            };
+        } catch (err: any) {
+            return {
+                content: [{
+                    type: 'text',
+                    text: err.message
+                }],
+                isError: true
+            };
+        }
+    }
+
     close() {
         if (this._pingInterval) {
             clearInterval(this._pingInterval);

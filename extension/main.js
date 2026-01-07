@@ -237,6 +237,77 @@
     // general
     wsc.method('ping', () => 'pong');
 
+    // viewport
+    wsc.method('viewport:capture', () => {
+        const app = window.editor.call('viewport:app');
+        if (!app) {
+            return { error: 'Viewport app not found' };
+        }
+
+        const device = app.graphicsDevice;
+        const gl = device.gl;
+        if (!gl) {
+            return { error: 'WebGL context not found' };
+        }
+
+        try {
+            // Force a render to ensure we have the latest frame
+            window.editor.call('viewport:render');
+            app.tick();
+
+            const width = device.width;
+            const height = device.height;
+
+            // Read pixels from the backbuffer
+            const pixels = new Uint8Array(width * height * 4);
+            gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+            gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+
+            // Flip the image vertically (WebGL reads bottom-to-top)
+            const flipped = new Uint8Array(width * height * 4);
+            for (let y = 0; y < height; y++) {
+                const srcRow = (height - 1 - y) * width * 4;
+                const dstRow = y * width * 4;
+                for (let x = 0; x < width * 4; x++) {
+                    flipped[dstRow + x] = pixels[srcRow + x];
+                }
+            }
+
+            // Create source canvas with full resolution
+            const srcCanvas = document.createElement('canvas');
+            srcCanvas.width = width;
+            srcCanvas.height = height;
+            const srcCtx = srcCanvas.getContext('2d');
+            const imageData = new ImageData(new Uint8ClampedArray(flipped.buffer), width, height);
+            srcCtx.putImageData(imageData, 0, 0);
+
+            // Scale down to max 800px width while maintaining aspect ratio
+            const maxWidth = 800;
+            let dstWidth = width;
+            let dstHeight = height;
+            if (width > maxWidth) {
+                dstWidth = maxWidth;
+                dstHeight = Math.round(height * (maxWidth / width));
+            }
+
+            // Create destination canvas and draw scaled image
+            const dstCanvas = document.createElement('canvas');
+            dstCanvas.width = dstWidth;
+            dstCanvas.height = dstHeight;
+            const dstCtx = dstCanvas.getContext('2d');
+            dstCtx.drawImage(srcCanvas, 0, 0, dstWidth, dstHeight);
+
+            // Convert to base64 JPEG for smaller file size
+            const dataUrl = dstCanvas.toDataURL('image/jpeg', 0.8);
+            const base64 = dataUrl.replace('data:image/jpeg;base64,', '');
+
+            log(`Captured viewport screenshot (${dstWidth}x${dstHeight})`);
+            return { data: base64 };
+        } catch (e) {
+            return { error: `Failed to capture viewport: ${e.message}` };
+        }
+    });
+
     // entities
     wsc.method('entities:create', (entityDataArray) => {
         const entities = [];
