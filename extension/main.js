@@ -265,12 +265,12 @@
 
             // Flip the image vertically (WebGL reads bottom-to-top)
             const flipped = new Uint8Array(width * height * 4);
+            const rowSize = width * 4;
             for (let y = 0; y < height; y++) {
-                const srcRow = (height - 1 - y) * width * 4;
-                const dstRow = y * width * 4;
-                for (let x = 0; x < width * 4; x++) {
-                    flipped[dstRow + x] = pixels[srcRow + x];
-                }
+                flipped.set(
+                    pixels.subarray((height - 1 - y) * rowSize, (height - y) * rowSize),
+                    y * rowSize
+                );
             }
 
             // Create source canvas with full resolution
@@ -297,9 +297,9 @@
             const dstCtx = dstCanvas.getContext('2d');
             dstCtx.drawImage(srcCanvas, 0, 0, dstWidth, dstHeight);
 
-            // Convert to base64 JPEG for smaller file size
-            const dataUrl = dstCanvas.toDataURL('image/jpeg', 0.8);
-            const base64 = dataUrl.replace('data:image/jpeg;base64,', '');
+            // Convert to base64 WebP for smaller file size
+            const dataUrl = dstCanvas.toDataURL('image/webp', 0.8);
+            const base64 = dataUrl.replace('data:image/webp;base64,', '');
 
             log(`Captured viewport screenshot (${dstWidth}x${dstHeight})`);
             return { data: base64 };
