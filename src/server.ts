@@ -40,23 +40,26 @@ const findPid = (port: number) => {
 const kill = (pid: string) => {
     if (process.platform === 'win32') {
         try {
-            execSync(`taskkill /F /PID ${pid}`);
+            // /F = force, /T = tree kill (kills child processes too)
+            execSync(`taskkill /F /T /PID ${pid}`, { stdio: 'ignore' });
         } catch (e) {
-            // Ignore
+            // Ignore - process may already be dead
         }
         return;
     }
-    execSync(`kill -9 ${pid}`);
+    try {
+        execSync(`kill -9 ${pid}`);
+    } catch (e) {
+        // Ignore - process may already be dead
+    }
 };
 
-// Kill the existing server
+// Kill any existing server on the port
 const pid = findPid(PORT);
-if (pid) {
+if (pid && pid !== String(process.pid)) {
     kill(pid);
+    await poll(() => !findPid(PORT));
 }
-
-// Wait for the server to stop
-await poll(() => !findPid(PORT));
 
 // Create a WebSocket server
 const wss = new WSS(PORT);
@@ -104,9 +107,14 @@ const close = () => {
 // Handle uncaught exceptions and unhandled rejections
 process.on('uncaughtException', (err) => {
     console.error('[process] Uncaught exception', err);
+    console.error('[process] Stack:', err.stack);
 });
-process.on('unhandledRejection', (reason) => {
-    console.error('[process] Unhandled rejection', reason);
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('[process] Unhandled rejection at:', promise);
+    console.error('[process] Reason:', reason);
+});
+process.on('exit', (code) => {
+    console.error('[process] Exit with code:', code);
 });
 
 // Clean up on exit
