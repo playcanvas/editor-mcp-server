@@ -48,6 +48,7 @@ An MCP Server for automating the [PlayCanvas Editor](https://playcanvas.com/prod
   * `store_download`
 * Viewport
   * `capture_viewport`
+  * `focus_viewport`
 
 ## Installation
 
