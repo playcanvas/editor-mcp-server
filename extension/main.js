@@ -307,6 +307,16 @@
             return { error: `Failed to capture viewport: ${e.message}` };
         }
     });
+    wsc.method('viewport:focus', (ids) => {
+        const entities = ids.map((id) => api.entities.get(id)).filter(Boolean);
+        if (!entities.length) {
+            return { error: 'No valid entities found' };
+        }
+        api.selection.set(entities, { history: true });
+        window.editor.call('viewport:focus');
+        log(`Focused viewport on entities: ${ids.join(', ')}`);
+        return { data: true };
+    });
 
     // entities
     wsc.method('entities:create', (entityDataArray) => {
