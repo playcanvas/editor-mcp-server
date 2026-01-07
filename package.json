@@ -34,23 +34,23 @@
   },
   "devDependencies": {
     "@playcanvas/eslint-config": "^2.1.0",
-    "@types/chrome": "^0.1.12",
+    "@types/chrome": "^0.1.32",
     "@types/command-line-args": "^5.2.3",
     "@types/command-line-usage": "^5.0.4",
     "@types/ws": "^8.18.1",
-    "@typescript-eslint/parser": "^8.44.1",
-    "eslint": "^9.36.0",
+    "@typescript-eslint/parser": "^8.52.0",
+    "eslint": "^9.39.2",
     "eslint-import-resolver-typescript": "^4.4.4",
-    "globals": "^16.4.0",
+    "globals": "^17.0.0",
     "publint": "^0.3.16",
-    "typescript": "^5.9.2"
+    "typescript": "^5.9.3"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.18.1",
+    "@modelcontextprotocol/sdk": "^1.25.1",
     "command-line-args": "^6.0.1",
     "command-line-usage": "^7.0.3",
-    "tsx": "^4.20.5",
-    "ws": "^8.18.3",
+    "tsx": "^4.21.0",
+    "ws": "^8.19.0",
     "zod": "^3.23.8"
   }
 }
