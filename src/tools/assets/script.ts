@@ -3,24 +3,28 @@ import { z } from 'zod';
 
 import { type WSS } from '../../wss';
 
-export const register = (mcp: McpServer, wss: WSS) => {
-    mcp.tool(
+export const register = (server: McpServer, wss: WSS) => {
+    server.registerTool(
         'set_script_text',
-        'Set script text',
         {
-            assetId: z.number(),
-            text: z.string()
+            description: 'Set script text',
+            inputSchema: {
+                assetId: z.number(),
+                text: z.string()
+            }
         },
         ({ assetId, text }) => {
             return wss.call('assets:script:text:set', assetId, text);
         }
     );
 
-    mcp.tool(
+    server.registerTool(
         'script_parse',
-        'Parse the script after modification',
         {
-            assetId: z.number()
+            description: 'Parse the script after modification',
+            inputSchema: {
+                assetId: z.number()
+            }
         },
         ({ assetId }) => {
             return wss.call('assets:script:parse', assetId);

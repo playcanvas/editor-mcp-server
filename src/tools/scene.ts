@@ -3,22 +3,25 @@ import { type McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { type WSS } from '../wss';
 import { SceneSettingsSchema } from './schema/scene-settings';
 
-export const register = (mcp: McpServer, wss: WSS) => {
-    mcp.tool(
+export const register = (server: McpServer, wss: WSS) => {
+    server.registerTool(
         'modify_scene_settings',
-        'Modify the scene settings',
         {
-            settings: SceneSettingsSchema
+            description: 'Modify the scene settings',
+            inputSchema: {
+                settings: SceneSettingsSchema
+            }
         },
         ({ settings }) => {
             return wss.call('scene:settings:modify', settings);
         }
     );
 
-    mcp.tool(
+    server.registerTool(
         'query_scene_settings',
-        'Query the scene settings',
-        {},
+        {
+            description: 'Query the scene settings'
+        },
         () => {
             return wss.call('scene:settings:modify', {});
         }
