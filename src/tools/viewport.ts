@@ -18,8 +18,7 @@ export const register = (mcp: McpServer, wss: WSS) => {
         'focus_viewport',
         'Select entities and focus the Editor viewport camera on them',
         {
-            ids: z.array(EntityIdSchema).nonempty()
-            .describe('Array of entity IDs to select and focus on')
+            ids: z.array(EntityIdSchema).nonempty().describe('Array of entity IDs to select and focus on')
         },
         ({ ids }) => {
             return wss.call('viewport:focus', ids);
