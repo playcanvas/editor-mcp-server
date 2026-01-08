@@ -423,13 +423,46 @@
         log(`Deleted entities: ${ids.join(', ')}`);
         return { data: true };
     });
-    wsc.method('entities:list', () => {
-        const entities = api.entities.list();
+    wsc.method('entities:list', (options = {}) => {
+        let entities = api.entities.list();
+
+        // Apply filters
+        if (options.name) {
+            const searchName = options.name.toLowerCase();
+            entities = entities.filter((entity) => entity.get('name').toLowerCase().includes(searchName));
+        }
+        if (options.component) {
+            entities = entities.filter((entity) => entity.get(`components.${options.component}`));
+        }
+        if (options.tag) {
+            entities = entities.filter((entity) => entity.get('tags').includes(options.tag));
+        }
+
         if (!entities.length) {
             return { error: 'No entities found' };
         }
+
         log('Listed entities');
-        return { data: entities.map((entity) => entity.json()) };
+
+        // Return full JSON or summary
+        if (options.full) {
+            return { data: entities.map((entity) => entity.json()) };
+        }
+
+        // Summary mode: return minimal data with component names
+        return {
+            data: entities.map((entity) => {
+                const components = entity.get('components') || {};
+                return {
+                    resource_id: entity.get('resource_id'),
+                    name: entity.get('name'),
+                    parent: entity.get('parent'),
+                    enabled: entity.get('enabled'),
+                    tags: entity.get('tags') || [],
+                    components: Object.keys(components)
+                };
+            })
+        };
     });
     wsc.method('entities:components:add', (id, components) => {
         const entity = api.entities.get(id);
@@ -549,13 +582,45 @@
         log(`Deleted assets: ${ids.join(', ')}`);
         return { data: true };
     });
-    wsc.method('assets:list', (type) => {
+    wsc.method('assets:list', (options = {}) => {
         let assets = api.assets.list();
-        if (type) {
-            assets = assets.filter((asset) => asset.get('type') === type);
+
+        // Apply filters
+        if (options.type) {
+            assets = assets.filter((asset) => asset.get('type') === options.type);
         }
+        if (options.name) {
+            const searchName = options.name.toLowerCase();
+            assets = assets.filter((asset) => asset.get('name').toLowerCase().includes(searchName));
+        }
+        if (options.tag) {
+            assets = assets.filter((asset) => (asset.get('tags') || []).includes(options.tag));
+        }
+
+        if (!assets.length) {
+            return { error: 'No assets found' };
+        }
+
         log('Listed assets');
-        return { data: assets.map((asset) => asset.json()) };
+
+        // Return full JSON or summary
+        if (options.full) {
+            return { data: assets.map((asset) => asset.json()) };
+        }
+
+        // Summary mode: return minimal data
+        return {
+            data: assets.map((asset) => {
+                const path = asset.get('path') || [];
+                return {
+                    id: asset.get('id'),
+                    name: asset.get('name'),
+                    type: asset.get('type'),
+                    folder: path.length > 0 ? path[path.length - 1] : null,
+                    tags: asset.get('tags') || []
+                };
+            })
+        };
     });
     wsc.method('assets:instantiate', async (ids) => {
         const assets = ids.map((id) => api.assets.get(id));
