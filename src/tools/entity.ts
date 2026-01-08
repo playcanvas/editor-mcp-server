@@ -85,10 +85,16 @@ export const register = (server: McpServer, wss: WSS) => {
     server.registerTool(
         'list_entities',
         {
-            description: 'List all entities'
+            description: 'List entities. Returns summary by default (id, name, parent, enabled, tags, components). Use full=true for complete entity data.',
+            inputSchema: {
+                full: z.boolean().optional().describe('Return full entity JSON instead of summary'),
+                name: z.string().optional().describe('Filter by name (case-insensitive contains)'),
+                component: ComponentNameSchema.optional().describe('Filter by component type'),
+                tag: z.string().optional().describe('Filter by tag')
+            }
         },
-        () => {
-            return wss.call('entities:list');
+        (options) => {
+            return wss.call('entities:list', options);
         }
     );
 

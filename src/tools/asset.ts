@@ -33,13 +33,16 @@ export const register = (server: McpServer, wss: WSS) => {
     server.registerTool(
         'list_assets',
         {
-            description: 'List assets',
+            description: 'List assets. Returns summary by default (id, name, type, folder, tags). Use full=true for complete asset data.',
             inputSchema: {
-                type: z.enum(['css', 'cubemap', 'folder', 'font', 'html', 'json', 'material', 'render', 'script', 'shader', 'template', 'text', 'texture']).optional().describe('Filter by type')
+                full: z.boolean().optional().describe('Return full asset JSON instead of summary'),
+                type: z.enum(['css', 'cubemap', 'folder', 'font', 'html', 'json', 'material', 'render', 'script', 'shader', 'template', 'text', 'texture']).optional().describe('Filter by type'),
+                name: z.string().optional().describe('Filter by name (case-insensitive contains)'),
+                tag: z.string().optional().describe('Filter by tag')
             }
         },
-        ({ type }) => {
-            return wss.call('assets:list', type);
+        (options) => {
+            return wss.call('assets:list', options);
         }
     );
 
