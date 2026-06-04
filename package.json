@@ -33,14 +33,12 @@
     "publint": "publint"
   },
   "devDependencies": {
-    "@playcanvas/eslint-config": "^2.1.0",
+    "@playcanvas/eslint-config": "3.0.0-beta.6",
     "@types/chrome": "^0.1.33",
     "@types/command-line-args": "^5.2.3",
     "@types/command-line-usage": "^5.0.4",
     "@types/ws": "^8.18.1",
-    "@typescript-eslint/parser": "^8.53.0",
     "eslint": "^9.39.2",
-    "eslint-import-resolver-typescript": "^4.4.4",
     "globals": "^17.0.0",
     "publint": "^0.3.16",
     "typescript": "^5.9.3"
