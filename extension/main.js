@@ -302,7 +302,7 @@
             const base64 = dataUrl.split(',')[1];
 
             log(`Captured viewport screenshot (${dstWidth}x${dstHeight})`);
-            return { data: base64 };
+            return { data: base64, mimeType: 'image/webp' };
         } catch (e) {
             return { error: `Failed to capture viewport: ${e.message}` };
         }

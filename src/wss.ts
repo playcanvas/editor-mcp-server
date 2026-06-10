@@ -1,6 +1,7 @@
 import { WebSocketServer, WebSocket } from 'ws';
 
 const PING_DELAY = 1000;
+const DEFAULT_TIMEOUT = 30_000;
 
 class WSS {
     private _server: WebSocketServer;
@@ -58,12 +59,21 @@ class WSS {
     private _send(name: string, ...args: any[]) {
         return new Promise<{ data?: any, error?: string }>((resolve, reject) => {
             const id = this._id++;
-            this._callbacks.set(id, resolve);
+            const timer = setTimeout(() => {
+                this._callbacks.delete(id);
+                reject(new Error(`[WSS] Timeout: '${name}' after ${DEFAULT_TIMEOUT}ms`));
+            }, DEFAULT_TIMEOUT);
+            this._callbacks.set(id, (res: any) => {
+                clearTimeout(timer);
+                resolve(res);
+            });
             if (!this._socket) {
+                clearTimeout(timer);
                 reject(new Error('No socket'));
                 return;
             }
             if (this._socket.readyState !== WebSocket.OPEN) {
+                clearTimeout(timer);
                 reject(new Error('Socket not open'));
                 return;
             }
@@ -96,15 +106,18 @@ class WSS {
 
     async callImage(name: string, ...args: any[]): Promise<{ content: any[], isError?: boolean }> {
         try {
-            const { data, error } = await this._send(name, ...args);
+            const { data, error, mimeType } = await this._send(name, ...args);
             if (error) {
                 throw new Error(error);
+            }
+            if (!data || typeof data !== 'string' || data.trim().length === 0) {
+                throw new Error('No image data received — viewport may be empty or not yet rendered');
             }
             return {
                 content: [{
                     type: 'image',
                     data: data,
-                    mimeType: 'image/jpeg'
+                    mimeType: mimeType || 'image/png'
                 }]
             };
         } catch (err: any) {
