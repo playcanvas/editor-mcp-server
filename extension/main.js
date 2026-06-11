@@ -299,10 +299,13 @@
 
             // Convert to base64 WebP for smaller file size (falls back to PNG if unsupported)
             const dataUrl = dstCanvas.toDataURL('image/webp', 0.8);
+            // Derive the actual mime type from the data URL header, since the browser
+            // may fall back to PNG when WebP is unsupported.
+            const mimeType = (dataUrl.match(/^data:([^;,]+)/) || [])[1] || 'image/png';
             const base64 = dataUrl.split(',')[1];
 
             log(`Captured viewport screenshot (${dstWidth}x${dstHeight})`);
-            return { data: base64, mimeType: 'image/webp' };
+            return { data: base64, mimeType };
         } catch (e) {
             return { error: `Failed to capture viewport: ${e.message}` };
         }

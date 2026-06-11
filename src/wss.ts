@@ -57,7 +57,15 @@ class WSS {
     }
 
     private _send(name: string, ...args: any[]) {
-        return new Promise<{ data?: any, error?: string }>((resolve, reject) => {
+        return new Promise<{ data?: any, error?: string, mimeType?: string }>((resolve, reject) => {
+            if (!this._socket) {
+                reject(new Error('No socket'));
+                return;
+            }
+            if (this._socket.readyState !== WebSocket.OPEN) {
+                reject(new Error('Socket not open'));
+                return;
+            }
             const id = this._id++;
             const timer = setTimeout(() => {
                 this._callbacks.delete(id);
@@ -67,17 +75,13 @@ class WSS {
                 clearTimeout(timer);
                 resolve(res);
             });
-            if (!this._socket) {
+            try {
+                this._socket.send(JSON.stringify({ id, name, args }));
+            } catch (err: any) {
                 clearTimeout(timer);
-                reject(new Error('No socket'));
-                return;
+                this._callbacks.delete(id);
+                reject(new Error(`[WSS] Send failed: ${err.message}`));
             }
-            if (this._socket.readyState !== WebSocket.OPEN) {
-                clearTimeout(timer);
-                reject(new Error('Socket not open'));
-                return;
-            }
-            this._socket.send(JSON.stringify({ id, name, args }));
         });
     }
 
