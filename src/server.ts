@@ -96,13 +96,70 @@ mcp.connect(transport).then(() => {
     process.exit(1);
 });
 
-const close = () => {
-    mcp.close().finally(() => {
-        console.error('[MCP] Closed');
-        wss.close();
+let shuttingDown = false;
+
+const shutdown = async (reason: string) => {
+    if (shuttingDown) {
+        return;
+    }
+    shuttingDown = true;
+    console.error(`[MCP] Shutdown: ${reason}`);
+
+    const forceExit = setTimeout(() => {
+        console.error('[MCP] Force exit after timeout');
         process.exit(0);
-    });
+    }, 3000);
+    forceExit.unref();
+
+    try {
+        await mcp.close();
+    } catch (err) {
+        console.error('[MCP] close error', err);
+    }
+    try {
+        await wss.close();
+    } catch (err) {
+        console.error('[WSS] close error', err);
+    }
+    clearTimeout(forceExit);
+    process.stdin.destroy?.();
+    console.error('[MCP] Closed');
+    process.exit(0);
 };
+
+const isParentAlive = (parentPid: number) => {
+    try {
+        process.kill(parentPid, 0);
+        return true;
+    } catch {
+        return false;
+    }
+};
+
+// Stdin close/end is the most reliable cross-platform signal when the MCP client disconnects.
+// On Windows, SIGTERM is often not delivered when the parent IDE exits.
+if (!process.stdin.isTTY) {
+    process.stdin.resume();
+}
+process.stdin.on('end', () => shutdown('stdin end'));
+process.stdin.on('close', () => shutdown('stdin close'));
+process.stdin.on('error', () => shutdown('stdin error'));
+
+const onPipeError = (stream: string) => (err: { code?: string }) => {
+    if (err.code === 'EPIPE' || err.code === 'ECONNRESET') {
+        shutdown(`${stream} pipe broken`);
+    }
+};
+process.stdout?.on('error', onPipeError('stdout'));
+process.stderr?.on('error', onPipeError('stderr'));
+
+const parentPid = process.ppid;
+const parentWatchdog = setInterval(() => {
+    if (!isParentAlive(parentPid)) {
+        clearInterval(parentWatchdog);
+        shutdown('parent process exited');
+    }
+}, 2000);
 
 // Handle uncaught exceptions and unhandled rejections
 process.on('uncaughtException', (err) => {
@@ -118,19 +175,6 @@ process.on('exit', (code) => {
 });
 
 // Clean up on exit
-process.stdin.on('close', () => {
-    console.error('[process] stdin closed');
-    close();
-});
-process.on('SIGINT', () => {
-    console.error('[process] SIGINT');
-    close();
-});
-process.on('SIGTERM', () => {
-    console.error('[process] SIGTERM');
-    close();
-});
-process.on('SIGQUIT', () => {
-    console.error('[process] SIGQUIT');
-    close();
-});
+for (const signal of ['SIGINT', 'SIGTERM', 'SIGQUIT', 'SIGHUP'] as const) {
+    process.on(signal, () => shutdown(signal));
+}

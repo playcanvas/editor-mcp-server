@@ -118,15 +118,21 @@ class WSS {
         }
     }
 
-    close() {
+    close(): Promise<void> {
         if (this._pingInterval) {
             clearInterval(this._pingInterval);
+            this._pingInterval = null;
         }
         if (this._socket) {
             this._socket.close(1000, 'FORCE');
+            this._socket = undefined;
         }
-        this._server.close();
-        console.error('[WSS] Closed');
+        return new Promise((resolve) => {
+            this._server.close(() => {
+                console.error('[WSS] Closed');
+                resolve();
+            });
+        });
     }
 }
 
