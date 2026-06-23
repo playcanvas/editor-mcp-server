@@ -68,6 +68,92 @@
         });
     };
 
+    /**
+     * Build a human-readable hierarchy path for an entity (e.g. `Root/Player/Camera`).
+     * This resolves the otherwise opaque UUID chain into semantic context (issue #2).
+     *
+     * @param {Object} entity - The entity API instance.
+     * @returns {string} The slash-separated path from the root to the entity.
+     */
+    const entityPath = (entity) => {
+        const names = [];
+        let current = entity;
+        const seen = new Set();
+        while (current && !seen.has(current.get('resource_id'))) {
+            seen.add(current.get('resource_id'));
+            names.unshift(current.get('name'));
+            const parentId = current.get('parent');
+            current = parentId ? api.entities.get(parentId) : null;
+        }
+        return names.join('/');
+    };
+
+    /**
+     * Produce the compact, semantic summary returned by list/create/modify tools.
+     * Returning this inline after mutations lets agents skip a follow-up
+     * `list_entities` round-trip (issue #12).
+     *
+     * @param {Object} entity - The entity API instance.
+     * @returns {Object} The entity summary.
+     */
+    const entitySummary = (entity) => {
+        const components = entity.get('components') || {};
+        return {
+            resource_id: entity.get('resource_id'),
+            name: entity.get('name'),
+            path: entityPath(entity),
+            parent: entity.get('parent'),
+            enabled: entity.get('enabled'),
+            tags: entity.get('tags') || [],
+            components: Object.keys(components)
+        };
+    };
+
+    /**
+     * Compact summary for an asset.
+     *
+     * @param {Object} asset - The asset API instance.
+     * @returns {Object} The asset summary.
+     */
+    const assetSummary = (asset) => {
+        const path = asset.get('path') || [];
+        return {
+            id: asset.get('id'),
+            name: asset.get('name'),
+            type: asset.get('type'),
+            folder: path.length > 0 ? path[path.length - 1] : null,
+            tags: asset.get('tags') || []
+        };
+    };
+
+    /**
+     * Apply limit/offset pagination to a list and return the page plus the
+     * pagination metadata that belongs in the response envelope (issue #1).
+     *
+     * @param {Array} items - The full result set.
+     * @param {Object} options - Pagination options.
+     * @param {number} [options.limit] - Max items to return (default 50).
+     * @param {number} [options.offset] - Items to skip (default 0).
+     * @returns {{ page: Array, meta: Object }} The page and pagination meta.
+     */
+    const paginate = (items, options = {}) => {
+        const total = items.length;
+        const limit = Number.isFinite(options.limit) ? Math.max(0, options.limit) : 50;
+        const offset = Number.isFinite(options.offset) ? Math.max(0, options.offset) : 0;
+        const page = limit > 0 ? items.slice(offset, offset + limit) : items.slice(offset);
+        const end = offset + page.length;
+        const hasMore = end < total;
+        return {
+            page,
+            meta: {
+                total,
+                count: page.length,
+                _has_more: hasMore,
+                _next_cursor: hasMore ? String(end) : null
+            }
+        };
+    };
+
     class WSC extends observer.Events {
         static STATUS_CONNECTING = 'connecting';
 
@@ -302,26 +388,26 @@
             const base64 = dataUrl.split(',')[1];
 
             log(`Captured viewport screenshot (${dstWidth}x${dstHeight})`);
-            return { data: base64 };
+            return { data: base64, meta: { mimeType: 'image/webp', width: dstWidth, height: dstHeight } };
         } catch (e) {
-            return { error: `Failed to capture viewport: ${e.message}` };
+            return { error: `Failed to capture viewport: ${e.message}. Ensure a scene is loaded and the viewport is visible, then retry.` };
         }
     });
     wsc.method('viewport:focus', (ids, options = {}) => {
         const entities = ids.map((id) => api.entities.get(id)).filter(Boolean);
         if (!entities.length) {
-            return { error: 'No valid entities found' };
+            return { error: 'No valid entities found. Call list_entities (or resolve_entities) to obtain valid resource_ids.' };
         }
         api.selection.set(entities, { history: true });
 
         // Get camera and calculate target
         const camera = window.editor.call('camera:current');
         if (!camera) {
-            return { error: 'Could not retrieve current camera' };
+            return { error: 'Could not retrieve current camera. Ensure a scene is loaded in the editor and retry.' };
         }
         const aabb = window.editor.call('selection:aabb');
         if (!aabb) {
-            return { error: 'Could not calculate selection bounds' };
+            return { error: 'Could not calculate selection bounds. The selected entities may have no renderable bounds.' };
         }
 
         // Calculate distance based on bounding box and FOV
@@ -354,7 +440,7 @@
         // Focus camera on target
         window.editor.call('camera:focus', aabb.center, distance);
         log(`Focused viewport on entities: ${ids.join(', ')}`);
-        return { data: true };
+        return { data: { focused: entities.length } };
     });
 
     // entities
@@ -364,64 +450,82 @@
             if (Object.hasOwn(entityData, 'parent')) {
                 const parent = api.entities.get(entityData.parent);
                 if (!parent) {
-                    return { error: `Parent entity not found: ${entityData.parent}` };
+                    return { error: `Parent entity not found: ${entityData.parent}. Call list_entities (or resolve_entities) to obtain a valid parent resource_id, or omit 'parent' to create under the root.` };
                 }
                 entityData.entity.parent = parent;
             }
 
             const entity = api.entities.create(entityData.entity);
             if (!entity) {
-                return { error: 'Failed to create entity' };
+                return { error: 'Failed to create entity. Verify the entity definition is valid (e.g. component data types) and retry.' };
             }
             entities.push(entity);
 
             log(`Created entity(${entity.get('resource_id')})`);
         }
-        return { data: entities.map((entity) => entity.get('resource_id')) };
+        // Return the resulting entity summaries inline so the agent gets the new
+        // ids + hierarchy paths without a follow-up list_entities call (#12).
+        return { data: entities.map(entitySummary) };
     });
     wsc.method('entities:modify', (edits) => {
+        const modified = new Map();
         for (const { id, path, value } of edits) {
             const entity = api.entities.get(id);
             if (!entity) {
-                return { error: `Entity not found: ${id}` };
+                return { error: `Entity not found: ${id}. Call list_entities (or resolve_entities) to obtain a valid resource_id.` };
             }
             entity.set(path, value);
+            modified.set(id, entity);
             log(`Set property(${path}) of entity(${id}) to: ${JSON.stringify(value)}`);
         }
-        return { data: true };
+        // Return the post-edit summaries of every touched entity (#12).
+        return { data: Array.from(modified.values()).map(entitySummary) };
     });
     wsc.method('entities:duplicate', async (ids, options = {}) => {
-        const entities = ids.map((id) => api.entities.get(id));
+        const entities = ids.map((id) => api.entities.get(id)).filter(Boolean);
         if (!entities.length) {
-            return { error: 'Entities not found' };
+            return { error: `No valid entities to duplicate. Call list_entities (or resolve_entities) to obtain valid resource_ids.` };
         }
         const res = await api.entities.duplicate(entities, options);
         log(`Duplicated entities: ${res.map((entity) => entity.get('resource_id')).join(', ')}`);
-        return { data: res.map((entity) => entity.get('resource_id')) };
+        return { data: res.map(entitySummary) };
     });
     wsc.method('entities:reparent', (options) => {
         const entity = api.entities.get(options.id);
         if (!entity) {
-            return { error: 'Entity not found' };
+            return { error: `Entity not found: ${options.id}. Call list_entities (or resolve_entities) to obtain a valid resource_id.` };
         }
         const parent = api.entities.get(options.parent);
         if (!parent) {
-            return { error: 'Parent entity not found' };
+            return { error: `Parent entity not found: ${options.parent}. Call list_entities (or resolve_entities) to obtain a valid parent resource_id.` };
         }
         entity.reparent(parent, options.index, {
             preserveTransform: options.preserveTransform
         });
         log(`Reparented entity(${options.id}) to entity(${options.parent})`);
-        return { data: true };
+        return { data: entitySummary(entity) };
     });
     wsc.method('entities:delete', async (ids) => {
-        const entities = ids.map((id) => api.entities.get(id)).filter((entity) => entity !== api.entities.root);
+        const entities = ids.map((id) => api.entities.get(id)).filter((entity) => entity && entity !== api.entities.root);
         if (!entities.length) {
-            return { error: 'No entities to delete' };
+            return { error: 'No deletable entities found (the root entity cannot be deleted). Call list_entities to obtain valid, non-root resource_ids.' };
         }
         await api.entities.delete(entities);
         log(`Deleted entities: ${ids.join(', ')}`);
-        return { data: true };
+        return { data: { deleted: entities.length } };
+    });
+    wsc.method('entities:resolve', (options = {}) => {
+        const name = (options.name || '').toLowerCase();
+        if (!name) {
+            return { error: 'Provide a non-empty "name" to resolve.' };
+        }
+        const matches = api.entities.list().filter((entity) => {
+            const entityName = (entity.get('name') || '').toLowerCase();
+            return options.exact ? entityName === name : entityName.includes(name);
+        });
+        log(`Resolved entities by name(${options.name}): ${matches.length} match(es)`);
+        // Empty match is a valid result, not an error (#3).
+        return { data: matches.map(entitySummary), meta: { total: matches.length, count: matches.length } };
     });
     wsc.method('entities:list', (options = {}) => {
         let entities = api.entities.list();
@@ -438,65 +542,65 @@
             entities = entities.filter((entity) => entity.get('tags').includes(options.tag));
         }
 
-        if (!entities.length) {
-            return { error: 'No entities found' };
-        }
+        // An empty result is a valid success, not an error (#3).
+        const { page, meta } = paginate(entities, options);
 
-        log('Listed entities');
+        log(`Listed entities (${meta.count}/${meta.total})`);
 
         // Return full JSON or summary
         if (options.full) {
-            return { data: entities.map((entity) => entity.json()) };
+            return { data: page.map((entity) => entity.json()), meta };
         }
 
-        // Summary mode: return minimal data with component names
-        return {
-            data: entities.map((entity) => {
-                const components = entity.get('components') || {};
-                return {
-                    resource_id: entity.get('resource_id'),
-                    name: entity.get('name'),
-                    parent: entity.get('parent'),
-                    enabled: entity.get('enabled'),
-                    tags: entity.get('tags') || [],
-                    components: Object.keys(components)
-                };
-            })
-        };
+        // Summary mode: compact, semantic data (#2)
+        return { data: page.map(entitySummary), meta };
     });
     wsc.method('entities:components:add', (id, components) => {
         const entity = api.entities.get(id);
         if (!entity) {
-            return { error: 'Entity not found' };
+            return { error: `Entity not found: ${id}. Call list_entities (or resolve_entities) to obtain a valid resource_id.` };
         }
         Object.entries(components).forEach(([name, data]) => {
             entity.addComponent(name, data);
         });
         log(`Added components(${Object.keys(components).join(', ')}) to entity(${id})`);
-        return { data: true };
+        return { data: entitySummary(entity) };
     });
     wsc.method('entities:components:remove', (id, components) => {
         const entity = api.entities.get(id);
         if (!entity) {
-            return { error: 'Entity not found' };
+            return { error: `Entity not found: ${id}. Call list_entities (or resolve_entities) to obtain a valid resource_id.` };
         }
         components.forEach((component) => {
             entity.removeComponent(component);
         });
         log(`Removed components(${components.join(', ')}) from entity(${id})`);
-        return { data: true };
+        return { data: entitySummary(entity) };
     });
     wsc.method('entities:components:script:add', (id, scriptName) => {
         const entity = api.entities.get(id);
         if (!entity) {
-            return { error: 'Entity not found' };
+            return { error: `Entity not found: ${id}. Call list_entities (or resolve_entities) to obtain a valid resource_id.` };
         }
         if (!entity.get('components.script')) {
-            return { error: 'Script component not found' };
+            return { error: `Entity ${id} has no script component. Add one first via add_components { script: {} } or use attach_script which creates it automatically.` };
         }
         entity.addScript(scriptName);
         log(`Added script(${scriptName}) to component(script) of entity(${id})`);
-        return { data: entity.get('components.script') };
+        return { data: entitySummary(entity) };
+    });
+    wsc.method('entities:script:attach', (id, scriptName) => {
+        const entity = api.entities.get(id);
+        if (!entity) {
+            return { error: `Entity not found: ${id}. Call list_entities (or resolve_entities) to obtain a valid resource_id.` };
+        }
+        // Consolidated flow: ensure the script component exists, then attach (#4).
+        if (!entity.get('components.script')) {
+            entity.addComponent('script', {});
+        }
+        entity.addScript(scriptName);
+        log(`Attached script(${scriptName}) to entity(${id})`);
+        return { data: entitySummary(entity) };
     });
 
     // assets
@@ -555,9 +659,9 @@
                     throw new Error(`Failed to create asset of type ${type}`);
                 }
 
-                // Log success and return the asset ID for this promise
+                // Log success and return the asset summary for this promise (#12)
                 log(`Created asset(${asset.get('id')}) - Type: ${type}`);
-                return asset.get('id');
+                return assetSummary(asset);
             });
 
             // Wait for all creation promises to resolve concurrently
@@ -574,13 +678,13 @@
         }
     });
     wsc.method('assets:delete', (ids) => {
-        const assets = ids.map((id) => api.assets.get(id));
+        const assets = ids.map((id) => api.assets.get(id)).filter(Boolean);
         if (!assets.length) {
-            return { error: 'Assets not found' };
+            return { error: 'No valid assets to delete. Call list_assets to obtain valid asset ids.' };
         }
         api.assets.delete(assets);
         log(`Deleted assets: ${ids.join(', ')}`);
-        return { data: true };
+        return { data: { deleted: assets.length } };
     });
     wsc.method('assets:list', (options = {}) => {
         let assets = api.assets.list();
@@ -597,56 +701,59 @@
             assets = assets.filter((asset) => (asset.get('tags') || []).includes(options.tag));
         }
 
-        if (!assets.length) {
-            return { error: 'No assets found' };
-        }
+        // An empty result is a valid success, not an error (#3).
+        const { page, meta } = paginate(assets, options);
 
-        log('Listed assets');
+        log(`Listed assets (${meta.count}/${meta.total})`);
 
         // Return full JSON or summary
         if (options.full) {
-            return { data: assets.map((asset) => asset.json()) };
+            return { data: page.map((asset) => asset.json()), meta };
         }
 
         // Summary mode: return minimal data
-        return {
-            data: assets.map((asset) => {
-                const path = asset.get('path') || [];
-                return {
-                    id: asset.get('id'),
-                    name: asset.get('name'),
-                    type: asset.get('type'),
-                    folder: path.length > 0 ? path[path.length - 1] : null,
-                    tags: asset.get('tags') || []
-                };
-            })
-        };
+        return { data: page.map(assetSummary), meta };
     });
     wsc.method('assets:instantiate', async (ids) => {
-        const assets = ids.map((id) => api.assets.get(id));
+        const assets = ids.map((id) => api.assets.get(id)).filter(Boolean);
         if (!assets.length) {
-            return { error: 'Assets not found' };
+            return { error: 'No valid assets found. Call list_assets with type="template" to obtain valid template asset ids.' };
         }
         if (assets.some((asset) => asset.get('type') !== 'template')) {
-            return { error: 'Invalid template asset' };
+            return { error: 'One or more ids are not template assets. Only template assets can be instantiated; call list_assets with type="template".' };
         }
         const entities = await api.assets.instantiateTemplates(assets);
         log(`Instantiated assets: ${ids.join(', ')}`);
-        return { data: entities.map((entity) => entity.get('resource_id')) };
+        return { data: entities.map(entitySummary) };
     });
     wsc.method('assets:property:set', (id, prop, value) => {
         const asset = api.assets.get(id);
         if (!asset) {
-            return { error: 'Asset not found' };
+            return { error: `Asset not found: ${id}. Call list_assets to obtain a valid asset id.` };
         }
         asset.set(`data.${prop}`, value);
         log(`Set asset(${id}) property(${prop}) to: ${JSON.stringify(value)}`);
-        return { data: true };
+        return { data: { id, [prop]: value } };
+    });
+    wsc.method('assets:data:set', (id, props) => {
+        const asset = api.assets.get(id);
+        if (!asset) {
+            return { error: `Asset not found: ${id}. Call list_assets to obtain a valid asset id.` };
+        }
+        const keys = Object.keys(props || {});
+        if (!keys.length) {
+            return { error: 'No properties provided to set.' };
+        }
+        keys.forEach((key) => {
+            asset.set(`data.${key}`, props[key]);
+        });
+        log(`Set asset(${id}) properties(${keys.join(', ')})`);
+        return { data: assetSummary(asset) };
     });
     wsc.method('assets:script:text:set', async (id, text) => {
         const asset = api.assets.get(id);
         if (!asset) {
-            return { error: 'Asset not found' };
+            return { error: `Asset not found: ${id}. Call list_assets with type="script" to obtain a valid script asset id.` };
         }
 
         const form = new FormData();
@@ -668,7 +775,7 @@
     wsc.method('assets:script:parse', async (id) => {
         const asset = api.assets.get(id);
         if (!asset) {
-            return { error: 'Asset not found' };
+            return { error: `Asset not found: ${id}. Call list_assets with type="script" to obtain a valid script asset id.` };
         }
         // FIXME: This is a hacky way to get the parsed script data. Expose a proper API for this.
         const [error, data] = await new Promise((resolve) => {
@@ -692,7 +799,8 @@
         });
 
         log('Modified scene settings');
-        return { data: true };
+        // Return the resulting settings snapshot inline (#12).
+        return { data: scene.json() };
     });
     wsc.method('scene:settings:query', () => {
         const scene = api.settings.scene;

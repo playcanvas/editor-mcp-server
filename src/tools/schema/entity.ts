@@ -258,17 +258,47 @@ const SoundSchema = z.object({
     }).describe('Sound slots')
 }).describe('Sound component');
 
+// Loosely-typed component schemas. These cover component types the editor
+// supports adding/removing but for which we don't (yet) enumerate every field.
+// Using passthrough keeps add_components at parity with ComponentNameSchema /
+// remove_components (issue #4) without blocking valid data. Prefer the
+// strongly-typed schemas above when available.
+const GenericComponentSchema = (label: string) => z.object({
+    enabled: z.boolean().optional()
+}).passthrough().describe(`${label} component (loosely typed; pass any valid component fields)`);
+
+const AnimSchema = GenericComponentSchema('Anim');
+const AnimationSchema = GenericComponentSchema('Animation (legacy)');
+const ButtonSchema = GenericComponentSchema('Button');
+const LayoutChildSchema = GenericComponentSchema('Layout child');
+const LayoutGroupSchema = GenericComponentSchema('Layout group');
+const ModelSchema = GenericComponentSchema('Model (legacy)');
+const ParticleSystemSchema = GenericComponentSchema('Particle system');
+const ScrollbarSchema = GenericComponentSchema('Scrollbar');
+const ScrollViewSchema = GenericComponentSchema('Scroll view');
+const SpriteSchema = GenericComponentSchema('Sprite');
+
 export const ComponentsSchema = z.object({
+    anim: AnimSchema.optional(),
+    animation: AnimationSchema.optional(),
     audiolistener: AudioListenerSchema.optional(),
+    button: ButtonSchema.optional(),
     camera: CameraSchema.optional(),
     collision: CollisionSchema.optional(),
     element: ElementSchema.optional(),
+    layoutchild: LayoutChildSchema.optional(),
+    layoutgroup: LayoutGroupSchema.optional(),
     light: LightSchema.optional(),
+    model: ModelSchema.optional(),
+    particlesystem: ParticleSystemSchema.optional(),
     render: RenderSchema.optional(),
     rigidbody: RigidBodySchema.optional(),
     screen: ScreenSchema.optional(),
+    scrollbar: ScrollbarSchema.optional(),
+    scrollview: ScrollViewSchema.optional(),
     script: ScriptSchema.optional(),
-    sound: SoundSchema.optional()
+    sound: SoundSchema.optional(),
+    sprite: SpriteSchema.optional()
 }).describe('Entity components');
 
 export const ComponentNameSchema = z.enum([

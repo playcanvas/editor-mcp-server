@@ -23,6 +23,7 @@ An MCP Server for automating the [PlayCanvas Editor](https://playcanvas.com/prod
 
 * Entity
   * `list_entities`
+  * `resolve_entities`
   * `create_entities`
   * `delete_entities`
   * `duplicate_entities`
@@ -31,6 +32,7 @@ An MCP Server for automating the [PlayCanvas Editor](https://playcanvas.com/prod
   * `add_components`
   * `remove_components`
   * `add_script_component_script`
+  * `attach_script`
 * Asset
   * `list_assets`
   * `create_assets`
@@ -39,6 +41,7 @@ An MCP Server for automating the [PlayCanvas Editor](https://playcanvas.com/prod
   * `set_script_text`
   * `script_parse`
   * `set_material_diffuse`
+  * `set_material_properties`
 * Scene
   * `query_scene_settings`
   * `modify_scene_settings`
@@ -49,6 +52,32 @@ An MCP Server for automating the [PlayCanvas Editor](https://playcanvas.com/prod
 * Viewport
   * `capture_viewport`
   * `focus_viewport`
+
+## Response Format
+
+Every tool returns a single, consistent **envelope** so agents can pattern-match on a stable shape:
+
+```jsonc
+{
+  "data": <result> | null,   // business payload; an empty set is [], never an error
+  "meta": {
+    "tool": "list_entities",
+    "_status": "ok" | "error",
+    "_message": "...",         // present only on error; actionable, with a recovery hint
+    // list tools also include pagination metadata:
+    "total": 120, "count": 50, "_has_more": true, "_next_cursor": "50"
+  }
+}
+```
+
+Notes for tool authors / agents:
+
+* **Errors** never use a top-level `error` field; they set `meta._status = "error"` and put an actionable message in `meta._message` (the protocol-level `isError` flag is also set).
+* **Empty results** (`list_*`, `resolve_entities`) are a successful empty list, not an error.
+* **Pagination**: `list_entities` / `list_assets` accept `limit` (default 50) + `offset`. Page using `meta._next_cursor` (pass it back as `offset`) and stop when `meta._has_more` is `false`.
+* **State snapshots**: mutating tools (`create_entities`, `modify_entities`, `add_components`, `reparent_entity`, `duplicate_entities`, `instantiate_template_assets`, …) return the resulting entity/asset summaries — including a human-readable hierarchy `path` — so you rarely need a follow-up `list_entities` call.
+* **Annotations**: read-only tools declare `readOnlyHint`, destructive tools (`delete_*`) declare `destructiveHint`, and store tools declare `openWorldHint` (they reach the network).
+* Image tools (`capture_viewport`) return a protocol `image` block plus a parallel `text` block carrying the same `meta`.
 
 ## Installation
 

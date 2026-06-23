@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 import { AssetIdSchema, EntityIdSchema, RgbSchema, Vec2Schema, Vec3Schema } from './common';
 
-const MaterialSchema = z.object({
+export const MaterialSchema = z.object({
     name: z.string().optional(),
     ambient: RgbSchema.optional(),
     aoMap: AssetIdSchema.optional(),
