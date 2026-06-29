@@ -57,6 +57,7 @@ An MCP Server for automating the [PlayCanvas Editor](https://playcanvas.com/prod
   * `launch_stop`
   * `capture_runtime`
   * `read_runtime_logs`
+  * `inject_input`
 
 ## Runtime Tools
 
@@ -69,6 +70,9 @@ you can verify that a scene actually *runs*, not just how it looks at edit time:
 * `capture_runtime` screenshots the running app (scripts/physics/animation active).
 * `read_runtime_logs` returns the app's `console` output + uncaught
   exceptions/rejections (newest first, paginated; defaults to warnings + errors).
+* `inject_input` dispatches keyboard / mouse / touch events to the running app
+  (e.g. hold `W` for 500ms, click at a canvas coordinate, tap the screen), so you
+  can drive end-to-end interactions and then verify with `capture_runtime`.
 * `launch_stop` closes the launch window.
 
 Notes:

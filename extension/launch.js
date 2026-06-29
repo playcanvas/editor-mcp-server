@@ -7,6 +7,12 @@
     const LOG_CAP = 1000;
 
     /**
+     * @param {number} ms - Milliseconds to wait.
+     * @returns {Promise<void>} Resolves after the delay.
+     */
+    const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+    /**
      * @param {string} msg - The message to log.
      */
     const log = (msg) => {
@@ -165,6 +171,154 @@
                 _next_cursor: hasMore ? String(end) : null
             }
         };
+    });
+
+    // ---- input injection ----------------------------------------------------
+
+    const SPECIAL_KEYS = {
+        ' ': { key: ' ', code: 'Space', keyCode: 32 },
+        'space': { key: ' ', code: 'Space', keyCode: 32 },
+        'enter': { key: 'Enter', code: 'Enter', keyCode: 13 },
+        'return': { key: 'Enter', code: 'Enter', keyCode: 13 },
+        'escape': { key: 'Escape', code: 'Escape', keyCode: 27 },
+        'esc': { key: 'Escape', code: 'Escape', keyCode: 27 },
+        'tab': { key: 'Tab', code: 'Tab', keyCode: 9 },
+        'backspace': { key: 'Backspace', code: 'Backspace', keyCode: 8 },
+        'delete': { key: 'Delete', code: 'Delete', keyCode: 46 },
+        'shift': { key: 'Shift', code: 'ShiftLeft', keyCode: 16 },
+        'control': { key: 'Control', code: 'ControlLeft', keyCode: 17 },
+        'ctrl': { key: 'Control', code: 'ControlLeft', keyCode: 17 },
+        'alt': { key: 'Alt', code: 'AltLeft', keyCode: 18 },
+        'arrowleft': { key: 'ArrowLeft', code: 'ArrowLeft', keyCode: 37 },
+        'left': { key: 'ArrowLeft', code: 'ArrowLeft', keyCode: 37 },
+        'arrowup': { key: 'ArrowUp', code: 'ArrowUp', keyCode: 38 },
+        'up': { key: 'ArrowUp', code: 'ArrowUp', keyCode: 38 },
+        'arrowright': { key: 'ArrowRight', code: 'ArrowRight', keyCode: 39 },
+        'right': { key: 'ArrowRight', code: 'ArrowRight', keyCode: 39 },
+        'arrowdown': { key: 'ArrowDown', code: 'ArrowDown', keyCode: 40 },
+        'down': { key: 'ArrowDown', code: 'ArrowDown', keyCode: 40 }
+    };
+
+    /**
+     * Resolve a friendly key name into the fields PlayCanvas / the DOM expect.
+     *
+     * @param {string} raw - The key name (e.g. 'w', 'Space', 'ArrowUp').
+     * @returns {{ key: string, code: string, keyCode: number }} Key descriptor.
+     */
+    const keyInfo = (raw) => {
+        const k = String(raw);
+        const special = SPECIAL_KEYS[k.toLowerCase()];
+        if (special) {
+            return special;
+        }
+        if (k.length === 1) {
+            const code = k.toUpperCase().charCodeAt(0);
+            if (/[a-z]/i.test(k)) {
+                return { key: k, code: `Key${k.toUpperCase()}`, keyCode: code };
+            }
+            if (/[0-9]/.test(k)) {
+                return { key: k, code: `Digit${k}`, keyCode: code };
+            }
+            return { key: k, code: k, keyCode: code };
+        }
+        return { key: k, code: k, keyCode: 0 };
+    };
+
+    /**
+     * @returns {HTMLCanvasElement|null} The running app's canvas, or null.
+     */
+    const getCanvas = () => {
+        const app = getApp();
+        return (app && app.graphicsDevice && app.graphicsDevice.canvas) || document.querySelector('canvas') || null;
+    };
+
+    const dispatchKey = (kind, info) => {
+        const e = new KeyboardEvent(kind, { key: info.key, code: info.code, bubbles: true, cancelable: true, view: window });
+        // keyCode/which are read-only and not settable via the constructor, but
+        // PlayCanvas' keyboard handler reads them — so back them with getters.
+        Object.defineProperty(e, 'keyCode', { get: () => info.keyCode });
+        Object.defineProperty(e, 'which', { get: () => info.keyCode });
+        window.dispatchEvent(e);
+        document.dispatchEvent(e);
+    };
+
+    const dispatchMouse = (kind, canvas, x, y, button) => {
+        const rect = canvas.getBoundingClientRect();
+        const clientX = rect.left + (x || 0);
+        const clientY = rect.top + (y || 0);
+        const buttons = kind === 'mousedown' ? (button === 2 ? 2 : button === 1 ? 4 : 1) : 0;
+        canvas.dispatchEvent(new MouseEvent(kind, {
+            clientX, clientY, button: button || 0, buttons, bubbles: true, cancelable: true, view: window
+        }));
+    };
+
+    const dispatchTouch = (kind, canvas, x, y, id) => {
+        const rect = canvas.getBoundingClientRect();
+        const clientX = rect.left + (x || 0);
+        const clientY = rect.top + (y || 0);
+        const touch = new Touch({ identifier: id || 0, target: canvas, clientX, clientY, pageX: clientX, pageY: clientY, radiusX: 1, radiusY: 1, force: 1 });
+        const active = kind === 'touchend' ? [] : [touch];
+        canvas.dispatchEvent(new TouchEvent(kind, {
+            touches: active, targetTouches: active, changedTouches: [touch], bubbles: true, cancelable: true, view: window
+        }));
+    };
+
+    methods.set('runtime:input', async (payload = {}) => {
+        const events = Array.isArray(payload.events) ? payload.events : [];
+        if (!events.length) {
+            return { error: 'No input events provided.' };
+        }
+        const canvas = getCanvas();
+        if (!canvas) {
+            return { error: 'Runtime canvas not found. Ensure launch_start succeeded and the scene has loaded, then retry.' };
+        }
+        const betweenMs = Number.isFinite(payload.betweenMs) ? payload.betweenMs : 0;
+
+        let dispatched = 0;
+        for (const ev of events) {
+            if (ev.type === 'key') {
+                const info = keyInfo(ev.key);
+                const action = ev.action || 'press';
+                const repeat = Math.max(1, ev.repeat || 1);
+                for (let i = 0; i < repeat; i++) {
+                    if (action === 'down') {
+                        dispatchKey('keydown', info);
+                    } else if (action === 'up') {
+                        dispatchKey('keyup', info);
+                    } else {
+                        dispatchKey('keydown', info);
+                        if (ev.holdMs) {
+                            // eslint-disable-next-line no-await-in-loop
+                            await wait(ev.holdMs);
+                        }
+                        dispatchKey('keyup', info);
+                    }
+                    dispatched++;
+                }
+            } else if (ev.type === 'mouse') {
+                if (ev.action === 'click') {
+                    dispatchMouse('mousedown', canvas, ev.x, ev.y, ev.button);
+                    dispatchMouse('mouseup', canvas, ev.x, ev.y, ev.button);
+                } else {
+                    dispatchMouse(`mouse${ev.action}`, canvas, ev.x, ev.y, ev.button);
+                }
+                dispatched++;
+            } else if (ev.type === 'touch') {
+                if (ev.action === 'tap') {
+                    dispatchTouch('touchstart', canvas, ev.x, ev.y, ev.id);
+                    dispatchTouch('touchend', canvas, ev.x, ev.y, ev.id);
+                } else {
+                    dispatchTouch(`touch${ev.action}`, canvas, ev.x, ev.y, ev.id);
+                }
+                dispatched++;
+            }
+            if (betweenMs) {
+                // eslint-disable-next-line no-await-in-loop
+                await wait(betweenMs);
+            }
+        }
+        log(`Injected ${dispatched} input event(s)`);
+        return { data: { dispatched } };
     });
 
     // ---- websocket client ---------------------------------------------------

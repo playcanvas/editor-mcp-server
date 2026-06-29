@@ -121,4 +121,53 @@ export const register = (server: McpServer, wss: WSS) => {
             });
         }
     );
+
+    const KeyEventSchema = z.object({
+        type: z.literal('key'),
+        key: z.string().describe('Key name: a single char ("w", "1"), or a named key ("Space", "Enter", "ArrowUp", "Shift", "Escape")'),
+        action: z.enum(['press', 'down', 'up']).optional().describe('press = down+up (default); use down/up to hold across calls'),
+        holdMs: z.number().int().min(0).max(10000).optional().describe('For action=press, hold the key down this long before releasing'),
+        repeat: z.number().int().min(1).max(50).optional().describe('Repeat this key event N times')
+    });
+    const MouseEventSchema = z.object({
+        type: z.literal('mouse'),
+        action: z.enum(['move', 'down', 'up', 'click']),
+        x: z.number().optional().describe('X in CSS pixels from the canvas top-left'),
+        y: z.number().optional().describe('Y in CSS pixels from the canvas top-left'),
+        button: z.union([z.literal(0), z.literal(1), z.literal(2)]).optional().describe('0=left (default), 1=middle, 2=right')
+    });
+    const TouchEventSchema = z.object({
+        type: z.literal('touch'),
+        action: z.enum(['start', 'move', 'end', 'tap']),
+        x: z.number().describe('X in CSS pixels from the canvas top-left'),
+        y: z.number().describe('Y in CSS pixels from the canvas top-left'),
+        id: z.number().int().optional().describe('Touch identifier (for multi-touch sequences)')
+    });
+
+    server.registerTool(
+        'inject_input',
+        {
+            description: [
+                'Dispatch keyboard / mouse / touch input to the RUNNING Launch instance so you can drive end-to-end interactions ("press W to move", "click a button", "tap the screen").',
+                'Requires launch_start first. Events run in order; coordinates are CSS pixels from the canvas top-left (match capture_runtime\'s framing). Returns { dispatched }.',
+                'Patterns: key press with holdMs to move for a duration; mouse click at (x,y); a down→move…→up sequence for dragging; touch tap for mobile UI.',
+                'After injecting, use capture_runtime / read_runtime_logs / query the scene to observe the effect.',
+                'When NOT to use: to change entity data directly (use modify_entities) or before launch_start.'
+            ].join(' '),
+            annotations: {
+                title: 'Inject Runtime Input',
+                readOnlyHint: false,
+                destructiveHint: false,
+                idempotentHint: false,
+                openWorldHint: false
+            },
+            inputSchema: {
+                events: z.array(z.discriminatedUnion('type', [KeyEventSchema, MouseEventSchema, TouchEventSchema])).nonempty().describe('Ordered list of input events to dispatch'),
+                betweenMs: z.number().int().min(0).max(10000).optional().describe('Delay between consecutive events (default 0)')
+            }
+        },
+        ({ events, betweenMs }) => {
+            return wss.call('inject_input', 'runtime:input', { events, betweenMs });
+        }
+    );
 };
