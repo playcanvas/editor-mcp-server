@@ -231,6 +231,9 @@
         _connect(address, retryTimeout, resolve) {
             this._ws = new WebSocket(address);
             this._ws.onopen = () => {
+                // Announce our role so the server can route edit-time vs runtime
+                // methods to the correct peer.
+                this._ws.send(JSON.stringify({ register: 'editor' }));
                 resolve();
             };
             this._ws.onmessage = async (event) => {
@@ -281,7 +284,11 @@
          * @returns {{ data?: any, error?: string }} The response data.
          */
         call(name, ...args) {
-            return this._methods.get(name)?.(...args);
+            const fn = this._methods.get(name);
+            if (!fn) {
+                return { error: `Unknown method: ${name}. The editor extension may be outdated; reload it at chrome://extensions and reconnect.` };
+            }
+            return fn(...args);
         }
     }
 
@@ -306,11 +313,17 @@
     const wsc = new WSC();
     const messenger = new Messenger('main');
 
+    // Remember the MCP port so we can hand it to the launched runtime window,
+    // and keep a handle to that window so we can stop it later.
+    let currentMcpPort = null;
+    let runtimeWindow = null;
+
     // sync
     messenger.on('sync', () => {
         messenger.send('status', wsc.status);
     });
     messenger.on('connect', ({ port = 52000 }) => {
+        currentMcpPort = port;
         wsc.connect(`ws://localhost:${port}`);
     });
     messenger.on('disconnect', () => {
@@ -441,6 +454,47 @@
         window.editor.call('camera:focus', aabb.center, distance);
         log(`Focused viewport on entities: ${ids.join(', ')}`);
         return { data: { focused: entities.length } };
+    });
+
+    // launch (runtime control)
+    wsc.method('launch:start', (options = {}) => {
+        const sceneId = window.config?.scene?.id;
+        const base = window.config?.url?.launch;
+        if (!sceneId || !base) {
+            return { error: 'No scene loaded, or launch URL unavailable. Load a scene in the editor and retry.' };
+        }
+        const params = new URLSearchParams();
+        // debug=true makes the engine log warnings/errors to the console, which
+        // read_runtime_logs relies on.
+        params.set('debug', 'true');
+        if (options.device) {
+            params.set('device', options.device);
+        }
+        // Pass the MCP port so the injected launch page can connect back as the
+        // runtime peer without any popup UI.
+        if (currentMcpPort) {
+            params.set('mcp_port', String(currentMcpPort));
+        }
+        const url = `${base}${sceneId}?${params.toString()}`;
+
+        if (runtimeWindow && !runtimeWindow.closed) {
+            runtimeWindow.close();
+        }
+        runtimeWindow = window.open(url, '_blank');
+        if (!runtimeWindow) {
+            return { error: 'Could not open the launch window (popup blocked). Allow popups for the editor origin and retry.' };
+        }
+        log(`Launched runtime for scene(${sceneId})`);
+        return { data: { url, sceneId } };
+    });
+    wsc.method('launch:stop', () => {
+        const wasOpen = !!(runtimeWindow && !runtimeWindow.closed);
+        if (runtimeWindow && !runtimeWindow.closed) {
+            runtimeWindow.close();
+        }
+        runtimeWindow = null;
+        log('Stopped runtime');
+        return { data: { stopped: wasOpen } };
     });
 
     // entities

@@ -52,6 +52,32 @@ An MCP Server for automating the [PlayCanvas Editor](https://playcanvas.com/prod
 * Viewport
   * `capture_viewport`
   * `focus_viewport`
+* Runtime (live Launch instance)
+  * `launch_start`
+  * `launch_stop`
+  * `capture_runtime`
+  * `read_runtime_logs`
+
+## Runtime Tools
+
+The runtime tools drive a **real Launch instance** (the editor's Launch button) so
+you can verify that a scene actually *runs*, not just how it looks at edit time:
+
+* `launch_start` opens `https://launch.playcanvas.com/<sceneId>?debug=true` in a new
+  window. The extension injects a content script there that connects back to the MCP
+  server as the "runtime" peer. `launch_start` returns `{ url, sceneId, ready }`.
+* `capture_runtime` screenshots the running app (scripts/physics/animation active).
+* `read_runtime_logs` returns the app's `console` output + uncaught
+  exceptions/rejections (newest first, paginated; defaults to warnings + errors).
+* `launch_stop` closes the launch window.
+
+Notes:
+
+* Allow pop-ups for the editor origin, otherwise `launch_start` cannot open the window.
+* The launch page uses your existing PlayCanvas login session (same browser), so no
+  extra auth step is needed.
+* Reload the unpacked extension in `chrome://extensions/` after updating it so the new
+  launch content script + permissions take effect.
 
 ## Response Format
 
