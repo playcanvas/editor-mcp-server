@@ -20,8 +20,6 @@
         original.log(`%c[WSC:runtime] ${msg}`, 'color:#0a6');
     };
 
-    // ---- console / error capture (installed before the app boots) ----------
-
     const logs = [];
     const original = {
         log: console.log.bind(console),
@@ -65,8 +63,6 @@
     window.addEventListener('unhandledrejection', (e) => {
         push('error', [`Unhandled promise rejection: ${e.reason?.message ?? e.reason}`], e.reason?.stack);
     });
-
-    // ---- runtime methods ----------------------------------------------------
 
     const methods = new Map();
 
@@ -167,13 +163,11 @@
             meta: {
                 total,
                 count: page.length,
-                _has_more: hasMore,
-                _next_cursor: hasMore ? String(end) : null
+                hasMore,
+                nextCursor: hasMore ? String(end) : null
             }
         };
     });
-
-    // ---- input injection ----------------------------------------------------
 
     const SPECIAL_KEYS = {
         ' ': { key: ' ', code: 'Space', keyCode: 32 },
@@ -320,8 +314,6 @@
         log(`Injected ${dispatched} input event(s)`);
         return { data: { dispatched } };
     });
-
-    // ---- websocket client ---------------------------------------------------
 
     let ws = null;
     let retry = null;

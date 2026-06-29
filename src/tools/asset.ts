@@ -38,7 +38,7 @@ export const register = (server: McpServer, wss: WSS) => {
             }
         },
         ({ assets }) => {
-            return wss.call('create_assets', 'assets:create', assets);
+            return wss.call('assets:create', assets);
         }
     );
 
@@ -47,7 +47,7 @@ export const register = (server: McpServer, wss: WSS) => {
         {
             description: [
                 'List project assets, returning compact summaries by default (id, name, type, folder, tags).',
-                'Results are paginated: use limit (default 50) and offset; the response meta includes total, count, _has_more and _next_cursor.',
+                'Results are paginated: use limit (default 50) and offset; the response meta includes total, count, hasMore and nextCursor.',
                 'Filter with type, name (case-insensitive contains) and/or tag. Use full=true only when you need the complete asset JSON (large).',
                 'An empty result is a successful, empty list (not an error).',
                 'When NOT to use: to search the public asset store (use store_search).'
@@ -63,11 +63,11 @@ export const register = (server: McpServer, wss: WSS) => {
                 name: z.string().optional().describe('Filter by name (case-insensitive contains)'),
                 tag: z.string().optional().describe('Filter by tag'),
                 limit: z.number().int().min(1).max(500).optional().describe('Max assets to return (default 50)'),
-                offset: z.number().int().min(0).optional().describe('Number of assets to skip (use _next_cursor from a previous page)')
+                offset: z.number().int().min(0).optional().describe('Number of assets to skip (use nextCursor from a previous page)')
             }
         },
         (options) => {
-            return wss.call('list_assets', 'assets:list', options);
+            return wss.call('assets:list', options);
         }
     );
 
@@ -91,7 +91,7 @@ export const register = (server: McpServer, wss: WSS) => {
             }
         },
         ({ ids }) => {
-            return wss.call('delete_assets', 'assets:delete', ids);
+            return wss.call('assets:delete', ids);
         }
     );
 
@@ -114,7 +114,7 @@ export const register = (server: McpServer, wss: WSS) => {
             }
         },
         ({ ids }) => {
-            return wss.call('instantiate_template_assets', 'assets:instantiate', ids);
+            return wss.call('assets:instantiate', ids);
         }
     );
 };

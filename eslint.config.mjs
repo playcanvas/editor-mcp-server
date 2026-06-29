@@ -27,6 +27,13 @@ export default [
                     project: './tsconfig.json'
                 }
             }
+        },
+        rules: {
+            // We document with TSDoc, not JSDoc: TypeScript already carries the
+            // types, so doc comments describe params/returns without duplicating
+            // them as `{type}` annotations.
+            'jsdoc/require-param-type': 'off',
+            'jsdoc/require-returns-type': 'off'
         }
     }
 ];

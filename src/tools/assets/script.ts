@@ -25,7 +25,7 @@ export const register = (server: McpServer, wss: WSS) => {
             }
         },
         ({ assetId, text }) => {
-            return wss.call('set_script_text', 'assets:script:text:set', assetId, text);
+            return wss.call('assets:script:text:set', assetId, text);
         }
     );
 
@@ -46,7 +46,7 @@ export const register = (server: McpServer, wss: WSS) => {
             }
         },
         ({ assetId }) => {
-            return wss.call('script_parse', 'assets:script:parse', assetId);
+            return wss.call('assets:script:parse', assetId);
         }
     );
 };

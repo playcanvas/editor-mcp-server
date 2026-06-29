@@ -30,7 +30,7 @@ export const register = (server: McpServer, wss: WSS) => {
             }
         },
         ({ search, order, skip, limit }) => {
-            return wss.call('store_search', 'store:playcanvas:list', {
+            return wss.call('store:playcanvas:list', {
                 search,
                 order: order ? orderEnum[order] : undefined,
                 skip,
@@ -56,7 +56,7 @@ export const register = (server: McpServer, wss: WSS) => {
             }
         },
         ({ id }) => {
-            return wss.call('store_get', 'store:playcanvas:get', id);
+            return wss.call('store:playcanvas:get', id);
         }
     );
 
@@ -85,7 +85,7 @@ export const register = (server: McpServer, wss: WSS) => {
             }
         },
         ({ id, name, license }) => {
-            return wss.call('store_download', 'store:playcanvas:clone', id, name, license);
+            return wss.call('store:playcanvas:clone', id, name, license);
         }
     );
 };

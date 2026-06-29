@@ -25,7 +25,7 @@ export const register = (server: McpServer, wss: WSS) => {
             }
         },
         ({ assetId, color }) => {
-            return wss.call('set_material_diffuse', 'assets:property:set', assetId, 'diffuse', color);
+            return wss.call('assets:property:set', assetId, 'diffuse', color);
         }
     );
 
@@ -50,7 +50,7 @@ export const register = (server: McpServer, wss: WSS) => {
             }
         },
         ({ assetId, properties }) => {
-            return wss.call('set_material_properties', 'assets:data:set', assetId, properties);
+            return wss.call('assets:data:set', assetId, properties);
         }
     );
 };

@@ -20,7 +20,7 @@ export const register = (server: McpServer, wss: WSS) => {
             }
         },
         () => {
-            return wss.callImage('capture_viewport', 'viewport:capture');
+            return wss.callImage('viewport:capture');
         }
     );
 
@@ -46,7 +46,7 @@ export const register = (server: McpServer, wss: WSS) => {
             }
         },
         ({ ids, view, yaw, pitch }) => {
-            return wss.call('focus_viewport', 'viewport:focus', ids, { view, yaw, pitch });
+            return wss.call('viewport:focus', ids, { view, yaw, pitch });
         }
     );
 };

@@ -148,8 +148,8 @@
             meta: {
                 total,
                 count: page.length,
-                _has_more: hasMore,
-                _next_cursor: hasMore ? String(end) : null
+                hasMore,
+                nextCursor: hasMore ? String(end) : null
             }
         };
     };

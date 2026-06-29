@@ -24,7 +24,7 @@ export const register = (server: McpServer, wss: WSS) => {
             }
         },
         ({ settings }) => {
-            return wss.call('modify_scene_settings', 'scene:settings:modify', settings);
+            return wss.call('scene:settings:modify', settings);
         }
     );
 
@@ -42,7 +42,7 @@ export const register = (server: McpServer, wss: WSS) => {
             }
         },
         () => {
-            return wss.call('query_scene_settings', 'scene:settings:query');
+            return wss.call('scene:settings:query');
         }
     );
 };

@@ -31,7 +31,7 @@ export const register = (server: McpServer, wss: WSS) => {
             }
         },
         ({ entities }) => {
-            return wss.call('create_entities', 'entities:create', entities);
+            return wss.call('entities:create', entities);
         }
     );
 
@@ -61,7 +61,7 @@ export const register = (server: McpServer, wss: WSS) => {
             }
         },
         ({ edits }) => {
-            return wss.call('modify_entities', 'entities:modify', edits);
+            return wss.call('entities:modify', edits);
         }
     );
 
@@ -86,7 +86,7 @@ export const register = (server: McpServer, wss: WSS) => {
             }
         },
         ({ ids, rename }) => {
-            return wss.call('duplicate_entities', 'entities:duplicate', ids, { rename });
+            return wss.call('entities:duplicate', ids, { rename });
         }
     );
 
@@ -114,7 +114,7 @@ export const register = (server: McpServer, wss: WSS) => {
             }
         },
         (options) => {
-            return wss.call('reparent_entity', 'entities:reparent', options);
+            return wss.call('entities:reparent', options);
         }
     );
 
@@ -138,7 +138,7 @@ export const register = (server: McpServer, wss: WSS) => {
             }
         },
         ({ ids }) => {
-            return wss.call('delete_entities', 'entities:delete', ids);
+            return wss.call('entities:delete', ids);
         }
     );
 
@@ -147,7 +147,7 @@ export const register = (server: McpServer, wss: WSS) => {
         {
             description: [
                 'List entities in the current scene, returning compact summaries by default (resource_id, name, hierarchy path, parent, enabled, tags, component names).',
-                'Results are paginated: use limit (default 50) and offset to page through large scenes; the response meta includes total, count, _has_more and _next_cursor.',
+                'Results are paginated: use limit (default 50) and offset to page through large scenes; the response meta includes total, count, hasMore and nextCursor.',
                 'Filter with name (case-insensitive contains), component (only entities with that component) and/or tag. Use full=true only when you need the complete entity JSON (large; prefer summaries).',
                 'An empty result is a successful, empty list (not an error).',
                 'When NOT to use: when you already know an entity id and just need to act on it; for runtime/play-mode state (this returns edit-time data only).'
@@ -163,11 +163,11 @@ export const register = (server: McpServer, wss: WSS) => {
                 component: ComponentNameSchema.optional().describe('Filter to entities that have this component'),
                 tag: z.string().optional().describe('Filter by tag'),
                 limit: z.number().int().min(1).max(500).optional().describe('Max entities to return (default 50)'),
-                offset: z.number().int().min(0).optional().describe('Number of entities to skip (use _next_cursor from a previous page)')
+                offset: z.number().int().min(0).optional().describe('Number of entities to skip (use nextCursor from a previous page)')
             }
         },
         (options) => {
-            return wss.call('list_entities', 'entities:list', options);
+            return wss.call('entities:list', options);
         }
     );
 
@@ -191,7 +191,7 @@ export const register = (server: McpServer, wss: WSS) => {
             }
         },
         ({ name, exact }) => {
-            return wss.call('resolve_entities', 'entities:resolve', { name, exact });
+            return wss.call('entities:resolve', { name, exact });
         }
     );
 
@@ -216,7 +216,7 @@ export const register = (server: McpServer, wss: WSS) => {
             }
         },
         ({ id, components }) => {
-            return wss.call('add_components', 'entities:components:add', id, components);
+            return wss.call('entities:components:add', id, components);
         }
     );
 
@@ -240,7 +240,7 @@ export const register = (server: McpServer, wss: WSS) => {
             }
         },
         ({ id, components }) => {
-            return wss.call('remove_components', 'entities:components:remove', id, components);
+            return wss.call('entities:components:remove', id, components);
         }
     );
 
@@ -264,7 +264,7 @@ export const register = (server: McpServer, wss: WSS) => {
             }
         },
         ({ id, scriptName }) => {
-            return wss.call('add_script_component_script', 'entities:components:script:add', id, scriptName);
+            return wss.call('entities:components:script:add', id, scriptName);
         }
     );
 
@@ -290,7 +290,7 @@ export const register = (server: McpServer, wss: WSS) => {
             }
         },
         ({ id, scriptName }) => {
-            return wss.call('attach_script', 'entities:script:attach', id, scriptName);
+            return wss.call('entities:script:attach', id, scriptName);
         }
     );
 };

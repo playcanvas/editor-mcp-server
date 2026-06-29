@@ -34,20 +34,20 @@ export const register = (server: McpServer, wss: WSS) => {
                 if (!opened || typeof opened !== 'object') {
                     // The editor returned nothing for this method — almost always
                     // an outdated extension that predates the runtime tools.
-                    return wss.fail('launch_start', 'The connected editor extension does not support launch_start (it looks outdated). Reload the unpacked extension at chrome://extensions, then DISCONNECT → CONNECT in the popup, and retry.');
+                    return wss.fail('launch:start', 'The connected editor extension does not support launch_start (it looks outdated). Reload the unpacked extension at chrome://extensions, then DISCONNECT → CONNECT in the popup, and retry.');
                 }
                 if (opened.error) {
-                    return wss.fail('launch_start', opened.error);
+                    return wss.fail('launch:start', opened.error);
                 }
                 const ready = await wss.waitForRuntime(waitMs ?? DEFAULT_READY_TIMEOUT);
                 const data = { ...(opened.data as object || {}), ready };
                 return wss.ok(
-                    'launch_start',
+                    'launch:start',
                     data,
-                    ready ? undefined : { _hint: 'Runtime did not connect in time. The launch page may still be loading (poll read_runtime_logs), or popups are blocked for the editor origin.' }
+                    ready ? undefined : { hint: 'Runtime did not connect in time. The launch page may still be loading (poll read_runtime_logs), or popups are blocked for the editor origin.' }
                 );
             } catch (err: any) {
-                return wss.fail('launch_start', err.message);
+                return wss.fail('launch:start', err.message);
             }
         }
     );
@@ -68,7 +68,7 @@ export const register = (server: McpServer, wss: WSS) => {
             }
         },
         () => {
-            return wss.call('launch_stop', 'launch:stop');
+            return wss.call('launch:stop');
         }
     );
 
@@ -87,7 +87,7 @@ export const register = (server: McpServer, wss: WSS) => {
             }
         },
         () => {
-            return wss.callImage('capture_runtime', 'runtime:capture');
+            return wss.callImage('runtime:capture');
         }
     );
 
@@ -96,7 +96,7 @@ export const register = (server: McpServer, wss: WSS) => {
         {
             description: [
                 'Read console output (log/info/warn/error), uncaught exceptions and unhandled rejections from the RUNNING Launch instance — the first-line signal for runtime bugs.',
-                'Requires launch_start first. Returns the most recent entries first, paginated (meta has total/count/_has_more/_next_cursor).',
+                'Requires launch_start first. Returns the most recent entries first, paginated (meta has total/count/hasMore/nextCursor).',
                 'Defaults to warnings + errors; set level="all" (or debug/info/warn/error as a minimum severity) to widen, and keyword to filter. An empty result is success, not an error.',
                 'When NOT to use: to read edit-time editor logs (this is the launched app only).'
             ].join(' '),
@@ -109,11 +109,11 @@ export const register = (server: McpServer, wss: WSS) => {
                 level: z.enum(['all', 'debug', 'info', 'warn', 'error']).optional().describe('Minimum severity to include (default: warn)'),
                 keyword: z.string().optional().describe('Only include entries whose text contains this (case-insensitive)'),
                 limit: z.number().int().min(1).max(1000).optional().describe('Max entries to return (default 100)'),
-                offset: z.number().int().min(0).optional().describe('Entries to skip from the newest (use _next_cursor)')
+                offset: z.number().int().min(0).optional().describe('Entries to skip from the newest (use nextCursor)')
             }
         },
         (options) => {
-            return wss.call('read_runtime_logs', 'runtime:logs', {
+            return wss.call('runtime:logs', {
                 level: options.level ?? 'warn',
                 keyword: options.keyword,
                 limit: options.limit,
@@ -167,7 +167,7 @@ export const register = (server: McpServer, wss: WSS) => {
             }
         },
         ({ events, betweenMs }) => {
-            return wss.call('inject_input', 'runtime:input', { events, betweenMs });
+            return wss.call('runtime:input', { events, betweenMs });
         }
     );
 };

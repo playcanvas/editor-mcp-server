@@ -5,17 +5,18 @@ const PING_DELAY = 1000;
 const DEFAULT_TIMEOUT = 30_000;
 
 /**
- * Metadata attached to every tool response. `_status`/`_message` are
- * underscore-prefixed so agents read them as metadata, not as business data.
+ * Metadata attached to every tool response. `status`/`message` describe the
+ * outcome; the pagination fields describe a list slice. Everything lives under
+ * `meta` so it never collides with business data in `data`.
  */
 export type Meta = {
     tool: string;
-    _status: 'ok' | 'error';
-    _message?: string;
+    status: 'ok' | 'error';
+    message?: string;
     total?: number;
     count?: number;
-    _has_more?: boolean;
-    _next_cursor?: string | null;
+    hasMore?: boolean;
+    nextCursor?: string | null;
     [key: string]: unknown;
 };
 
@@ -25,7 +26,7 @@ export type Meta = {
  * a major source of hallucinated field access.
  *
  * - `data` is always present; an empty result set is `[]`, never an error.
- * - errors live in `meta._status`/`meta._message` (never a top-level `error`).
+ * - errors live in `meta.status`/`meta.message` (never a top-level `error`).
  */
 export type Envelope<T = unknown> = {
     data: T | null;
@@ -138,7 +139,7 @@ class WSS {
     /**
      * Whether a live runtime (launch) peer is currently connected.
      *
-     * @returns {boolean} True if the runtime socket is open.
+     * @returns True if the runtime socket is open.
      */
     hasRuntime(): boolean {
         return this._sockets.runtime?.readyState === WebSocket.OPEN;
@@ -147,8 +148,8 @@ class WSS {
     /**
      * Wait for a runtime (launch) peer to connect, up to a timeout.
      *
-     * @param {number} timeoutMs - Maximum time to wait in milliseconds.
-     * @returns {Promise<boolean>} Resolves true once the runtime is connected, false on timeout.
+     * @param timeoutMs - Maximum time to wait in milliseconds.
+     * @returns Resolves true once the runtime is connected, false on timeout.
      */
     waitForRuntime(timeoutMs: number): Promise<boolean> {
         const start = Date.now();
@@ -203,19 +204,19 @@ class WSS {
      * Wrap a business payload (or error) in the unified envelope and produce an
      * MCP text response.
      *
-     * @param {string} tool - The public tool name surfaced in `meta.tool`.
-     * @param {RawResult | null} raw - The raw payload from the extension, or null on transport error.
-     * @param {string} [errorMessage] - An overriding error message (e.g. a transport failure).
-     * @returns {{ content: any[], isError?: boolean }} The MCP tool response.
+     * @param name - The websocket method name surfaced in `meta.tool`.
+     * @param raw - The raw payload from the extension, or null on transport error.
+     * @param errorMessage - An overriding error message (e.g. a transport failure).
+     * @returns The MCP tool response.
      */
-    private _wrap(tool: string, raw: RawResult | null, errorMessage?: string): { content: any[], isError?: boolean } {
+    private _wrap(name: string, raw: RawResult | null, errorMessage?: string): { content: any[], isError?: boolean } {
         const isError = !!errorMessage || !!raw?.error;
         const meta: Meta = {
-            tool,
-            _status: isError ? 'error' : 'ok'
+            tool: name,
+            status: isError ? 'error' : 'ok'
         };
         if (isError) {
-            meta._message = errorMessage ?? raw?.error;
+            meta.message = errorMessage ?? raw?.error;
         }
         if (raw?.meta) {
             Object.assign(meta, raw.meta);
@@ -237,9 +238,9 @@ class WSS {
      * Send a raw method to a peer and return its unwrapped payload. Useful when
      * a tool needs to post-process the result before wrapping it.
      *
-     * @param {string} name - The method name (routed by prefix).
-     * @param {...any} args - The method arguments.
-     * @returns {Promise<RawResult>} The raw payload from the peer.
+     * @param name - The method name (routed by prefix).
+     * @param args - The method arguments.
+     * @returns The raw payload from the peer.
      */
     raw(name: string, ...args: any[]): Promise<RawResult> {
         return this._send(name, ...args);
@@ -248,49 +249,49 @@ class WSS {
     /**
      * Build a success MCP response in the unified envelope.
      *
-     * @param {string} tool - The public tool name.
-     * @param {unknown} data - The business payload.
-     * @param {Record<string, unknown>} [meta] - Optional extra meta fields.
-     * @returns {{ content: any[], isError?: boolean }} The MCP tool response.
+     * @param name - The websocket method name surfaced in `meta.tool`.
+     * @param data - The business payload.
+     * @param meta - Optional extra meta fields.
+     * @returns The MCP tool response.
      */
-    ok(tool: string, data: unknown, meta?: Record<string, unknown>): { content: any[], isError?: boolean } {
-        return this._wrap(tool, { data, meta });
+    ok(name: string, data: unknown, meta?: Record<string, unknown>): { content: any[], isError?: boolean } {
+        return this._wrap(name, { data, meta });
     }
 
     /**
      * Build an error MCP response in the unified envelope.
      *
-     * @param {string} tool - The public tool name.
-     * @param {string} message - The actionable error message.
-     * @returns {{ content: any[], isError?: boolean }} The MCP tool response.
+     * @param name - The websocket method name surfaced in `meta.tool`.
+     * @param message - The actionable error message.
+     * @returns The MCP tool response.
      */
-    fail(tool: string, message: string): { content: any[], isError?: boolean } {
-        return this._wrap(tool, null, message);
+    fail(name: string, message: string): { content: any[], isError?: boolean } {
+        return this._wrap(name, null, message);
     }
 
-    async call(tool: string, name: string, ...args: any[]): Promise<{ content: any[], isError?: boolean }> {
+    async call(name: string, ...args: any[]): Promise<{ content: any[], isError?: boolean }> {
         try {
             const raw = await this._send(name, ...args);
-            return this._wrap(tool, raw);
+            return this._wrap(name, raw);
         } catch (err: any) {
-            return this._wrap(tool, null, err.message);
+            return this._wrap(name, null, err.message);
         }
     }
 
-    async callImage(tool: string, name: string, ...args: any[]): Promise<{ content: any[], isError?: boolean }> {
+    async callImage(name: string, ...args: any[]): Promise<{ content: any[], isError?: boolean }> {
         try {
             const raw = await this._send(name, ...args);
             if (raw.error) {
-                return this._wrap(tool, raw);
+                return this._wrap(name, raw);
             }
             if (!raw.data || typeof raw.data !== 'string') {
-                return this._wrap(tool, null, 'No image data received. Ensure a scene is loaded and the viewport has rendered at least one frame, then retry.');
+                return this._wrap(name, null, 'No image data received. Ensure a scene is loaded and the viewport has rendered at least one frame, then retry.');
             }
             const mimeType = (raw.meta?.mimeType as string) || 'image/webp';
             // Image tools still return a protocol image block, but attach a
             // parallel text block carrying the same meta so that "all metadata
             // lives in meta" holds for every tool (issue #11).
-            const meta: Meta = { tool, _status: 'ok', ...(raw.meta || {}) };
+            const meta: Meta = { tool: name, status: 'ok', ...(raw.meta || {}) };
             return {
                 content: [
                     {
@@ -305,7 +306,7 @@ class WSS {
                 ]
             };
         } catch (err: any) {
-            return this._wrap(tool, null, err.message);
+            return this._wrap(name, null, err.message);
         }
     }
 
