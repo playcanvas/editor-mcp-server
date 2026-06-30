@@ -7,13 +7,13 @@
     const LOG_CAP = 1000;
 
     /**
-     * @param {number} ms - Milliseconds to wait.
-     * @returns {Promise<void>} Resolves after the delay.
+     * @param ms - Milliseconds to wait.
+     * @returns Resolves after the delay.
      */
     const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
     /**
-     * @param {string} msg - The message to log.
+     * @param msg - The message to log.
      */
     const log = (msg) => {
         // Use the original console (captured below) to avoid recursive buffering.
@@ -30,9 +30,9 @@
     };
 
     /**
-     * @param {string} level - The log level.
-     * @param {any[]} args - The console arguments.
-     * @param {string} [stack] - Optional stack trace.
+     * @param level - The log level.
+     * @param args - The console arguments.
+     * @param stack - Optional stack trace.
      */
     const push = (level, args, stack) => {
         const text = args.map((a) => {
@@ -67,7 +67,7 @@
     const methods = new Map();
 
     /**
-     * @returns {Object|null} The running PlayCanvas application, or null.
+     * @returns The running PlayCanvas application, or null.
      */
     const getApp = () => {
         return (window.pc && (window.pc.app || (window.pc.Application && window.pc.Application.getApplication?.()))) || null;
@@ -196,8 +196,8 @@
     /**
      * Resolve a friendly key name into the fields PlayCanvas / the DOM expect.
      *
-     * @param {string} raw - The key name (e.g. 'w', 'Space', 'ArrowUp').
-     * @returns {{ key: string, code: string, keyCode: number }} Key descriptor.
+     * @param raw - The key name (e.g. 'w', 'Space', 'ArrowUp').
+     * @returns Key descriptor.
      */
     const keyInfo = (raw) => {
         const k = String(raw);
@@ -219,7 +219,7 @@
     };
 
     /**
-     * @returns {HTMLCanvasElement|null} The running app's canvas, or null.
+     * @returns The running app's canvas, or null.
      */
     const getCanvas = () => {
         const app = getApp();

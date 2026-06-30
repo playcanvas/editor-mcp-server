@@ -4,14 +4,14 @@
     }
 
     /**
-     * @param {string} msg - The message to log.
+     * @param msg - The message to log.
      */
     const log = (msg) => {
         console.log(`%c[WSC] ${msg}`, 'color:#f60');
     };
 
     /**
-     * @param {string} msg - The message to log.
+     * @param msg - The message to log.
      */
     const error = (msg) => {
         console.error(`%c[WSC] ${msg}`, 'color:#f60');
@@ -30,11 +30,11 @@
     /**
      * PlayCanvas REST API wrapper.
      *
-     * @param {'GET' | 'POST' | 'PUT' | 'DELETE'} method - The HTTP method to use.
-     * @param {string} path - The path to the API endpoint.
-     * @param {FormData | Object} data - The data to send.
-     * @param {boolean} auth - Whether to use authentication.
-     * @returns {Promise<Object>} The response data.
+     * @param method - The HTTP method to use.
+     * @param path - The path to the API endpoint.
+     * @param data - The data to send.
+     * @param auth - Whether to use authentication.
+     * @returns The response data.
      */
     const rest = (method, path, data, auth = false) => {
         const init = {
@@ -53,9 +53,9 @@
     };
 
     /**
-     * @param {Object} obj - The object to iterate.
-     * @param {Function} callback - The callback to call for each key-value pair.
-     * @param {string} currentPath - The current path of the object.
+     * @param obj - The object to iterate.
+     * @param callback - The callback to call for each key-value pair.
+     * @param currentPath - The current path of the object.
      */
     const iterateObject = (obj, callback, currentPath = '') => {
         Object.entries(obj).forEach(([key, value]) => {
@@ -72,8 +72,8 @@
      * Build a human-readable hierarchy path for an entity (e.g. `Root/Player/Camera`).
      * This resolves the otherwise opaque UUID chain into semantic context (issue #2).
      *
-     * @param {Object} entity - The entity API instance.
-     * @returns {string} The slash-separated path from the root to the entity.
+     * @param entity - The entity API instance.
+     * @returns The slash-separated path from the root to the entity.
      */
     const entityPath = (entity) => {
         const names = [];
@@ -93,8 +93,8 @@
      * Returning this inline after mutations lets agents skip a follow-up
      * `list_entities` round-trip (issue #12).
      *
-     * @param {Object} entity - The entity API instance.
-     * @returns {Object} The entity summary.
+     * @param entity - The entity API instance.
+     * @returns The entity summary.
      */
     const entitySummary = (entity) => {
         const components = entity.get('components') || {};
@@ -112,8 +112,8 @@
     /**
      * Compact summary for an asset.
      *
-     * @param {Object} asset - The asset API instance.
-     * @returns {Object} The asset summary.
+     * @param asset - The asset API instance.
+     * @returns The asset summary.
      */
     const assetSummary = (asset) => {
         const path = asset.get('path') || [];
@@ -130,11 +130,11 @@
      * Apply limit/offset pagination to a list and return the page plus the
      * pagination metadata that belongs in the response envelope (issue #1).
      *
-     * @param {Array} items - The full result set.
-     * @param {Object} options - Pagination options.
-     * @param {number} [options.limit] - Max items to return (default 50).
-     * @param {number} [options.offset] - Items to skip (default 0).
-     * @returns {{ page: Array, meta: Object }} The page and pagination meta.
+     * @param items - The full result set.
+     * @param options - Pagination options.
+     * @param options.limit - Max items to return (default 50).
+     * @param options.offset - Items to skip (default 0).
+     * @returns The page and pagination meta.
      */
     const paginate = (items, options = {}) => {
         const total = items.length;
@@ -193,9 +193,9 @@
         }
 
         /**
-         * @param {string} address - The address to connect to.
-         * @param {Function} resolve - The function to call when the connection is established.
-         * @param {number} [retryTimeout] - The timeout to retry the connection.
+         * @param address - The address to connect to.
+         * @param resolve - The function to call when the connection is established.
+         * @param retryTimeout - The timeout to retry the connection.
          */
         connect(address, retryTimeout = 1000) {
             this._status = WSC.STATUS_CONNECTING;
@@ -223,9 +223,9 @@
         }
 
         /**
-         * @param {string} address - The address to connect to.
-         * @param {number} retryTimeout - The timeout to retry the connection.
-         * @param {Function} resolve - The function to call when the connection is established
+         * @param address - The address to connect to.
+         * @param retryTimeout - The timeout to retry the connection.
+         * @param resolve - The function to call when the connection is established
          * @private
          */
         _connect(address, retryTimeout, resolve) {
@@ -267,8 +267,8 @@
         }
 
         /**
-         * @param {string} name - The name of the method to add.
-         * @param {(...args: any[]) => { data?: any, error?: string }} fn - The function to call when the method is called.
+         * @param name - The name of the method to add.
+         * @param fn - The function to call when the method is called.
          */
         method(name, fn) {
             if (this._methods.get(name)) {
@@ -279,9 +279,9 @@
         }
 
         /**
-         * @param {string} name - The name of the method to call.
-         * @param {...*} args - The arguments to pass to the method.
-         * @returns {{ data?: any, error?: string }} The response data.
+         * @param name - The name of the method to call.
+         * @param args - The arguments to pass to the method.
+         * @returns The response data.
          */
         call(name, ...args) {
             const fn = this._methods.get(name);
