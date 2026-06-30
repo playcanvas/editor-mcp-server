@@ -1,8 +1,6 @@
 {
   "name": "@playcanvas/editor-mcp-server",
   "version": "0.1.0",
-  "author": "PlayCanvas <support@playcanvas.com>",
-  "homepage": "https://github.com/playcanvas/editor-mcp-server#readme",
   "description": "The PlayCanvas Editor MCP Server",
   "keywords": [
     "playcanvas",
@@ -10,8 +8,7 @@
     "mcp",
     "cli"
   ],
-  "license": "MIT",
-  "type": "module",
+  "homepage": "https://github.com/playcanvas/editor-mcp-server#readme",
   "bugs": {
     "url": "https://github.com/playcanvas/editor-mcp-server/issues"
   },
@@ -19,18 +16,30 @@
     "type": "git",
     "url": "git+https://github.com/playcanvas/editor-mcp-server.git"
   },
-  "files": [
-    "src"
-  ],
+  "license": "MIT",
+  "author": "PlayCanvas <support@playcanvas.com>",
+  "type": "module",
   "bin": {
     "mcp-server": "cli.mjs"
   },
+  "files": [
+    "src"
+  ],
   "scripts": {
-    "start": "tsx src/server.ts",
-    "watch": "tsx watch src/server.ts",
     "debug": "npx @modelcontextprotocol/inspector tsx src/server.ts",
     "lint": "eslint src",
-    "publint": "publint"
+    "lint:fix": "eslint src --fix",
+    "publint": "publint",
+    "start": "tsx src/server.ts",
+    "watch": "tsx watch src/server.ts"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.25.2",
+    "command-line-args": "^6.0.1",
+    "command-line-usage": "^7.0.3",
+    "tsx": "^4.21.0",
+    "ws": "^8.19.0",
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "@playcanvas/eslint-config": "3.0.0-beta.6",
@@ -42,13 +51,5 @@
     "globals": "^17.0.0",
     "publint": "^0.3.16",
     "typescript": "^5.9.3"
-  },
-  "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.25.2",
-    "command-line-args": "^6.0.1",
-    "command-line-usage": "^7.0.3",
-    "tsx": "^4.21.0",
-    "ws": "^8.19.0",
-    "zod": "^3.23.8"
   }
 }

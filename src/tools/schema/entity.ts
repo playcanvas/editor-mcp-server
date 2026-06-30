@@ -1,4 +1,5 @@
-import { z, type ZodTypeAny } from 'zod';
+import { z  } from 'zod';
+import type {ZodTypeAny} from 'zod';
 
 import { AssetIdSchema, RgbSchema, RgbaSchema, Vec2Schema, Vec3Schema, Vec4Schema } from './common';
 
