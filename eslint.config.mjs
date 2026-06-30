@@ -1,32 +1,3 @@
-import playcanvasConfig from '@playcanvas/eslint-config';
-import typescriptParser from '@typescript-eslint/parser';
-import globals from 'globals';
+import typescriptConfig from '@playcanvas/eslint-config/typescript';
 
-export default [
-    ...playcanvasConfig,
-    {
-        files: ['**/*.ts', '**/*.mjs', '**/*.js'],
-        languageOptions: {
-            ecmaVersion: 2022,
-            sourceType: 'module',
-            parser: typescriptParser,
-            parserOptions: {
-                requireConfigFile: false
-            },
-            globals: {
-                ...globals.browser,
-                ...globals.mocha,
-                ...globals.node,
-                ...globals.webextensions
-            }
-        },
-        settings: {
-            'import/resolver': {
-                typescript: {
-                    alwaysTryTypes: true,
-                    project: './tsconfig.json'
-                }
-            }
-        }
-    }
-];
+export default typescriptConfig;

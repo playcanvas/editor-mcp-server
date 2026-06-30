@@ -1,13 +1,16 @@
+import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import { WebSocketServer, WebSocket } from 'ws';
 
 const PING_DELAY = 1000;
+
+type Reply = { data?: unknown, error?: string };
 
 class WSS {
     private _server: WebSocketServer;
 
     private _socket?: WebSocket;
 
-    private _callbacks = new Map();
+    private _callbacks = new Map<number, (res: Reply) => void>();
 
     private _id = 0;
 
@@ -27,9 +30,10 @@ class WSS {
             console.error('[WSS] Connected');
             ws.on('message', (data) => {
                 try {
-                    const { id, res } = JSON.parse(data.toString());
-                    if (this._callbacks.has(id)) {
-                        this._callbacks.get(id)(res);
+                    const { id, res } = JSON.parse(data.toString()) as { id: number, res: Reply };
+                    const cb = this._callbacks.get(id);
+                    if (cb) {
+                        cb(res);
                         this._callbacks.delete(id);
                     }
                 } catch (e) {
@@ -55,8 +59,8 @@ class WSS {
         });
     }
 
-    private _send(name: string, ...args: any[]) {
-        return new Promise<{ data?: any, error?: string }>((resolve, reject) => {
+    private _send(name: string, ...args: unknown[]) {
+        return new Promise<Reply>((resolve, reject) => {
             const id = this._id++;
             this._callbacks.set(id, resolve);
             if (!this._socket) {
@@ -71,7 +75,7 @@ class WSS {
         });
     }
 
-    async call(name: string, ...args: any[]): Promise<{ content: any[], isError?: boolean }> {
+    async call(name: string, ...args: unknown[]): Promise<CallToolResult> {
         try {
             const { data, error } = await this._send(name, ...args);
             if (error) {
@@ -83,18 +87,19 @@ class WSS {
                     text: JSON.stringify(data)
                 }]
             };
-        } catch (err: any) {
+        } catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
             return {
                 content: [{
                     type: 'text',
-                    text: err.message
+                    text: message
                 }],
                 isError: true
             };
         }
     }
 
-    async callImage(name: string, ...args: any[]): Promise<{ content: any[], isError?: boolean }> {
+    async callImage(name: string, ...args: unknown[]): Promise<CallToolResult> {
         try {
             const { data, error } = await this._send(name, ...args);
             if (error) {
@@ -103,15 +108,16 @@ class WSS {
             return {
                 content: [{
                     type: 'image',
-                    data: data,
+                    data: String(data),
                     mimeType: 'image/jpeg'
                 }]
             };
-        } catch (err: any) {
+        } catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
             return {
                 content: [{
                     type: 'text',
-                    text: err.message
+                    text: message
                 }],
                 isError: true
             };

@@ -15,7 +15,7 @@ import { WSS } from './wss';
 
 const PORT = parseInt(process.env.PORT || '52000', 10);
 
-const poll = (cond: () => boolean, rate: number = 1000) => {
+const poll = (cond: () => boolean, rate = 1000) => {
     return new Promise<void>((resolve) => {
         const id = setInterval(() => {
             if (cond()) {
@@ -30,7 +30,7 @@ const findPid = (port: number) => {
     if (process.platform === 'win32') {
         try {
             return execSync(`netstat -ano | findstr 0.0.0.0:${PORT}`).toString().trim().split(' ').pop();
-        } catch (e) {
+        } catch {
             return '';
         }
     }
@@ -42,14 +42,14 @@ const kill = (pid: string) => {
         try {
             // /F = force, /T = tree kill (kills child processes too)
             execSync(`taskkill /F /T /PID ${pid}`, { stdio: 'ignore' });
-        } catch (e) {
+        } catch {
             // Ignore - process may already be dead
         }
         return;
     }
     try {
         execSync(`kill -9 ${pid}`);
-    } catch (e) {
+    } catch {
         // Ignore - process may already be dead
     }
 };
