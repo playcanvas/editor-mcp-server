@@ -48,7 +48,6 @@
     "@types/command-line-usage": "^5.0.4",
     "@types/ws": "^8.18.1",
     "eslint": "^9.39.2",
-    "globals": "^17.0.0",
     "publint": "^0.3.16",
     "typescript": "^5.9.3"
   }
