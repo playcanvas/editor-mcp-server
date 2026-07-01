@@ -127,6 +127,23 @@ class WSS {
             ws.on('message', (data) => {
                 try {
                     const msg = JSON.parse(data.toString());
+                    // A newer server instance politely asks us to hand off the
+                    // port so the *active* client controls the editor. We release
+                    // the port (without exiting, so our MCP client doesn't
+                    // restart us) and stand by to take it back if that instance
+                    // later exits. This is what makes "latest instance wins"
+                    // work without a kill/restart storm.
+                    if (msg.yield === true) {
+                        if (this._sockets[role] === ws) {
+                            this._sockets[role] = undefined;
+                        }
+                        console.error('[WSS] Yield requested; relinquishing port to a newer instance and standing by');
+                        try {
+                            ws.close();
+                        } catch { /* already closing */ }
+                        this._relinquish();
+                        return;
+                    }
                     if (msg.register === 'editor' || msg.register === 'runtime') {
                         const newRole: Role = msg.register;
                         // Vacate the optimistic slot if we're switching roles.
@@ -194,6 +211,33 @@ class WSS {
             }
             this._send('ping').catch(() => { /* ping failures are non-fatal */ });
         }, PING_DELAY);
+    }
+
+    /**
+     * Release the port and drop peers WITHOUT exiting the process, then re-enter
+     * standby so we automatically take the port back if the new owner exits.
+     * Used when a newer instance requests a graceful handoff.
+     */
+    private _relinquish() {
+        this._listening = false;
+        if (this._pingInterval) {
+            clearInterval(this._pingInterval);
+            this._pingInterval = null;
+        }
+        // Drop peers so the editor extension reconnects to the new owner.
+        (['editor', 'runtime'] as Role[]).forEach((role) => {
+            try {
+                this._sockets[role]?.close();
+            } catch { /* already closing */ }
+            this._sockets[role] = undefined;
+        });
+        try {
+            this._server.close();
+        } catch { /* already closing */ }
+        if (this._bindTimer) {
+            clearTimeout(this._bindTimer);
+        }
+        this._bindTimer = setTimeout(() => this._bind(), BIND_RETRY_DELAY);
     }
 
     /**

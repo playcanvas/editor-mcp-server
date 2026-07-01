@@ -3,6 +3,7 @@ import { execSync } from 'child_process';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { ListPromptsRequestSchema, ListResourcesRequestSchema } from '@modelcontextprotocol/sdk/types.js';
+import { WebSocket } from 'ws';
 
 import { register as registerAsset } from './tools/asset';
 import { register as registerAssetMaterial } from './tools/assets/material';
@@ -68,20 +69,68 @@ const waitForPortFree = (timeoutMs: number) => {
     });
 };
 
-// By default, coexist with any MCP server instance that already owns the port:
-// the WSS stands by and automatically takes over when that instance exits. This
-// avoids the kill/restart storm that happens when several agents each run their
-// own MCP server — killing a live sibling makes its client restart it, which
-// then kills us back, and so on. Set MCP_TAKEOVER=1 to force-reclaim the port.
-if (process.env.MCP_TAKEOVER === '1') {
-    const existing = stale();
-    if (existing.length) {
+// Ask whoever currently owns the port to gracefully hand it off, so the *newest*
+// (active) client ends up controlling the editor. The owner releases the port
+// without exiting, so its MCP client doesn't restart it — no kill/restart storm.
+const requestYield = (port: number, timeoutMs: number) => {
+    return new Promise<void>((resolve) => {
+        let settled = false;
+        const done = () => {
+            if (!settled) {
+                settled = true;
+                resolve();
+            }
+        };
+        let ws: WebSocket;
+        try {
+            ws = new WebSocket(`ws://127.0.0.1:${port}`);
+        } catch {
+            done();
+            return;
+        }
+        const timer = setTimeout(() => {
+            try {
+                ws.close();
+            } catch { /* noop */ }
+            done();
+        }, timeoutMs);
+        ws.on('open', () => {
+            try {
+                ws.send(JSON.stringify({ yield: true }));
+            } catch { /* noop */ }
+        });
+        ws.on('close', () => {
+            clearTimeout(timer);
+            done();
+        });
+        ws.on('error', () => {
+            clearTimeout(timer);
+            done();
+        });
+    });
+};
+
+// Take over the port from any existing instance so the active client controls
+// the editor. Prefer a graceful handoff (no killing); fall back to reclaiming
+// the port only if the current owner won't yield (old build, orphan, or hung).
+const existing = stale();
+if (existing.length) {
+    if (process.env.MCP_TAKEOVER === '1') {
         console.error('[process] MCP_TAKEOVER=1: killing process(es) on port', PORT, existing.join(', '));
         existing.forEach(kill);
         await waitForPortFree(5000);
+    } else {
+        console.error('[process] Port', PORT, 'in use; requesting graceful handoff from the current owner');
+        await requestYield(PORT, 1500);
+        await waitForPortFree(3000);
         if (stale().length) {
-            console.error('[process] Port', PORT, 'still in use after timeout; standing by until it frees');
+            console.error('[process] No handoff; reclaiming port', PORT, 'from', stale().join(', '));
+            stale().forEach(kill);
+            await waitForPortFree(5000);
         }
+    }
+    if (stale().length) {
+        console.error('[process] Port', PORT, 'still in use after timeout; will stand by and retry');
     }
 }
 
