@@ -7,13 +7,13 @@
     const LOG_CAP = 1000;
 
     /**
-     * @param ms - Milliseconds to wait.
-     * @returns Resolves after the delay.
+     * @param {number} ms - Milliseconds to wait.
+     * @returns {Promise<void>} Resolves after the delay.
      */
     const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
     /**
-     * @param msg - The message to log.
+     * @param {string} msg - The message to log.
      */
     const log = (msg) => {
         // Use the original console (captured below) to avoid recursive buffering.
@@ -30,9 +30,9 @@
     };
 
     /**
-     * @param level - The log level.
-     * @param args - The console arguments.
-     * @param stack - Optional stack trace.
+     * @param {string} level - The log level.
+     * @param {any[]} args - The console arguments.
+     * @param {string} [stack] - Optional stack trace.
      */
     const push = (level, args, stack) => {
         const text = args.map((a) => {
@@ -67,7 +67,7 @@
     const methods = new Map();
 
     /**
-     * @returns The running PlayCanvas application, or null.
+     * @returns {Object|null} The running PlayCanvas application, or null.
      */
     const getApp = () => {
         return (window.pc && (window.pc.app || (window.pc.Application && window.pc.Application.getApplication?.()))) || null;
@@ -173,8 +173,8 @@
      * Round a number to 4 decimals to keep runtime-state payloads compact and
      * free of float noise (e.g. 1.0000000002 -> 1).
      *
-     * @param n - The number to round.
-     * @returns The rounded number.
+     * @param {number} n - The number to round.
+     * @returns {number} The rounded number.
      */
     const round = (n) => (typeof n === 'number' && Number.isFinite(n) ? Math.round(n * 1e4) / 1e4 : n);
 
@@ -183,8 +183,8 @@
      * ground-truth read-back that lets the agent confirm behaviour (did the ball
      * move? did the score update?) without guessing screenshot timing (P0-3).
      *
-     * @param e - The pc.Entity instance.
-     * @returns The runtime state summary.
+     * @param {Object} e - The pc.Entity instance.
+     * @returns {Object} The runtime state summary.
      */
     const entityRuntimeState = (e) => {
         const p = e.getPosition();
@@ -284,8 +284,8 @@
     /**
      * Resolve a friendly key name into the fields PlayCanvas / the DOM expect.
      *
-     * @param raw - The key name (e.g. 'w', 'Space', 'ArrowUp').
-     * @returns Key descriptor.
+     * @param {string} raw - The key name (e.g. 'w', 'Space', 'ArrowUp').
+     * @returns {{ key: string, code: string, keyCode: number }} Key descriptor.
      */
     const keyInfo = (raw) => {
         const k = String(raw);
@@ -307,7 +307,7 @@
     };
 
     /**
-     * @returns The running app's canvas, or null.
+     * @returns {HTMLCanvasElement|null} The running app's canvas, or null.
      */
     const getCanvas = () => {
         const app = getApp();

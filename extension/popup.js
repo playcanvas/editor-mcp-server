@@ -42,8 +42,8 @@ body.appendChild(connectBtn);
 /**
  * Creates a state management hook.
  *
- * @param defaultState - The default state.
- * @returns The state getter and setter.
+ * @param {string} defaultState - The default state.
+ * @returns {[function(): string, function(string): void]} The state getter and setter.
  */
 const useState = (defaultState) => {
     let state;
@@ -99,8 +99,8 @@ class EventHandler {
     _handlers = new Map();
 
     /**
-     * @param name - The name of the event to add.
-     * @param fn - The function to call when the event is triggered.
+     * @param {string} name - The name of the event to add.
+     * @param {(...args: any[]) => void} fn - The function to call when the event is triggered.
      */
     on(name, fn) {
         if (!this._handlers.has(name)) {
@@ -110,8 +110,8 @@ class EventHandler {
     }
 
     /**
-     * @param name - The name of the event to remove.
-     * @param fn - The function to remove.
+     * @param {string} name - The name of the event to remove.
+     * @param {(...args: any[]) => void} fn - The function to remove.
      */
     off(name, fn) {
         if (!this._handlers.has(name)) {
@@ -128,8 +128,8 @@ class EventHandler {
     }
 
     /**
-     * @param name - The name of the event to trigger.
-     * @param args - The arguments to pass to the event.
+     * @param {string} name - The name of the event to trigger.
+     * @param {...*} args - The arguments to pass to the event.
      */
     fire(name, ...args) {
         if (!this._handlers.has(name)) {
@@ -155,9 +155,9 @@ chrome.runtime.onMessage.addListener((data) => {
 /**
  * Sends a message to the content script.
  *
- * @param name - The name of the message to send.
- * @param args - The arguments to pass to the message.
- * @returns A promise that resolves to true if the message was sent successfully, false otherwise.
+ * @param {string} name - The name of the message to send.
+ * @param {...*} args - The arguments to pass to the message.
+ * @returns {Promise<boolean>} A promise that resolves to true if the message was sent successfully, false otherwise.
  */
 const send = async (name, ...args) => {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
