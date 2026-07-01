@@ -109,6 +109,44 @@
         };
     };
 
+    // Top-level entity properties that modify_entities may set directly. Anything
+    // else must be addressed under `components.<type>.…` (or is not settable).
+    const ENTITY_TOP_LEVEL_PATHS = ['name', 'enabled', 'position', 'rotation', 'scale', 'tags'];
+
+    /**
+     * Validate a modify_entities path against an entity BEFORE writing, so an
+     * invalid path fails fast with an actionable message instead of silently
+     * "succeeding" (issue #8 / P0-2). Only rejects paths that are provably wrong
+     * (unknown top-level key, or a component path for a component the entity does
+     * not have) — valid edits are never blocked.
+     *
+     * @param entity - The entity API instance.
+     * @param path - The dot-notation path the caller wants to set.
+     * @returns An actionable error string if the path is invalid, otherwise null.
+     */
+    const validateEntityPath = (entity, path) => {
+        const components = Object.keys(entity.get('components') || {});
+        const componentList = components.length ? components.join(', ') : 'none';
+        if (typeof path !== 'string' || !path.length) {
+            return `Missing path. Valid top-level paths: ${ENTITY_TOP_LEVEL_PATHS.join(', ')}; or component paths like components.<type>.<prop>. This entity has components: [${componentList}].`;
+        }
+        if (path.startsWith('components.')) {
+            const component = path.split('.')[1];
+            if (!component) {
+                return `Incomplete path '${path}'. Component paths look like components.<type>.<prop>, e.g. components.light.intensity. This entity has components: [${componentList}].`;
+            }
+            if (!entity.get(`components.${component}`)) {
+                return `Entity ${entity.get('resource_id')} (${entity.get('name')}) has no '${component}' component, so '${path}' cannot be set. This entity has components: [${componentList}]. Add it first with add_components, or target an existing component.`;
+            }
+            return null;
+        }
+        const top = path.split('.')[0];
+        if (!ENTITY_TOP_LEVEL_PATHS.includes(top)) {
+            return `Unknown path '${path}'. Valid top-level paths: ${ENTITY_TOP_LEVEL_PATHS.join(', ')} (vectors are arrays e.g. position [0,1,0], euler rotation in degrees). For component properties use components.<type>.<prop>; this entity has components: [${componentList}].`;
+        }
+        return null;
+    };
+
     /**
      * Compact summary for an asset.
      *
@@ -527,6 +565,13 @@
             const entity = api.entities.get(id);
             if (!entity) {
                 return { error: `Entity not found: ${id}. Call list_entities (or resolve_entities) to obtain a valid resource_id.` };
+            }
+            // Validate-on-write: reject a provably-invalid path up front so the
+            // agent gets an actionable message and never mistakes a no-op for a
+            // successful edit (issue #8 / P0-2).
+            const pathError = validateEntityPath(entity, path);
+            if (pathError) {
+                return { error: pathError };
             }
             entity.set(path, value);
             modified.set(id, entity);

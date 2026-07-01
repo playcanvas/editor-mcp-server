@@ -57,7 +57,7 @@ const CollisionSchema = z.object({
     renderAsset: AssetIdSchema.optional().describe('Render asset'),
     linearOffset: Vec3Schema.optional(),
     angularOffset: Vec3Schema.optional()
-}).describe('Collision component');
+}).describe('Collision component. Requires the Ammo physics module to be enabled in the project (IMPORT AMMO) to take effect. halfExtents/radius are in LOCAL space and are multiplied by the entity world scale — size the collider via these fields rather than relying on entity scale.');
 
 const ElementSchema = z.object({
     enabled: z.boolean().optional(),
@@ -198,7 +198,7 @@ const RigidBodySchema = z.object({
     angularFactor: Vec3Schema.optional(),
     friction: z.number().min(0).max(1).optional(),
     restitution: z.number().min(0).max(1).optional().describe('Bounciness')
-}).describe('Rigidbody component');
+}).describe('Rigidbody component. Requires the Ammo physics module to be enabled in the project (IMPORT AMMO); without it the body will not simulate. Usually paired with a collision component.');
 
 const ScreenSchema = z.object({
     enabled: z.boolean().optional(),

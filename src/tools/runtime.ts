@@ -122,6 +122,33 @@ export const register = (server: McpServer, wss: WSS) => {
         }
     );
 
+    server.registerTool(
+        'query_runtime_state',
+        {
+            description: [
+                'Read the LIVE runtime state of entities in the RUNNING Launch instance — the non-visual ground-truth read-back for verifying play-mode behaviour without guessing screenshot timing.',
+                'Requires launch_start first. For each matched entity returns world position, local position, euler rotation, scale, enabled, component names, plus rigidbody (type/mass/linearVelocity/angularVelocity) and element (type/text, e.g. a HUD score label) when present.',
+                'Filter with ids (editor resource_ids — the runtime uses the same GUIDs) or name (case-insensitive substring); omit both to page through every entity. Paginated via limit (default 50) + offset (meta has total/count/hasMore/nextCursor).',
+                'Use this to answer questions the camera cannot: "did the ball actually move / fall through the floor?", "is the rigidbody simulating (velocity != 0)?", "what does the score HUD say?". An empty result is success, not an error.',
+                'When NOT to use: for edit-time scene data (use list_entities); before launch_start; to change state (use modify_entities / inject_input).'
+            ].join(' '),
+            annotations: {
+                title: 'Query Runtime State',
+                readOnlyHint: true,
+                openWorldHint: false
+            },
+            inputSchema: {
+                ids: z.array(z.string()).optional().describe('Entity resource_ids to inspect (same GUIDs as edit-time). Omit to filter by name or list all.'),
+                name: z.string().optional().describe('Filter by entity name (case-insensitive substring)'),
+                limit: z.number().int().min(1).max(500).optional().describe('Max entities to return (default 50)'),
+                offset: z.number().int().min(0).optional().describe('Entities to skip (use nextCursor from a previous page)')
+            }
+        },
+        (options) => {
+            return wss.call('runtime:state', options);
+        }
+    );
+
     const KeyEventSchema = z.object({
         type: z.literal('key'),
         key: z.string().describe('Key name: a single char ("w", "1"), or a named key ("Space", "Enter", "ArrowUp", "Shift", "Escape")'),

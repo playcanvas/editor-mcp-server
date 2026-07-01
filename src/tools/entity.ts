@@ -15,6 +15,7 @@ export const register = (server: McpServer, wss: WSS) => {
                 'Use this to add new objects: cameras, lights, models, UI, empty groups, etc.',
                 'Coordinates are local to the parent; rotation is euler degrees; scale is a multiplier.',
                 'Returns the created entity summaries inline (resource_id, name, path, components) so you do NOT need a follow-up list_entities call to recover the new ids.',
+                'Physics note: rigidbody/collision components only simulate if the project has the Ammo physics module enabled (Editor: click IMPORT AMMO / enable physics in project settings). Without it, rigidbodies are created but stay frozen at launch — enable Ammo before relying on physics rather than pausing to ask.',
                 'When NOT to use: to change an existing entity (use modify_entities), to add a component to an existing entity (use add_components), or to instantiate a template asset (use instantiate_template_assets).'
             ].join(' '),
             annotations: {
@@ -41,9 +42,10 @@ export const register = (server: McpServer, wss: WSS) => {
         {
             description: [
                 'Set properties on existing entities by dot-notation path.',
-                'Common paths: "name", "enabled", "position" ([x,y,z] local), "rotation" ([x,y,z] euler degrees), "scale" ([x,y,z]), "tags",',
-                'and component properties such as "components.light.intensity", "components.camera.fov", "components.render.castShadows", "components.script.scripts.<name>.attributes.<attr>".',
+                'Valid top-level paths: "name", "enabled", "position" ([x,y,z] local), "rotation" ([x,y,z] euler degrees), "scale" ([x,y,z]), "tags".',
+                'Component properties use "components.<type>.<prop>", e.g. "components.light.intensity", "components.camera.fov", "components.render.castShadows", "components.script.scripts.<name>.attributes.<attr>" (the entity must already have that component; add it with add_components first).',
                 'Each edit targets one entity id + one path. Returns the post-edit summaries of the affected entities.',
+                'Edits are validated on write: an unknown top-level path, or a component path for a component the entity does not have, fails immediately with a message listing the entity\'s valid paths/components — so you can fix it in one shot instead of retrying blind.',
                 'When NOT to use: to create entities (use create_entities), to add/remove components (use add_components/remove_components), or to change scene-wide settings (use modify_scene_settings).'
             ].join(' '),
             annotations: {
@@ -202,6 +204,7 @@ export const register = (server: McpServer, wss: WSS) => {
             description: [
                 'Add one or more components to an existing entity (camera, light, render, collision, rigidbody, element, screen, script, sound, etc.).',
                 'Pass each component\'s initial data under its name. Returns the updated entity summary.',
+                'Physics note: rigidbody/collision components only simulate when the project has the Ammo physics module enabled (Editor: IMPORT AMMO / enable physics in project settings). If it is not enabled, add the components then enable Ammo — do not stall on the decision.',
                 'When NOT to use: to create a new entity (use create_entities), to tweak an existing component property (use modify_entities), or to attach a script to a script component (use attach_script).'
             ].join(' '),
             annotations: {

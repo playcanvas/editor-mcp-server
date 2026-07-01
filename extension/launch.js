@@ -169,6 +169,94 @@
         };
     });
 
+    /**
+     * Round a number to 4 decimals to keep runtime-state payloads compact and
+     * free of float noise (e.g. 1.0000000002 -> 1).
+     *
+     * @param n - The number to round.
+     * @returns The rounded number.
+     */
+    const round = (n) => (typeof n === 'number' && Number.isFinite(n) ? Math.round(n * 1e4) / 1e4 : n);
+
+    /**
+     * Build a compact, non-visual snapshot of a live runtime entity — the
+     * ground-truth read-back that lets the agent confirm behaviour (did the ball
+     * move? did the score update?) without guessing screenshot timing (P0-3).
+     *
+     * @param e - The pc.Entity instance.
+     * @returns The runtime state summary.
+     */
+    const entityRuntimeState = (e) => {
+        const p = e.getPosition();
+        const lp = e.getLocalPosition();
+        const r = e.getEulerAngles();
+        const s = e.getLocalScale();
+        const state = {
+            name: e.name,
+            guid: e.getGuid(),
+            enabled: e.enabled,
+            position: [round(p.x), round(p.y), round(p.z)],
+            localPosition: [round(lp.x), round(lp.y), round(lp.z)],
+            rotation: [round(r.x), round(r.y), round(r.z)],
+            scale: [round(s.x), round(s.y), round(s.z)],
+            components: Object.keys(e.c || {})
+        };
+        if (e.rigidbody) {
+            const lv = e.rigidbody.linearVelocity;
+            const av = e.rigidbody.angularVelocity;
+            state.rigidbody = {
+                type: e.rigidbody.type,
+                mass: e.rigidbody.mass,
+                enabled: e.rigidbody.enabled,
+                linearVelocity: lv ? [round(lv.x), round(lv.y), round(lv.z)] : null,
+                angularVelocity: av ? [round(av.x), round(av.y), round(av.z)] : null
+            };
+        }
+        if (e.collision) {
+            state.collision = { type: e.collision.type, enabled: e.collision.enabled };
+        }
+        if (e.element) {
+            state.element = { type: e.element.type, text: e.element.text };
+        }
+        return state;
+    };
+
+    methods.set('runtime:state', (options = {}) => {
+        const app = getApp();
+        if (!app || !app.root) {
+            return { error: 'Runtime app not ready yet. Wait for the scene to finish loading (poll read_runtime_logs) and retry.' };
+        }
+
+        let entities;
+        if (Array.isArray(options.ids) && options.ids.length) {
+            entities = options.ids.map((id) => app.root.findByGuid(id)).filter(Boolean);
+        } else if (options.name) {
+            const q = String(options.name).toLowerCase();
+            entities = app.root.find((n) => typeof n.getGuid === 'function' && n.name && n.name.toLowerCase().includes(q));
+        } else {
+            // No filter: return every entity (paginated). Excludes the root.
+            entities = app.root.find((n) => typeof n.getGuid === 'function' && n !== app.root);
+        }
+
+        const total = entities.length;
+        const limit = Number.isFinite(options.limit) ? Math.max(0, options.limit) : 50;
+        const offset = Number.isFinite(options.offset) ? Math.max(0, options.offset) : 0;
+        const page = limit > 0 ? entities.slice(offset, offset + limit) : entities.slice(offset);
+        const end = offset + page.length;
+        const hasMore = end < total;
+
+        log(`Queried runtime state (${page.length}/${total})`);
+        return {
+            data: page.map(entityRuntimeState),
+            meta: {
+                total,
+                count: page.length,
+                hasMore,
+                nextCursor: hasMore ? String(end) : null
+            }
+        };
+    });
+
     const SPECIAL_KEYS = {
         ' ': { key: ' ', code: 'Space', keyCode: 32 },
         'space': { key: ' ', code: 'Space', keyCode: 32 },
