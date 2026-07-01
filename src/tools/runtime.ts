@@ -1,7 +1,7 @@
-import { type McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 
-import { type WSS } from '../wss';
+import type { WSS } from '../wss';
 
 const DEFAULT_READY_TIMEOUT = 20_000;
 
@@ -46,8 +46,8 @@ export const register = (server: McpServer, wss: WSS) => {
                     data,
                     ready ? undefined : { hint: 'Runtime did not connect in time. The launch page may still be loading (poll read_runtime_logs), or popups are blocked for the editor origin.' }
                 );
-            } catch (err: any) {
-                return wss.fail('launch:start', err.message);
+            } catch (err) {
+                return wss.fail('launch:start', err instanceof Error ? err.message : String(err));
             }
         }
     );

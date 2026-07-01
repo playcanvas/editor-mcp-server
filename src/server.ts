@@ -27,7 +27,7 @@ const findPids = (port: number): string[] => {
         const lines = execSync(cmd).toString().split('\n');
         const pids = lines.map(line => line.trim().split(/\s+/).pop() || '').filter(p => /^\d+$/.test(p));
         return Array.from(new Set(pids));
-    } catch (e) {
+    } catch {
         // No listener (lsof/netstat exit non-zero when nothing matches).
         return [];
     }
@@ -38,14 +38,14 @@ const kill = (pid: string) => {
         try {
             // /F = force, /T = tree kill (kills child processes too)
             execSync(`taskkill /F /T /PID ${pid}`, { stdio: 'ignore' });
-        } catch (e) {
+        } catch {
             // Ignore - process may already be dead
         }
         return;
     }
     try {
         execSync(`kill -9 ${pid}`);
-    } catch (e) {
+    } catch {
         // Ignore - process may already be dead
     }
 };

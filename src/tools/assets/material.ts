@@ -1,6 +1,6 @@
-import { type McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 
-import { type WSS } from '../../wss';
+import type { WSS } from '../../wss';
 import { MaterialSchema } from '../schema/asset';
 import { AssetIdSchema, RgbSchema } from '../schema/common';
 

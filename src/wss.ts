@@ -1,3 +1,4 @@
+import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import { WebSocketServer, WebSocket } from 'ws';
 
 const PING_DELAY = 1000;
@@ -54,7 +55,7 @@ class WSS {
 
     private _sockets: Record<Role, WebSocket | undefined> = { editor: undefined, runtime: undefined };
 
-    private _callbacks = new Map();
+    private _callbacks = new Map<number, (res: RawResult) => void>();
 
     private _id = 0;
 
@@ -106,8 +107,9 @@ class WSS {
                         return;
                     }
                     const { id, res } = msg;
-                    if (this._callbacks.has(id)) {
-                        this._callbacks.get(id)(res);
+                    const cb = this._callbacks.get(id);
+                    if (cb) {
+                        cb(res);
                         this._callbacks.delete(id);
                     }
                 } catch (e) {
@@ -132,7 +134,7 @@ class WSS {
             clearInterval(this._pingInterval);
         }
         this._pingInterval = setInterval(() => {
-            this._send('ping').then(() => console.error('[WSS] Ping')).catch(() => {});
+            this._send('ping').then(() => console.error('[WSS] Ping')).catch(() => { /* ping failures are non-fatal */ });
         }, PING_DELAY);
     }
 
@@ -169,7 +171,7 @@ class WSS {
         });
     }
 
-    private _send(name: string, ...args: any[]) {
+    private _send(name: string, ...args: unknown[]) {
         // `runtime:*` methods go to the launch page; everything else (including
         // `launch:*` control + `ping`) goes to the editor page.
         const role: Role = name.startsWith('runtime:') ? 'runtime' : 'editor';
@@ -209,7 +211,7 @@ class WSS {
      * @param errorMessage - An overriding error message (e.g. a transport failure).
      * @returns The MCP tool response.
      */
-    private _wrap(name: string, raw: RawResult | null, errorMessage?: string): { content: any[], isError?: boolean } {
+    private _wrap(name: string, raw: RawResult | null, errorMessage?: string): CallToolResult {
         const isError = !!errorMessage || !!raw?.error;
         const meta: Meta = {
             tool: name,
@@ -242,7 +244,7 @@ class WSS {
      * @param args - The method arguments.
      * @returns The raw payload from the peer.
      */
-    raw(name: string, ...args: any[]): Promise<RawResult> {
+    raw(name: string, ...args: unknown[]): Promise<RawResult> {
         return this._send(name, ...args);
     }
 
@@ -254,7 +256,7 @@ class WSS {
      * @param meta - Optional extra meta fields.
      * @returns The MCP tool response.
      */
-    ok(name: string, data: unknown, meta?: Record<string, unknown>): { content: any[], isError?: boolean } {
+    ok(name: string, data: unknown, meta?: Record<string, unknown>): CallToolResult {
         return this._wrap(name, { data, meta });
     }
 
@@ -265,20 +267,21 @@ class WSS {
      * @param message - The actionable error message.
      * @returns The MCP tool response.
      */
-    fail(name: string, message: string): { content: any[], isError?: boolean } {
+    fail(name: string, message: string): CallToolResult {
         return this._wrap(name, null, message);
     }
 
-    async call(name: string, ...args: any[]): Promise<{ content: any[], isError?: boolean }> {
+    async call(name: string, ...args: unknown[]): Promise<CallToolResult> {
         try {
             const raw = await this._send(name, ...args);
             return this._wrap(name, raw);
-        } catch (err: any) {
-            return this._wrap(name, null, err.message);
+        } catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            return this._wrap(name, null, message);
         }
     }
 
-    async callImage(name: string, ...args: any[]): Promise<{ content: any[], isError?: boolean }> {
+    async callImage(name: string, ...args: unknown[]): Promise<CallToolResult> {
         try {
             const raw = await this._send(name, ...args);
             if (raw.error) {
@@ -305,8 +308,9 @@ class WSS {
                     }
                 ]
             };
-        } catch (err: any) {
-            return this._wrap(name, null, err.message);
+        } catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            return this._wrap(name, null, message);
         }
     }
 
