@@ -196,6 +196,25 @@ process.stdin.on('close', () => {
     console.error('[process] stdin closed');
     close();
 });
+process.stdin.on('end', () => {
+    console.error('[process] stdin ended');
+    close();
+});
+
+// If our parent process dies we get reparented to init (ppid 1). That means our
+// MCP client/launcher is gone but we were left running — the main way stale
+// servers pile up and keep hogging the port. Detect it and exit so the port is
+// released for the active client instead of lingering as an orphan.
+if (process.platform !== 'win32') {
+    const parentWatch = setInterval(() => {
+        if (process.ppid === 1) {
+            console.error('[process] Parent gone (reparented to init); exiting to release the port');
+            clearInterval(parentWatch);
+            close();
+        }
+    }, 2000);
+    parentWatch.unref();
+}
 process.on('SIGINT', () => {
     console.error('[process] SIGINT');
     close();

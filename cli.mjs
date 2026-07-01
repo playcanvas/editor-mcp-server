@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { execSync } from 'child_process';
+import { spawn } from 'child_process';
 import { readFileSync } from 'fs';
 import { dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
@@ -54,15 +54,39 @@ const main = (argv) => {
     }
 
     process.env.PORT = args.port.toString();
-    try {
-        execSync(`npx tsx ${resolve(__dirname, 'src', 'server.ts')}`, {
-            stdio: 'inherit',
-            env: process.env
-        });
-    } catch (error) {
+
+    // Launch the server as a DIRECT child (`node --import tsx …`) instead of via
+    // `npx tsx`, which inserts extra npx/tsx wrapper processes. A short, direct
+    // chain means that if this launcher dies the server is reparented to init
+    // (ppid 1) and can detect that and exit itself (see server.ts), instead of
+    // lingering as an orphan that keeps hogging the port.
+    const serverPath = resolve(__dirname, 'src', 'server.ts');
+    const child = spawn(process.execPath, ['--import', 'tsx', serverPath], {
+        stdio: 'inherit',
+        cwd: __dirname,
+        env: process.env
+    });
+
+    const killChild = (signal) => {
+        try {
+            child.kill(signal);
+        } catch {
+            // Already gone.
+        }
+    };
+
+    // Never let the server outlive this launcher.
+    process.on('SIGINT', () => killChild('SIGINT'));
+    process.on('SIGTERM', () => killChild('SIGTERM'));
+    process.on('exit', () => killChild('SIGKILL'));
+
+    child.on('error', (error) => {
         console.error('[CLI ERROR]', error.message);
         process.exit(1);
-    }
+    });
+    child.on('exit', (code, signal) => {
+        process.exit(signal ? 1 : (code ?? 0));
+    });
 };
 
 main(process.argv.slice(2));
