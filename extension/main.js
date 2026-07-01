@@ -218,6 +218,24 @@
         _connectTimeout = null;
 
         /**
+         * @type {string | null}
+         * @private
+         */
+        _address = null;
+
+        /**
+         * @type {number}
+         * @private
+         */
+        _retryTimeout = 1000;
+
+        /**
+         * @type {boolean}
+         * @private
+         */
+        _forceClosed = false;
+
+        /**
          * @type {WSC.STATUS_CONNECTING | WSC.STATUS_CONNECTED | WSC.STATUS_DISCONNECTED}
          * @private
          */
@@ -231,69 +249,87 @@
         }
 
         /**
+         * Connect to the MCP server and keep the connection alive. If the socket
+         * drops unexpectedly (server restart, transient network, background-tab
+         * throttling) we retry automatically until it reconnects or disconnect()
+         * is called. Previously a drop after a successful connect left the editor
+         * stuck in DISCONNECTED, needing a manual CONNECT — the main cause of the
+         * connection feeling "unstable".
+         *
          * @param {string} address - The address to connect to.
-         * @param {Function} resolve - The function to call when the connection is established.
-         * @param {number} [retryTimeout] - The timeout to retry the connection.
+         * @param {number} [retryTimeout] - Delay between reconnect attempts (ms).
          */
         connect(address, retryTimeout = 1000) {
+            this._address = address;
+            this._retryTimeout = retryTimeout;
+            this._forceClosed = false;
+
             this._status = WSC.STATUS_CONNECTING;
             this.emit('status', this._status);
             log(`Connecting to ${address}`);
 
             if (this._connectTimeout) {
                 clearTimeout(this._connectTimeout);
+                this._connectTimeout = null;
             }
 
-            this._connect(address, retryTimeout, () => {
-                this._ws.onclose = (evt) => {
-                    if (evt.reason === 'FORCE') {
-                        return;
-                    }
-                    this._status = WSC.STATUS_DISCONNECTED;
-                    this.emit('status', this._status);
-                    log('Disconnected');
-                };
-
-                this._status = WSC.STATUS_CONNECTED;
-                this.emit('status', this._status);
-                log('Connected');
-            });
+            this._open();
         }
 
         /**
-         * @param {string} address - The address to connect to.
-         * @param {number} retryTimeout - The timeout to retry the connection.
-         * @param {Function} resolve - The function to call when the connection is established
+         * Open a single WebSocket and wire up auto-reconnect on unexpected close.
+         *
          * @private
          */
-        _connect(address, retryTimeout, resolve) {
-            this._ws = new WebSocket(address);
-            this._ws.onopen = () => {
+        _open() {
+            const ws = new WebSocket(this._address);
+            this._ws = ws;
+
+            ws.onopen = () => {
                 // Announce our role so the server can route edit-time vs runtime
                 // methods to the correct peer.
-                this._ws.send(JSON.stringify({ register: 'editor' }));
-                resolve();
+                ws.send(JSON.stringify({ register: 'editor' }));
+                this._status = WSC.STATUS_CONNECTED;
+                this.emit('status', this._status);
+                log('Connected');
             };
-            this._ws.onmessage = async (event) => {
+            ws.onmessage = async (event) => {
                 try {
                     const { id, name, args } = JSON.parse(event.data);
                     const res = await this.call(name, ...args);
-                    this._ws.send(JSON.stringify({ id, res }));
+                    ws.send(JSON.stringify({ id, res }));
                 } catch (e) {
                     error(e);
                 }
             };
-            this._ws.onclose = () => {
+            ws.onerror = () => {
+                // A socket error is always followed by a close event, which
+                // drives the reconnect below; swallow it here so it isn't
+                // surfaced as an unhandled error.
+            };
+            ws.onclose = (evt) => {
+                // A deliberate disconnect() (FORCE) must never reconnect.
+                if (this._forceClosed || evt?.reason === 'FORCE') {
+                    return;
+                }
+                this._status = WSC.STATUS_CONNECTING;
+                this.emit('status', this._status);
+                log('Disconnected; reconnecting');
+                if (this._connectTimeout) {
+                    clearTimeout(this._connectTimeout);
+                }
                 this._connectTimeout = setTimeout(() => {
                     this._connectTimeout = null;
-                    this._connect(address, retryTimeout, resolve);
-                }, retryTimeout);
+                    this._open();
+                }, this._retryTimeout);
             };
         }
 
         disconnect() {
+            this._forceClosed = true;
             if (this._connectTimeout) {
                 clearTimeout(this._connectTimeout);
+                this._connectTimeout = null;
             }
             if (this._ws) {
                 this._ws.close(1000, 'FORCE');

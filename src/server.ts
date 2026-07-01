@@ -68,14 +68,20 @@ const waitForPortFree = (timeoutMs: number) => {
     });
 };
 
-// Kill any existing server on the port (excluding ourselves) before binding.
-const existing = stale();
-if (existing.length) {
-    console.error('[process] Killing stale process(es) on port', PORT, existing.join(', '));
-    existing.forEach(kill);
-    await waitForPortFree(5000);
-    if (stale().length) {
-        console.error('[process] Port', PORT, 'still in use after timeout; attempting to listen anyway');
+// By default, coexist with any MCP server instance that already owns the port:
+// the WSS stands by and automatically takes over when that instance exits. This
+// avoids the kill/restart storm that happens when several agents each run their
+// own MCP server — killing a live sibling makes its client restart it, which
+// then kills us back, and so on. Set MCP_TAKEOVER=1 to force-reclaim the port.
+if (process.env.MCP_TAKEOVER === '1') {
+    const existing = stale();
+    if (existing.length) {
+        console.error('[process] MCP_TAKEOVER=1: killing process(es) on port', PORT, existing.join(', '));
+        existing.forEach(kill);
+        await waitForPortFree(5000);
+        if (stale().length) {
+            console.error('[process] Port', PORT, 'still in use after timeout; standing by until it frees');
+        }
     }
 }
 

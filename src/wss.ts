@@ -3,7 +3,12 @@ import { WebSocketServer, WebSocket } from 'ws';
 
 const PING_DELAY = 1000;
 
-const DEFAULT_TIMEOUT = 30_000;
+const DEFAULT_TIMEOUT = 60_000;
+
+// How often a standby instance retries binding the port. Multiple MCP clients
+// (agents) each run their own server; only one can own the port and talk to the
+// editor at a time. The others stand by and take over when the owner exits.
+const BIND_RETRY_DELAY = 3_000;
 
 /**
  * Metadata attached to every tool response. `status`/`message` describe the
@@ -51,7 +56,7 @@ type RawResult = {
 type Role = 'editor' | 'runtime';
 
 class WSS {
-    private _server: WebSocketServer;
+    private _server!: WebSocketServer;
 
     private _sockets: Record<Role, WebSocket | undefined> = { editor: undefined, runtime: undefined };
 
@@ -61,24 +66,54 @@ class WSS {
 
     private _pingInterval: ReturnType<typeof setInterval> | null = null;
 
+    private _port: number;
+
+    private _listening = false;
+
+    private _bindTimer: ReturnType<typeof setTimeout> | null = null;
+
     constructor(port: number) {
-        this._server = new WebSocketServer({ port });
-        this._server.on('listening', () => console.error('[WSS] Listening on port', port));
-        this._server.on('error', (err: Error & { code?: string }) => {
+        this._port = port;
+        this._bind();
+    }
+
+    /**
+     * Try to own the port. If another MCP server instance already owns it
+     * (EADDRINUSE), don't kill it and don't give up — stand by and retry, so
+     * whoever currently owns the editor connection stays stable and we take
+     * over automatically once they exit. This is what keeps multiple concurrent
+     * agent MCP clients from fighting over the port.
+     */
+    private _bind() {
+        const server = new WebSocketServer({ port: this._port });
+        this._server = server;
+        server.on('listening', () => {
+            this._listening = true;
+            console.error('[WSS] Listening on port', this._port);
+        });
+        server.on('error', (err: Error & { code?: string }) => {
             if (err.code === 'EADDRINUSE') {
-                console.error(`[WSS] Port ${port} already in use. Stop the other MCP server (or set a different PORT) and restart.`);
+                this._listening = false;
+                console.error(`[WSS] Port ${this._port} is owned by another MCP server instance; standing by and retrying (only one instance controls the editor at a time).`);
+                try {
+                    server.close();
+                } catch { /* already closing */ }
+                if (this._bindTimer) {
+                    clearTimeout(this._bindTimer);
+                }
+                this._bindTimer = setTimeout(() => this._bind(), BIND_RETRY_DELAY);
             } else {
                 console.error('[WSS] Server error', err);
             }
         });
-        this._waitForSocket();
+        this._attachConnectionHandler(server);
     }
 
-    private _waitForSocket() {
-        // The `connection` listener is attached once and lives for the whole
-        // server; it must NOT be re-added per disconnect (that leaks listeners
-        // and double-handles messages).
-        this._server.on('connection', (ws) => {
+    private _attachConnectionHandler(server: WebSocketServer) {
+        // The `connection` listener is attached once per server instance and
+        // lives for its whole life; it must NOT be re-added per disconnect (that
+        // leaks listeners and double-handles messages).
+        server.on('connection', (ws) => {
             // Default new peers to the editor role so clients that don't send a
             // `{ register }` handshake (e.g. older extension builds) still work.
             // A `{ register }` message can reassign the socket — notably the
@@ -126,15 +161,38 @@ class WSS {
                     }
                 }
             });
+            // A socket 'error' with no listener is re-thrown by `ws` as an
+            // uncaught exception. With the runtime peer reconnecting frequently
+            // and abrupt tab closes, that would otherwise destabilise the whole
+            // process. Handle it and let the 'close' that follows free the slot.
+            ws.on('error', (err: Error) => {
+                console.error('[WSS] Socket error', role, err?.message ?? err);
+                try {
+                    ws.close();
+                } catch { /* already closing */ }
+            });
         });
     }
 
     private _startPing() {
         if (this._pingInterval) {
             clearInterval(this._pingInterval);
+            this._pingInterval = null;
         }
         this._pingInterval = setInterval(() => {
-            this._send('ping').then(() => console.error('[WSS] Ping')).catch(() => { /* ping failures are non-fatal */ });
+            const editor = this._sockets.editor;
+            // Self-heal: if there is no live editor (e.g. a peer that grabbed the
+            // slot optimistically turned out to be the runtime, or the editor
+            // vanished), stop the loop instead of pinging into the void every
+            // second. A fresh editor connection restarts it.
+            if (!editor || editor.readyState !== WebSocket.OPEN) {
+                if (this._pingInterval) {
+                    clearInterval(this._pingInterval);
+                    this._pingInterval = null;
+                }
+                return;
+            }
+            this._send('ping').catch(() => { /* ping failures are non-fatal */ });
         }, PING_DELAY);
     }
 
@@ -181,6 +239,8 @@ class WSS {
             if (!socket) {
                 if (role === 'runtime') {
                     reject(new Error('No running instance connected. Call launch_start first (and allow popups for the editor); the launched page connects back automatically.'));
+                } else if (!this._listening) {
+                    reject(new Error(`This MCP server is on standby because another instance owns port ${this._port} (only one instance can control the editor at a time). Close the other MCP client/instance, or start this one with MCP_TAKEOVER=1 to force takeover, then retry.`));
                 } else {
                     reject(new Error('Editor not connected. Open the PlayCanvas Editor in Chrome and click CONNECT in the MCP extension popup, then retry.'));
                 }
@@ -198,7 +258,13 @@ class WSS {
                 clearTimeout(timer);
                 resolve(res);
             });
-            socket.send(JSON.stringify({ id, name, args }));
+            try {
+                socket.send(JSON.stringify({ id, name, args }));
+            } catch (err) {
+                clearTimeout(timer);
+                this._callbacks.delete(id);
+                reject(err instanceof Error ? err : new Error(String(err)));
+            }
         });
     }
 
@@ -318,6 +384,11 @@ class WSS {
         if (this._pingInterval) {
             clearInterval(this._pingInterval);
         }
+        if (this._bindTimer) {
+            clearTimeout(this._bindTimer);
+            this._bindTimer = null;
+        }
+        this._listening = false;
         (['editor', 'runtime'] as Role[]).forEach((role) => {
             this._sockets[role]?.close(1000, 'FORCE');
             this._sockets[role] = undefined;
