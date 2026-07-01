@@ -12,7 +12,7 @@
     "action": {
         "default_popup": "popup.html"
     },
-    "host_permissions": ["http://playcanvas.com/*", "https://playcanvas.com/*"],
+    "host_permissions": ["http://playcanvas.com/*", "https://playcanvas.com/*", "https://launch.playcanvas.com/*"],
     "content_scripts": [
         {
             "matches": ["http://playcanvas.com/editor*", "https://playcanvas.com/editor*"],
@@ -23,6 +23,12 @@
             "matches": ["http://playcanvas.com/editor*", "https://playcanvas.com/editor*"],
             "js": ["isolated.js"],
             "world": "ISOLATED"
+        },
+        {
+            "matches": ["https://launch.playcanvas.com/*"],
+            "js": ["launch.js"],
+            "world": "MAIN",
+            "run_at": "document_start"
         }
     ]
 }

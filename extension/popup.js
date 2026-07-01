@@ -157,7 +157,7 @@ chrome.runtime.onMessage.addListener((data) => {
  *
  * @param {string} name - The name of the message to send.
  * @param {...*} args - The arguments to pass to the message.
- * @returns {Promise<boolean>} - A promise that resolves to true if the message was sent successfully, false otherwise.
+ * @returns {Promise<boolean>} A promise that resolves to true if the message was sent successfully, false otherwise.
  */
 const send = async (name, ...args) => {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });

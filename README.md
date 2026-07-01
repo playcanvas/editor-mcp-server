@@ -23,6 +23,7 @@ An MCP Server for automating the [PlayCanvas Editor](https://playcanvas.com/prod
 
 * Entity
   * `list_entities`
+  * `resolve_entities`
   * `create_entities`
   * `delete_entities`
   * `duplicate_entities`
@@ -31,6 +32,7 @@ An MCP Server for automating the [PlayCanvas Editor](https://playcanvas.com/prod
   * `add_components`
   * `remove_components`
   * `add_script_component_script`
+  * `attach_script`
 * Asset
   * `list_assets`
   * `create_assets`
@@ -39,6 +41,7 @@ An MCP Server for automating the [PlayCanvas Editor](https://playcanvas.com/prod
   * `set_script_text`
   * `script_parse`
   * `set_material_diffuse`
+  * `set_material_properties`
 * Scene
   * `query_scene_settings`
   * `modify_scene_settings`
@@ -49,6 +52,62 @@ An MCP Server for automating the [PlayCanvas Editor](https://playcanvas.com/prod
 * Viewport
   * `capture_viewport`
   * `focus_viewport`
+* Runtime (live Launch instance)
+  * `launch_start`
+  * `launch_stop`
+  * `capture_runtime`
+  * `read_runtime_logs`
+  * `inject_input`
+
+## Runtime Tools
+
+The runtime tools drive a **real Launch instance** (the editor's Launch button) so
+you can verify that a scene actually *runs*, not just how it looks at edit time:
+
+* `launch_start` opens `https://launch.playcanvas.com/<sceneId>?debug=true` in a new
+  window. The extension injects a content script there that connects back to the MCP
+  server as the "runtime" peer. `launch_start` returns `{ url, sceneId, ready }`.
+* `capture_runtime` screenshots the running app (scripts/physics/animation active).
+* `read_runtime_logs` returns the app's `console` output + uncaught
+  exceptions/rejections (newest first, paginated; defaults to warnings + errors).
+* `inject_input` dispatches keyboard / mouse / touch events to the running app
+  (e.g. hold `W` for 500ms, click at a canvas coordinate, tap the screen), so you
+  can drive end-to-end interactions and then verify with `capture_runtime`.
+* `launch_stop` closes the launch window.
+
+Notes:
+
+* Allow pop-ups for the editor origin, otherwise `launch_start` cannot open the window.
+* The launch page uses your existing PlayCanvas login session (same browser), so no
+  extra auth step is needed.
+* Reload the unpacked extension in `chrome://extensions/` after updating it so the new
+  launch content script + permissions take effect.
+
+## Response Format
+
+Every tool returns a single, consistent **envelope** so agents can pattern-match on a stable shape:
+
+```jsonc
+{
+  "data": <result> | null,   // business payload; an empty set is [], never an error
+  "meta": {
+    "tool": "entities:list",
+    "status": "ok" | "error",
+    "message": "...",          // present only on error; actionable, with a recovery hint
+    // list tools also include pagination metadata:
+    "total": 120, "count": 50, "hasMore": true, "nextCursor": "50"
+  }
+}
+```
+
+Notes for tool authors / agents:
+
+* **Errors** never use a top-level `error` field; they set `meta.status = "error"` and put an actionable message in `meta.message` (the protocol-level `isError` flag is also set).
+* **Empty results** (`list_*`, `resolve_entities`) are a successful empty list, not an error.
+* **Pagination**: `list_entities` / `list_assets` accept `limit` (default 50) + `offset`. Page using `meta.nextCursor` (pass it back as `offset`) and stop when `meta.hasMore` is `false`.
+* **State snapshots**: mutating tools (`create_entities`, `modify_entities`, `add_components`, `reparent_entity`, `duplicate_entities`, `instantiate_template_assets`, …) return the resulting entity/asset summaries — including a human-readable hierarchy `path` — so you rarely need a follow-up `list_entities` call.
+* **Annotations**: read-only tools declare `readOnlyHint`, destructive tools (`delete_*`) declare `destructiveHint`, and store tools declare `openWorldHint` (they reach the network).
+* Image tools (`capture_viewport`) return a protocol `image` block plus a parallel `text` block carrying the same `meta`.
 
 ## Installation
 

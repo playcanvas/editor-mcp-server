@@ -8,6 +8,7 @@ import { register as registerAsset } from './tools/asset';
 import { register as registerAssetMaterial } from './tools/assets/material';
 import { register as registerAssetScript } from './tools/assets/script';
 import { register as registerEntity } from './tools/entity';
+import { register as registerRuntime } from './tools/runtime';
 import { register as registerScene } from './tools/scene';
 import { register as registerStore } from './tools/store';
 import { register as registerViewport } from './tools/viewport';
@@ -15,26 +16,21 @@ import { WSS } from './wss';
 
 const PORT = parseInt(process.env.PORT || '52000', 10);
 
-const poll = (cond: () => boolean, rate = 1000) => {
-    return new Promise<void>((resolve) => {
-        const id = setInterval(() => {
-            if (cond()) {
-                clearInterval(id);
-                resolve();
-            }
-        }, rate);
-    });
-};
-
-const findPid = (port: number) => {
-    if (process.platform === 'win32') {
-        try {
-            return execSync(`netstat -ano | findstr 0.0.0.0:${PORT}`).toString().trim().split(' ').pop();
-        } catch {
-            return '';
-        }
+// Return the *deduped* list of PIDs listening on the port. A single process can
+// produce multiple lsof/netstat lines (e.g. IPv4 + IPv6), so we must dedupe —
+// otherwise a multi-line result would break the kill command and deadlock.
+const findPids = (port: number): string[] => {
+    try {
+        const cmd = process.platform === 'win32' ?
+            `netstat -ano | findstr :${port}` :
+            `lsof -nP -iTCP:${port} -sTCP:LISTEN -t`;
+        const lines = execSync(cmd).toString().split('\n');
+        const pids = lines.map(line => line.trim().split(/\s+/).pop() || '').filter(p => /^\d+$/.test(p));
+        return Array.from(new Set(pids));
+    } catch {
+        // No listener (lsof/netstat exit non-zero when nothing matches).
+        return [];
     }
-    return execSync(`lsof -i :${port} | grep LISTEN | awk '{print $2}'`).toString().trim();
 };
 
 const kill = (pid: string) => {
@@ -54,11 +50,33 @@ const kill = (pid: string) => {
     }
 };
 
-// Kill any existing server on the port
-const pid = findPid(PORT);
-if (pid && pid !== String(process.pid)) {
-    kill(pid);
-    await poll(() => !findPid(PORT));
+const own = String(process.pid);
+const stale = () => findPids(PORT).filter(p => p !== own);
+
+// Wait — with a bounded timeout so startup never hangs — for the port to free up.
+const waitForPortFree = (timeoutMs: number) => {
+    const deadline = Date.now() + timeoutMs;
+    return new Promise<void>((resolve) => {
+        const tick = () => {
+            if (!stale().length || Date.now() >= deadline) {
+                resolve();
+                return;
+            }
+            setTimeout(tick, 250);
+        };
+        tick();
+    });
+};
+
+// Kill any existing server on the port (excluding ourselves) before binding.
+const existing = stale();
+if (existing.length) {
+    console.error('[process] Killing stale process(es) on port', PORT, existing.join(', '));
+    existing.forEach(kill);
+    await waitForPortFree(5000);
+    if (stale().length) {
+        console.error('[process] Port', PORT, 'still in use after timeout; attempting to listen anyway');
+    }
 }
 
 // Create a WebSocket server
@@ -86,6 +104,7 @@ registerAssetScript(mcp, wss);
 registerScene(mcp, wss);
 registerStore(mcp, wss);
 registerViewport(mcp, wss);
+registerRuntime(mcp, wss);
 
 // Start receiving messages on stdin and sending messages on stdout
 const transport = new StdioServerTransport();
