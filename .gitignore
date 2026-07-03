@@ -175,4 +175,5 @@ dist
 .DS_Store
 
 # Dev scripts
-pack.sh
+dev
+*.crx
