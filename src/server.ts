@@ -3,6 +3,7 @@ import { execSync } from 'child_process';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { ListPromptsRequestSchema, ListResourcesRequestSchema } from '@modelcontextprotocol/sdk/types.js';
+import { WebSocket } from 'ws';
 
 import { register as registerAsset } from './tools/asset';
 import { register as registerAssetMaterial } from './tools/assets/material';
@@ -68,14 +69,68 @@ const waitForPortFree = (timeoutMs: number) => {
     });
 };
 
-// Kill any existing server on the port (excluding ourselves) before binding.
+// Ask whoever currently owns the port to gracefully hand it off, so the *newest*
+// (active) client ends up controlling the editor. The owner releases the port
+// without exiting, so its MCP client doesn't restart it — no kill/restart storm.
+const requestYield = (port: number, timeoutMs: number) => {
+    return new Promise<void>((resolve) => {
+        let settled = false;
+        const done = () => {
+            if (!settled) {
+                settled = true;
+                resolve();
+            }
+        };
+        let ws: WebSocket;
+        try {
+            ws = new WebSocket(`ws://127.0.0.1:${port}`);
+        } catch {
+            done();
+            return;
+        }
+        const timer = setTimeout(() => {
+            try {
+                ws.close();
+            } catch { /* noop */ }
+            done();
+        }, timeoutMs);
+        ws.on('open', () => {
+            try {
+                ws.send(JSON.stringify({ yield: true }));
+            } catch { /* noop */ }
+        });
+        ws.on('close', () => {
+            clearTimeout(timer);
+            done();
+        });
+        ws.on('error', () => {
+            clearTimeout(timer);
+            done();
+        });
+    });
+};
+
+// Take over the port from any existing instance so the active client controls
+// the editor. Prefer a graceful handoff (no killing); fall back to reclaiming
+// the port only if the current owner won't yield (old build, orphan, or hung).
 const existing = stale();
 if (existing.length) {
-    console.error('[process] Killing stale process(es) on port', PORT, existing.join(', '));
-    existing.forEach(kill);
-    await waitForPortFree(5000);
+    if (process.env.MCP_TAKEOVER === '1') {
+        console.error('[process] MCP_TAKEOVER=1: killing process(es) on port', PORT, existing.join(', '));
+        existing.forEach(kill);
+        await waitForPortFree(5000);
+    } else {
+        console.error('[process] Port', PORT, 'in use; requesting graceful handoff from the current owner');
+        await requestYield(PORT, 1500);
+        await waitForPortFree(3000);
+        if (stale().length) {
+            console.error('[process] No handoff; reclaiming port', PORT, 'from', stale().join(', '));
+            stale().forEach(kill);
+            await waitForPortFree(5000);
+        }
+    }
     if (stale().length) {
-        console.error('[process] Port', PORT, 'still in use after timeout; attempting to listen anyway');
+        console.error('[process] Port', PORT, 'still in use after timeout; will stand by and retry');
     }
 }
 
@@ -141,6 +196,25 @@ process.stdin.on('close', () => {
     console.error('[process] stdin closed');
     close();
 });
+process.stdin.on('end', () => {
+    console.error('[process] stdin ended');
+    close();
+});
+
+// If our parent process dies we get reparented to init (ppid 1). That means our
+// MCP client/launcher is gone but we were left running — the main way stale
+// servers pile up and keep hogging the port. Detect it and exit so the port is
+// released for the active client instead of lingering as an orphan.
+if (process.platform !== 'win32') {
+    const parentWatch = setInterval(() => {
+        if (process.ppid === 1) {
+            console.error('[process] Parent gone (reparented to init); exiting to release the port');
+            clearInterval(parentWatch);
+            close();
+        }
+    }, 2000);
+    parentWatch.unref();
+}
 process.on('SIGINT', () => {
     console.error('[process] SIGINT');
     close();
