@@ -1,7 +1,7 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 
-import type { WSS } from '../wss';
+import type { WSS } from '../wss.ts';
 
 const orderEnum = {
     'asc': 1,

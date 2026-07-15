@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { AssetIdSchema, RgbSchema, Vec3Schema } from './common';
+import { AssetIdSchema, RgbSchema, Vec3Schema } from './common.ts';
 
 const PhysicsSchema = z.object({
     gravity: Vec3Schema.optional().describe('Gravity force')

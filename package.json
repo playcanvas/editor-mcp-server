@@ -23,32 +23,32 @@
     "mcp-server": "cli.mjs"
   },
   "files": [
-    "src"
+    "dist"
   ],
+  "engines": {
+    "node": ">=22.18.0"
+  },
   "scripts": {
-    "debug": "npx @modelcontextprotocol/inspector tsx src/server.ts",
+    "build": "node build.mjs",
+    "debug": "npx @modelcontextprotocol/inspector node src/server.ts",
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",
+    "prepublishOnly": "npm run build",
     "publint": "publint",
-    "start": "tsx src/server.ts",
-    "test": "node --import tsx --test \"test/**/*.test.ts\"",
-    "watch": "tsx watch src/server.ts"
-  },
-  "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.25.2",
-    "command-line-args": "^6.0.1",
-    "command-line-usage": "^7.0.3",
-    "tsx": "^4.21.0",
-    "ws": "^8.19.0",
-    "zod": "^3.23.8"
+    "start": "node src/server.ts",
+    "test": "node --test \"test/**/*.test.ts\"",
+    "watch": "node --watch src/server.ts"
   },
   "devDependencies": {
+    "@modelcontextprotocol/sdk": "^1.25.2",
     "@playcanvas/eslint-config": "3.0.0-beta.6",
-    "@types/command-line-args": "^5.2.3",
-    "@types/command-line-usage": "^5.0.4",
+    "@types/node": "^22.18.0",
     "@types/ws": "^8.18.1",
+    "esbuild": "^0.25.0",
     "eslint": "^9.39.2",
     "publint": "^0.3.16",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "ws": "^8.19.0",
+    "zod": "^3.23.8"
   }
 }

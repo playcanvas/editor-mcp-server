@@ -1,8 +1,8 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 
-import type { WSS } from '../../wss';
-import { MaterialSchema } from '../schema/asset';
-import { AssetIdSchema, RgbSchema } from '../schema/common';
+import type { WSS } from '../../wss.ts';
+import { MaterialSchema } from '../schema/asset.ts';
+import { AssetIdSchema, RgbSchema } from '../schema/common.ts';
 
 export const register = (server: McpServer, wss: WSS) => {
     server.registerTool(

@@ -5,15 +5,15 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { ListPromptsRequestSchema, ListResourcesRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import { WebSocket } from 'ws';
 
-import { register as registerAsset } from './tools/asset';
-import { register as registerAssetMaterial } from './tools/assets/material';
-import { register as registerAssetScript } from './tools/assets/script';
-import { register as registerEntity } from './tools/entity';
-import { register as registerRuntime } from './tools/runtime';
-import { register as registerScene } from './tools/scene';
-import { register as registerStore } from './tools/store';
-import { register as registerViewport } from './tools/viewport';
-import { WSS } from './wss';
+import { register as registerAsset } from './tools/asset.ts';
+import { register as registerAssetMaterial } from './tools/assets/material.ts';
+import { register as registerAssetScript } from './tools/assets/script.ts';
+import { register as registerEntity } from './tools/entity.ts';
+import { register as registerRuntime } from './tools/runtime.ts';
+import { register as registerScene } from './tools/scene.ts';
+import { register as registerStore } from './tools/store.ts';
+import { register as registerViewport } from './tools/viewport.ts';
+import { WSS } from './wss.ts';
 
 const PORT = parseInt(process.env.PORT || '52000', 10);
 

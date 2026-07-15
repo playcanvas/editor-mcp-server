@@ -1,8 +1,8 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 
-import type { WSS } from '../wss';
+import type { WSS } from '../wss.ts';
 
-import { SceneSettingsSchema } from './schema/scene-settings';
+import { SceneSettingsSchema } from './schema/scene-settings.ts';
 
 export const register = (server: McpServer, wss: WSS) => {
     server.registerTool(

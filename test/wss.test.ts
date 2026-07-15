@@ -3,9 +3,11 @@ import { after, test } from 'node:test';
 
 import { WebSocket } from 'ws';
 
-import { WSS } from '../src/wss';
+import { WSS } from '../src/wss.ts';
 
 const PORT = 52999;
+
+process.env.MCP_ALLOWED_ORIGINS = 'https://extra.example.com, https://another.example.com:8443';
 
 const wss = new WSS(PORT);
 
@@ -46,6 +48,11 @@ test('origin validation on websocket upgrade', async () => {
     // allowed: local editor dev builds
     assert.equal(await attempt('http://localhost:3000'), true, 'localhost dev origin should be allowed');
     assert.equal(await attempt('http://127.0.0.1:8080'), true, '127.0.0.1 dev origin should be allowed');
+
+    // allowed: extra origins from MCP_ALLOWED_ORIGINS (exact match)
+    assert.equal(await attempt('https://extra.example.com'), true, 'MCP_ALLOWED_ORIGINS origin should be allowed');
+    assert.equal(await attempt('https://another.example.com:8443'), true, 'MCP_ALLOWED_ORIGINS origin with port should be allowed');
+    assert.equal(await attempt('https://sub.extra.example.com'), false, 'extra origins are exact match, not wildcards');
 
     // rejected: any other webpage (browsers do not apply CORS to websockets)
     assert.equal(await attempt('https://evil.com'), false, 'unknown origin must be rejected');

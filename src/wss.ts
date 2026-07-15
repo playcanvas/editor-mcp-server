@@ -15,7 +15,17 @@ const BIND_RETRY_DELAY = 3_000;
 // server compromise warnings). Only playcanvas.com pages and local editor dev
 // builds may connect; connections without an Origin header (non-browser local
 // processes, e.g. the yield handshake between server instances) are allowed.
+// Extra origins (e.g. internal editor deployments) can be allowed by setting
+// MCP_ALLOWED_ORIGINS to a comma-separated list of exact origins.
 const ALLOWED_ORIGINS = /^https:\/\/(?:[\w-]+\.)*playcanvas\.com$|^https?:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?$/;
+
+const allowedOrigin = (origin: string) => {
+    if (ALLOWED_ORIGINS.test(origin)) {
+        return true;
+    }
+    const extra = process.env.MCP_ALLOWED_ORIGINS || '';
+    return extra.split(',').map(s => s.trim()).filter(Boolean).includes(origin);
+};
 
 /**
  * Metadata attached to every tool response. `status`/`message` describe the
@@ -97,7 +107,7 @@ class WSS {
             // loopback only — never expose the editor bridge to the LAN
             host: '127.0.0.1',
             verifyClient: ({ origin }: { origin?: string }) => {
-                if (!origin || ALLOWED_ORIGINS.test(origin)) {
+                if (!origin || allowedOrigin(origin)) {
                     return true;
                 }
                 console.error(`[WSS] Rejected connection from disallowed origin: ${origin}`);
