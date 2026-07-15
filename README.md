@@ -116,6 +116,19 @@ Requires [Node.js](https://nodejs.org/) 18+. The server is published to npm as [
 claude mcp add playcanvas -- npx -y @playcanvas/editor-mcp-server
 ```
 
+To share the server with everyone working on a repo, commit a `.mcp.json` to the project root instead:
+
+```json
+{
+  "mcpServers": {
+    "playcanvas": {
+      "command": "npx",
+      "args": ["-y", "@playcanvas/editor-mcp-server"]
+    }
+  }
+}
+```
+
 ### Codex
 
 The Codex CLI and the Codex app share `~/.codex/config.toml`, so one command covers both:
@@ -123,6 +136,12 @@ The Codex CLI and the Codex app share `~/.codex/config.toml`, so one command cov
 ```sh
 codex mcp add playcanvas -- npx -y @playcanvas/editor-mcp-server
 ```
+
+> [!NOTE]
+> On Windows, use `codex mcp add playcanvas -- cmd /c npx -y @playcanvas/editor-mcp-server`. If the server times out on first run (while `npx` downloads the package), raise the startup timeout in `~/.codex/config.toml` under `[mcp_servers.playcanvas]`: `startup_timeout_sec = 60`.
+
+> [!NOTE]
+> ChatGPT itself (web and desktop) only supports remote MCP connectors, so it cannot run this local server — Codex is the OpenAI surface to use.
 
 ### Claude Desktop
 
