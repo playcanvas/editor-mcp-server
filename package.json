@@ -30,7 +30,7 @@
   },
   "scripts": {
     "build": "node build.ts",
-    "debug": "npx -y @modelcontextprotocol/inspector node src/server.ts",
+    "debug": "mcp-inspector node src/server.ts",
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",
     "prepublishOnly": "npm run build",
@@ -40,6 +40,7 @@
     "watch": "node --watch src/server.ts"
   },
   "devDependencies": {
+    "@modelcontextprotocol/inspector": "^0.22.0",
     "@modelcontextprotocol/sdk": "^1.25.2",
     "@playcanvas/eslint-config": "3.0.0-beta.6",
     "@types/node": "^22.18.0",
