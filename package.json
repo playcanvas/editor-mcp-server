@@ -29,7 +29,7 @@
     "node": ">=22.18.0"
   },
   "scripts": {
-    "build": "node build.mjs",
+    "build": "node build.ts",
     "debug": "npx @modelcontextprotocol/inspector node src/server.ts",
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",
