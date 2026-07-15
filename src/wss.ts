@@ -10,6 +10,13 @@ const DEFAULT_TIMEOUT = 60_000;
 // editor at a time. The others stand by and take over when the owner exits.
 const BIND_RETRY_DELAY = 3_000;
 
+// Browsers don't apply CORS to websockets, so ANY webpage the user has open
+// can attempt ws://localhost:<port> (see the MCP spec's DNS-rebinding / local
+// server compromise warnings). Only playcanvas.com pages and local editor dev
+// builds may connect; connections without an Origin header (non-browser local
+// processes, e.g. the yield handshake between server instances) are allowed.
+const ALLOWED_ORIGINS = /^https:\/\/(?:[\w-]+\.)*playcanvas\.com$|^https?:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?$/;
+
 /**
  * Metadata attached to every tool response. `status`/`message` describe the
  * outcome; the pagination fields describe a list slice. Everything lives under
@@ -85,7 +92,18 @@ class WSS {
      * agent MCP clients from fighting over the port.
      */
     private _bind() {
-        const server = new WebSocketServer({ port: this._port });
+        const server = new WebSocketServer({
+            port: this._port,
+            // loopback only — never expose the editor bridge to the LAN
+            host: '127.0.0.1',
+            verifyClient: ({ origin }: { origin?: string }) => {
+                if (!origin || ALLOWED_ORIGINS.test(origin)) {
+                    return true;
+                }
+                console.error(`[WSS] Rejected connection from disallowed origin: ${origin}`);
+                return false;
+            }
+        });
         this._server = server;
         server.on('listening', () => {
             this._listening = true;
