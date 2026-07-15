@@ -12,7 +12,7 @@ export const register = (server: McpServer, wss: WSS) => {
             description: [
                 'Capture a screenshot of the editor viewport (the current editing camera view) as a downscaled WebP image, for visual verification of edit-time state.',
                 'Tip: call focus_viewport first to frame the entities you care about.',
-                'Note: this renders the editor preview only (scripts/physics/animation are NOT running). When NOT to use: to verify play-mode/runtime behavior (runtime capture is not yet available).'
+                'Note: this renders the editor preview only (scripts/physics/animation are NOT running). When NOT to use: to verify play-mode/runtime behavior (use capture_runtime after launch_start).'
             ].join(' '),
             annotations: {
                 title: 'Capture Viewport',

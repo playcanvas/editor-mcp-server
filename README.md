@@ -56,6 +56,7 @@ The MCP client is built into the PlayCanvas Editor — no browser extension is n
   * `launch_stop`
   * `capture_runtime`
   * `read_runtime_logs`
+  * `query_runtime_state`
   * `inject_input`
 
 ## Runtime Tools
@@ -69,6 +70,8 @@ you can verify that a scene actually *runs*, not just how it looks at edit time:
 * `capture_runtime` screenshots the running app (scripts/physics/animation active).
 * `read_runtime_logs` returns the app's `console` output + uncaught
   exceptions/rejections (newest first, paginated; defaults to warnings + errors).
+* `query_runtime_state` reads live entity state (world/local transform, velocity,
+  element text) from the running app — ground truth without screenshot guessing.
 * `inject_input` dispatches keyboard / mouse / touch events to the running app
   (e.g. hold `W` for 500ms, click at a canvas coordinate, tap the screen), so you
   can drive end-to-end interactions and then verify with `capture_runtime`.

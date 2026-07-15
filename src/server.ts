@@ -1,4 +1,5 @@
 import { execSync } from 'child_process';
+import { readFileSync } from 'fs';
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
@@ -137,10 +138,14 @@ if (existing.length) {
 // Create a WebSocket server
 const wss = new WSS(PORT);
 
+// Works from both src/server.ts and the bundled dist/server.mjs — each sits
+// one level below package.json.
+const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf-8'));
+
 // Create an MCP server
 const mcp = new McpServer({
     name: 'PlayCanvas',
-    version: '1.0.0'
+    version: pkg.version
 }, {
     capabilities: {
         tools: {},
