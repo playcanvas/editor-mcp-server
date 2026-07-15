@@ -40,7 +40,7 @@ export type Envelope<T = unknown> = {
 };
 
 /**
- * The raw payload returned by an extension method over the websocket.
+ * The raw payload returned by an editor method over the websocket.
  */
 type RawResult = {
     data?: unknown;
@@ -115,7 +115,7 @@ class WSS {
         // leaks listeners and double-handles messages).
         server.on('connection', (ws) => {
             // Default new peers to the editor role so clients that don't send a
-            // `{ register }` handshake (e.g. older extension builds) still work.
+            // `{ register }` handshake (e.g. older editor builds) still work.
             // A `{ register }` message can reassign the socket — notably the
             // launch page registers itself as 'runtime'.
             let role: Role = 'editor';
@@ -224,7 +224,7 @@ class WSS {
             clearInterval(this._pingInterval);
             this._pingInterval = null;
         }
-        // Drop peers so the editor extension reconnects to the new owner.
+        // Drop peers so the editor reconnects to the new owner.
         (['editor', 'runtime'] as Role[]).forEach((role) => {
             try {
                 this._sockets[role]?.close();
@@ -286,7 +286,7 @@ class WSS {
                 } else if (!this._listening) {
                     reject(new Error(`This MCP server is on standby because another instance owns port ${this._port} (only one instance can control the editor at a time). Close the other MCP client/instance, or start this one with MCP_TAKEOVER=1 to force takeover, then retry.`));
                 } else {
-                    reject(new Error('Editor not connected. Open the PlayCanvas Editor in Chrome and click CONNECT in the MCP extension popup, then retry.'));
+                    reject(new Error('Editor not connected. Open the PlayCanvas Editor, click the MCP button at the bottom of the toolbar and press CONNECT, then retry.'));
                 }
                 return;
             }
@@ -317,7 +317,7 @@ class WSS {
      * MCP text response.
      *
      * @param name - The websocket method name surfaced in `meta.tool`.
-     * @param raw - The raw payload from the extension, or null on transport error.
+     * @param raw - The raw payload from the editor, or null on transport error.
      * @param errorMessage - An overriding error message (e.g. a transport failure).
      * @returns The MCP tool response.
      */

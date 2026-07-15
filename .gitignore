@@ -177,3 +177,6 @@ dist
 # Dev scripts
 dev
 *.crx
+
+# Local planning docs
+docs/

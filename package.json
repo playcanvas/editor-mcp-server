@@ -43,7 +43,6 @@
   },
   "devDependencies": {
     "@playcanvas/eslint-config": "3.0.0-beta.6",
-    "@types/chrome": "^0.1.33",
     "@types/command-line-args": "^5.2.3",
     "@types/command-line-usage": "^5.0.4",
     "@types/ws": "^8.18.1",
