@@ -16,8 +16,7 @@ An MCP Server for automating the [PlayCanvas Editor](https://playcanvas.com/prod
 
 <img width="1864" alt="Screenshot 2025-03-21 at 15 50 10" src="https://github.com/user-attachments/assets/393ffe73-40eb-4e1b-9442-2295bbb63326" />
 
-> [!IMPORTANT]  
-> At the moment, the MCP Server needs to be driven by Anthropic's Claude. Our experience shows that the free tier for Claude does not deliver a big enough chat context to operate the MCP Server reliably. Therefore, we strongly recommend subscribing to a Pro Claude account.
+The MCP client is built into the PlayCanvas Editor — no browser extension is needed. Install the server into your MCP client of choice (Claude Code, Codex, Claude Desktop, Cursor, …) and connect the Editor to it.
 
 ## Available Tools
 
@@ -65,8 +64,8 @@ The runtime tools drive a **real Launch instance** (the editor's Launch button) 
 you can verify that a scene actually *runs*, not just how it looks at edit time:
 
 * `launch_start` opens `https://launch.playcanvas.com/<sceneId>?debug=true` in a new
-  window. The extension injects a content script there that connects back to the MCP
-  server as the "runtime" peer. `launch_start` returns `{ url, sceneId, ready }`.
+  window. The editor hands the MCP port to the launch page, which connects back to the
+  MCP server as the "runtime" peer. `launch_start` returns `{ url, sceneId, ready }`.
 * `capture_runtime` screenshots the running app (scripts/physics/animation active).
 * `read_runtime_logs` returns the app's `console` output + uncaught
   exceptions/rejections (newest first, paginated; defaults to warnings + errors).
@@ -80,8 +79,6 @@ Notes:
 * Allow pop-ups for the editor origin, otherwise `launch_start` cannot open the window.
 * The launch page uses your existing PlayCanvas login session (same browser), so no
   extra auth step is needed.
-* Reload the unpacked extension in `chrome://extensions/` after updating it so the new
-  launch content script + permissions take effect.
 
 ## Response Format
 
@@ -111,95 +108,70 @@ Notes for tool authors / agents:
 
 ## Installation
 
-Run `npm install` to install all dependencies.
+Requires [Node.js](https://nodejs.org/) 18+. The server is published to npm as [`@playcanvas/editor-mcp-server`](https://www.npmjs.com/package/@playcanvas/editor-mcp-server), so every client below runs it with `npx` — nothing to clone or build.
 
-### Install Chrome Extension
+### Claude Code
 
-1. Visit `chrome://extensions/` and enable Developer mode
-2. Click `Load unpacked` and select the `extension` folder
-3. Load the PlayCanvas Editor. The extension should be loaded.
-
-### Run MCP Server
-
-The MCP Server can be driven by Cursor or Claude Desktop.
-
-> [!TIP]  
-> We have found Claude Desktop to be generally more reliable.
-
-#### Claude Desktop
-
-1. Install [Claude Desktop](https://claude.ai/download).
-2. Go to `Claude` > `Settings`.
-3. Select `Developer` and then `Edit Config`.
-4. This will open `claude_desktop_config.json`, your MCP Config JSON file.
-
-#### Cursor
-
-1. Install [Cursor](https://www.cursor.com/).
-2. Select `File` > `Preferences` > `Cursor Settings`.
-3. Click `+ Add new global MCP server`.
-4. This will open `mcp.json`, your MCP Config JSON file.
-
-> [!TIP]  
-> Also in `Cursor Settings`, select `Features` and scroll to the `Chat` section. Activate `Enable auto-run mode` to allow the LLM to run MCP tools without requiring constant authorization. You do this at your own risk (but we prefer it)!
-
-> [!IMPORTANT]  
-> In Cursor, ensure you have `Agent` selected. `Ask` and `Edit` modes will not recognize the MCP Server.
-
-#### MCP Config JSON File
-
-This is how your config should look:
-
-Windows
-
-```json
-{
-  "mcpServers": {
-    "playcanvas": {
-      "command": "cmd",
-      "args": [
-        "/c",
-        "npx",
-        "tsx",
-        "C:\\path\\to\\editor-mcp-server\\src\\server.ts"
-      ],
-      "env": {
-        "PORT": "52000"
-      }
-    }
-  }
-}
+```sh
+claude mcp add playcanvas -- npx -y @playcanvas/editor-mcp-server
 ```
 
-macOS
+### Codex
+
+The Codex CLI and the Codex app share `~/.codex/config.toml`, so one command covers both:
+
+```sh
+codex mcp add playcanvas -- npx -y @playcanvas/editor-mcp-server
+```
+
+### Claude Desktop
+
+Go to `Claude` > `Settings` > `Developer` > `Edit Config` and add to `claude_desktop_config.json`:
 
 ```json
 {
   "mcpServers": {
     "playcanvas": {
       "command": "npx",
-      "args": [
-        "tsx",
-        "/path/to/editor-mcp-server/src/server.ts"
-      ],
-      "env": {
-        "PORT": "52000"
-      }
+      "args": ["-y", "@playcanvas/editor-mcp-server"]
     }
   }
 }
 ```
 
+> [!NOTE]
+> On Windows, use `"command": "cmd"` and `"args": ["/c", "npx", "-y", "@playcanvas/editor-mcp-server"]`.
+
+### Cursor
+
+Select `File` > `Preferences` > `Cursor Settings` > `MCP` > `Add new global MCP server` and add the same JSON as for Claude Desktop.
+
+### Custom Port
+
+The server listens for the Editor on WebSocket port `52000` by default. To change it, append `--port <number>` to the `npx` args (e.g. `npx -y @playcanvas/editor-mcp-server --port 52001`) and set the same port in the Editor's MCP popover.
+
 ## Connecting the Editor to the MCP Server
 
-The PlayCanvas Editor does not connect to the MCP Server automatically. To connect:
+1. Open your project in the PlayCanvas Editor.
+2. Click the MCP button at the bottom of the toolbar (below the Publish button).
+3. Check that the port matches your MCP config (default `52000`) and click `CONNECT`.
 
-1. Activate a Chrome tab running the PlayCanvas Editor.
-2. Select the Extensions icon to the right of the address bar.
-3. Select PlayCanvas Editor MCP Extension to open the extension popup.
-4. Select `CONNECT` (the port number should match what is set in your MCP Config JSON File).
+Launch windows opened via `launch_start` (or the Launch button) connect automatically as the runtime peer.
 
 > [!NOTE]
 > You can currently only connect one instance of the PlayCanvas Editor to the MCP Server at any one time.
 
-You should now be able to issue commands in Claude Desktop or Cursor.
+You should now be able to issue commands from your MCP client.
+
+## Development
+
+To hack on the server itself:
+
+```sh
+git clone https://github.com/playcanvas/editor-mcp-server.git
+cd editor-mcp-server
+npm install
+npm run watch   # or: npm start
+```
+
+Point your MCP client at the checkout instead of the npm package by replacing the `npx` args with `["tsx", "/path/to/editor-mcp-server/src/server.ts"]`. `npm run debug` starts the server under the MCP Inspector.
