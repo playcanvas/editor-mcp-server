@@ -25,14 +25,11 @@
   "files": [
     "dist"
   ],
-  "engines": {
-    "node": ">=22.18.0"
-  },
   "scripts": {
     "build": "node build.ts",
     "debug": "mcp-inspector node src/server.ts",
-    "lint": "eslint src",
-    "lint:fix": "eslint src --fix",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "prepublishOnly": "npm run build",
     "publint": "publint",
     "start": "node src/server.ts",
@@ -51,5 +48,8 @@
     "typescript": "^5.9.3",
     "ws": "^8.19.0",
     "zod": "^3.23.8"
+  },
+  "engines": {
+    "node": ">=22.18.0"
   }
 }
