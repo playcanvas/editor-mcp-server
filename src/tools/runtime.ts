@@ -31,16 +31,11 @@ export const register = (server: McpServer, wss: WSS) => {
         async ({ device, waitMs }) => {
             try {
                 const opened = await wss.raw('launch:start', { device });
-                if (!opened || typeof opened !== 'object') {
-                    // The editor returned nothing for this method — almost always
-                    // an outdated editor build that predates the runtime tools.
-                    return wss.fail('launch:start', 'The connected editor does not support launch_start (it looks outdated). Reload the PlayCanvas Editor tab, reconnect via the MCP toolbar button, and retry.');
-                }
-                if (opened.error) {
+                if (opened?.error) {
                     return wss.fail('launch:start', opened.error);
                 }
                 const ready = await wss.waitForRuntime(waitMs ?? DEFAULT_READY_TIMEOUT);
-                const data = { ...(opened.data as object || {}), ready };
+                const data = { ...(opened?.data as object || {}), ready };
                 return wss.ok(
                     'launch:start',
                     data,
