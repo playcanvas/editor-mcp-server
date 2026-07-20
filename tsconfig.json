@@ -11,11 +11,15 @@
     // Bundler mode
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
     "verbatimModuleSyntax": true,
     "noEmit": true,
 
     // Best practices
     "strict": true,
+    // Node runs .ts files via type stripping, which forbids runtime TS
+    // syntax (enums, namespaces, parameter properties)
+    "erasableSyntaxOnly": true,
     "skipLibCheck": true,
     "noFallthroughCasesInSwitch": true,
 

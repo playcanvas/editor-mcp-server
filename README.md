@@ -56,6 +56,7 @@ The MCP client is built into the PlayCanvas Editor — no browser extension is n
   * `launch_stop`
   * `capture_runtime`
   * `read_runtime_logs`
+  * `query_runtime_state`
   * `inject_input`
 
 ## Runtime Tools
@@ -69,6 +70,8 @@ you can verify that a scene actually *runs*, not just how it looks at edit time:
 * `capture_runtime` screenshots the running app (scripts/physics/animation active).
 * `read_runtime_logs` returns the app's `console` output + uncaught
   exceptions/rejections (newest first, paginated; defaults to warnings + errors).
+* `query_runtime_state` reads live entity state (world/local transform, velocity,
+  element text) from the running app — ground truth without screenshot guessing.
 * `inject_input` dispatches keyboard / mouse / touch events to the running app
   (e.g. hold `W` for 500ms, click at a canvas coordinate, tap the screen), so you
   can drive end-to-end interactions and then verify with `capture_runtime`.
@@ -108,7 +111,7 @@ Notes for tool authors / agents:
 
 ## Installation
 
-Requires [Node.js](https://nodejs.org/) 18+. The server is published to npm as [`@playcanvas/editor-mcp-server`](https://www.npmjs.com/package/@playcanvas/editor-mcp-server), so every client below runs it with `npx` — nothing to clone or build.
+Requires [Node.js](https://nodejs.org/) 22.18+. The server is published to npm as [`@playcanvas/editor-mcp-server`](https://www.npmjs.com/package/@playcanvas/editor-mcp-server), so every client below runs it with `npx` — nothing to clone or build. The published package is a self-contained bundle with zero dependencies, so first-run installs are fast.
 
 ### Claude Code
 
@@ -193,4 +196,6 @@ npm install
 npm run watch   # or: npm start
 ```
 
-Point your MCP client at the checkout instead of the npm package by replacing the `npx` args with `["tsx", "/path/to/editor-mcp-server/src/server.ts"]`. `npm run debug` starts the server under the MCP Inspector.
+There is no build step during development — Node 22.18+ runs the TypeScript source directly. Point your MCP client at the checkout instead of the npm package with `"command": "node"` and `"args": ["/path/to/editor-mcp-server/src/server.ts"]`. `npm run debug` starts the server under the MCP Inspector, and `npm run build` produces the self-contained bundle that gets published.
+
+The server only accepts WebSocket connections from `playcanvas.com` origins and localhost. If your editor is served from another host, list it in the `MCP_ALLOWED_ORIGINS` environment variable (comma-separated exact origins) in your MCP client config.
