@@ -49,9 +49,12 @@ const main = (argv) => {
     // itself (see server.ts), instead of lingering as an orphan that keeps
     // hogging the port. The published package ships the bundled server; a
     // dev checkout runs the TypeScript source directly (native type
-    // stripping, hence the Node 22.18+ requirement).
-    const dist = resolve(__dirname, 'dist', 'server.mjs');
-    const serverPath = existsSync(dist) ? dist : resolve(__dirname, 'src', 'server.ts');
+    // stripping, hence the Node 22.18+ requirement). src is never in the
+    // published tarball (files: ["dist"]), so its presence means dev
+    // checkout — always run live source, even if a stale dist/ exists
+    // from a previous build.
+    const src = resolve(__dirname, 'src', 'server.ts');
+    const serverPath = existsSync(src) ? src : resolve(__dirname, 'dist', 'server.mjs');
     const child = spawn(process.execPath, [serverPath], {
         stdio: 'inherit',
         cwd: __dirname,
