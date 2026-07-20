@@ -1,26 +1,27 @@
 #!/bin/bash -e
 
 TYPE=$1
+PRE_ID_PREVIEW="beta"
 
-if [ -z "$TYPE" ]; then
-    echo "Usage: $0 <type>"
-    echo "type: major, minor, patch"
+if [[ ! " major minor patch premajor prerelease " =~ " $TYPE " ]]; then
+    echo "Usage: $0 (major|minor|patch|premajor|prerelease)"
     exit 1
 fi
 
+# Fetch all remote tags
+git fetch --tags
+
+# Calculate the next version
+npm version $TYPE --preid=$PRE_ID_PREVIEW --no-git-tag-version >> /dev/null
+NEXT_VERSION=$(npm pkg get version | sed 's/"//g')
+git reset --hard >> /dev/null
+
 # Confirm release
-read -p "Are you sure you want to release a new version? (y/N): " -r
+read -p "About to release 'v$NEXT_VERSION'. Continue? (y/N) " -r
 if [[ ! $REPLY =~ ^[Yy]$ ]]; then
     echo "Release cancelled."
     exit 1
 fi
 
 # Tag release
-npm version $TYPE
-
-# Publish to npm
-npm publish
-
-# Push to GitHub
-git push origin main
-git push --tags
+npm version $TYPE --preid=$PRE_ID_PREVIEW
