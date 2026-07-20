@@ -125,6 +125,3 @@ To hack on the server itself, ensure you have [Node.js](https://nodejs.org/) 22.
 4. Point your MCP client at the checkout instead of the npm package with `"command": "node"` and `"args": ["/path/to/editor-mcp-server/src/server.ts"]`.
 
 `npm run debug` starts the server under the MCP Inspector and `npm run build` produces the self-contained bundle that gets published.
-
-> [!NOTE]
-> The server only accepts WebSocket connections from `playcanvas.com` origins and localhost. If your editor is served from another host, list it in the `MCP_ALLOWED_ORIGINS` environment variable (comma-separated exact origins) in your MCP client config.
