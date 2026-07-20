@@ -1,117 +1,21 @@
-    ██████╗ ██╗      █████╗ ██╗   ██╗ ██████╗ █████╗ ███╗   ██╗██╗   ██╗ █████╗ ███████╗
-    ██╔══██╗██║     ██╔══██╗╚██╗ ██╔╝██╔════╝██╔══██╗████╗  ██║██║   ██║██╔══██╗██╔════╝
-    ██████╔╝██║     ███████║ ╚████╔╝ ██║     ███████║██╔██╗ ██║██║   ██║███████║███████╗
-    ██╔═══╝ ██║     ██╔══██║  ╚██╔╝  ██║     ██╔══██║██║╚██╗██║╚██╗ ██╔╝██╔══██║╚════██║
-    ██║     ███████╗██║  ██║   ██║   ╚██████╗██║  ██║██║ ╚████║ ╚████╔╝ ██║  ██║███████║
-    ╚═╝     ╚══════╝╚═╝  ╚═╝   ╚═╝    ╚═════╝╚═╝  ╚═╝╚═╝  ╚═══╝  ╚═══╝  ╚═╝  ╚═╝╚══════╝
+# PlayCanvas Editor MCP Server
 
-    ███╗   ███╗ ██████╗██████╗        ███████╗███████╗██████╗ ██╗   ██╗███████╗██████╗ 
-    ████╗ ████║██╔════╝██╔══██╗       ██╔════╝██╔════╝██╔══██╗██║   ██║██╔════╝██╔══██╗
-    ██╔████╔██║██║     ██████╔╝       ███████╗█████╗  ██████╔╝██║   ██║█████╗  ██████╔╝
-    ██║╚██╔╝██║██║     ██╔═══╝        ╚════██║██╔══╝  ██╔══██╗╚██╗ ██╔╝██╔══╝  ██╔══██╗
-    ██║ ╚═╝ ██║╚██████╗██║            ███████║███████╗██║  ██║ ╚████╔╝ ███████╗██║  ██║
-    ╚═╝     ╚═╝ ╚═════╝╚═╝            ╚══════╝╚══════╝╚═╝  ╚═╝  ╚═══╝  ╚══════╝╚═╝  ╚═╝
+[![CI](https://img.shields.io/github/actions/workflow/status/playcanvas/editor-mcp-server/.github%2Fworkflows%2Fci.yml?label=ci)](https://github.com/playcanvas/editor-mcp-server/actions/workflows/ci.yml)
+[![NPM Version](https://img.shields.io/npm/v/@playcanvas/editor-mcp-server)](https://www.npmjs.com/package/@playcanvas/editor-mcp-server)
+[![License](https://img.shields.io/github/license/playcanvas/editor-mcp-server)](https://github.com/playcanvas/editor-mcp-server/blob/main/LICENSE)
+[![Discord](https://img.shields.io/badge/Discord-5865F2?style=flat&logo=discord&logoColor=white&color=black)](https://discord.gg/RSaMRzg)
+[![Reddit](https://img.shields.io/badge/Reddit-FF4500?style=flat&logo=reddit&logoColor=white&color=black)](https://www.reddit.com/r/PlayCanvas)
+[![X](https://img.shields.io/badge/X-000000?style=flat&logo=x&logoColor=white&color=black)](https://x.com/intent/follow?screen_name=playcanvas)
 
-An MCP Server for automating the [PlayCanvas Editor](https://playcanvas.com/products/editor) using an LLM.
+| [User Manual](https://developer.playcanvas.com/user-manual/editor) | [API Reference](https://api.playcanvas.com/editor) | [Blog](https://blog.playcanvas.com) | [Forum](https://forum.playcanvas.com) |
 
-<img width="1864" alt="Screenshot 2025-03-21 at 15 50 10" src="https://github.com/user-attachments/assets/393ffe73-40eb-4e1b-9442-2295bbb63326" />
+An MCP server for automating the [PlayCanvas Editor](https://playcanvas.com/products/editor) with an LLM. The MCP client is built into the Editor — no browser extension needed. Install the server into your MCP client of choice (Claude Code, Codex, Claude Desktop, Cursor, …) and connect the Editor to it.
 
-The MCP client is built into the PlayCanvas Editor — no browser extension is needed. Install the server into your MCP client of choice (Claude Code, Codex, Claude Desktop, Cursor, …) and connect the Editor to it.
-
-## Available Tools
-
-* Entity
-  * `list_entities`
-  * `resolve_entities`
-  * `create_entities`
-  * `delete_entities`
-  * `duplicate_entities`
-  * `modify_entities`
-  * `reparent_entity`
-  * `add_components`
-  * `remove_components`
-  * `add_script_component_script`
-  * `attach_script`
-* Asset
-  * `list_assets`
-  * `create_assets`
-  * `delete_assets`
-  * `instantiate_template_assets`
-  * `set_script_text`
-  * `script_parse`
-  * `set_material_diffuse`
-  * `set_material_properties`
-* Scene
-  * `query_scene_settings`
-  * `modify_scene_settings`
-* Store
-  * `store_search`
-  * `store_get`
-  * `store_download`
-* Viewport
-  * `capture_viewport`
-  * `focus_viewport`
-* Runtime (live Launch instance)
-  * `launch_start`
-  * `launch_stop`
-  * `capture_runtime`
-  * `read_runtime_logs`
-  * `query_runtime_state`
-  * `inject_input`
-
-## Runtime Tools
-
-The runtime tools drive a **real Launch instance** (the editor's Launch button) so
-you can verify that a scene actually *runs*, not just how it looks at edit time:
-
-* `launch_start` opens `https://launch.playcanvas.com/<sceneId>?debug=true` in a new
-  window. The editor hands the MCP port to the launch page, which connects back to the
-  MCP server as the "runtime" peer. `launch_start` returns `{ url, sceneId, ready }`.
-* `capture_runtime` screenshots the running app (scripts/physics/animation active).
-* `read_runtime_logs` returns the app's `console` output + uncaught
-  exceptions/rejections (newest first, paginated; defaults to warnings + errors).
-* `query_runtime_state` reads live entity state (world/local transform, velocity,
-  element text) from the running app — ground truth without screenshot guessing.
-* `inject_input` dispatches keyboard / mouse / touch events to the running app
-  (e.g. hold `W` for 500ms, click at a canvas coordinate, tap the screen), so you
-  can drive end-to-end interactions and then verify with `capture_runtime`.
-* `launch_stop` closes the launch window.
-
-Notes:
-
-* Allow pop-ups for the editor origin, otherwise `launch_start` cannot open the window.
-* The launch page uses your existing PlayCanvas login session (same browser), so no
-  extra auth step is needed.
-
-## Response Format
-
-Every tool returns a single, consistent **envelope** so agents can pattern-match on a stable shape:
-
-```jsonc
-{
-  "data": <result> | null,   // business payload; an empty set is [], never an error
-  "meta": {
-    "tool": "entities:list",
-    "status": "ok" | "error",
-    "message": "...",          // present only on error; actionable, with a recovery hint
-    // list tools also include pagination metadata:
-    "total": 120, "count": 50, "hasMore": true, "nextCursor": "50"
-  }
-}
-```
-
-Notes for tool authors / agents:
-
-* **Errors** never use a top-level `error` field; they set `meta.status = "error"` and put an actionable message in `meta.message` (the protocol-level `isError` flag is also set).
-* **Empty results** (`list_*`, `resolve_entities`) are a successful empty list, not an error.
-* **Pagination**: `list_entities` / `list_assets` accept `limit` (default 50) + `offset`. Page using `meta.nextCursor` (pass it back as `offset`) and stop when `meta.hasMore` is `false`.
-* **State snapshots**: mutating tools (`create_entities`, `modify_entities`, `add_components`, `reparent_entity`, `duplicate_entities`, `instantiate_template_assets`, …) return the resulting entity/asset summaries — including a human-readable hierarchy `path` — so you rarely need a follow-up `list_entities` call.
-* **Annotations**: read-only tools declare `readOnlyHint`, destructive tools (`delete_*`) declare `destructiveHint`, and store tools declare `openWorldHint` (they reach the network).
-* Image tools (`capture_viewport`) return a protocol `image` block plus a parallel `text` block carrying the same `meta`.
+<img width="1864" alt="PlayCanvas Editor driven by an MCP client" src="https://github.com/user-attachments/assets/393ffe73-40eb-4e1b-9442-2295bbb63326" />
 
 ## Installation
 
-Requires [Node.js](https://nodejs.org/) 22.18+. The server is published to npm as [`@playcanvas/editor-mcp-server`](https://www.npmjs.com/package/@playcanvas/editor-mcp-server), so every client below runs it with `npx` — nothing to clone or build. The published package is a self-contained bundle with zero dependencies, so first-run installs are fast.
+Requires [Node.js](https://nodejs.org/) 22.18+. The server is published to npm as [`@playcanvas/editor-mcp-server`](https://www.npmjs.com/package/@playcanvas/editor-mcp-server) — a self-contained, zero-dependency bundle — so every client below runs it with `npx`. Nothing to clone or build.
 
 ### Claude Code
 
@@ -141,10 +45,7 @@ codex mcp add playcanvas -- npx -y @playcanvas/editor-mcp-server
 ```
 
 > [!NOTE]
-> On Windows, use `codex mcp add playcanvas -- cmd /c npx -y @playcanvas/editor-mcp-server`. If the server times out on first run (while `npx` downloads the package), raise the startup timeout in `~/.codex/config.toml` under `[mcp_servers.playcanvas]`: `startup_timeout_sec = 60`.
-
-> [!NOTE]
-> ChatGPT itself (web and desktop) only supports remote MCP connectors, so it cannot run this local server — Codex is the OpenAI surface to use.
+> On Windows, use `codex mcp add playcanvas -- cmd /c npx -y @playcanvas/editor-mcp-server`. If the server times out on first run (while `npx` downloads the package), raise `startup_timeout_sec` under `[mcp_servers.playcanvas]` in `~/.codex/config.toml`. ChatGPT itself only supports remote MCP connectors, so Codex is the OpenAI surface to use.
 
 ### Claude Desktop
 
@@ -170,32 +71,60 @@ Select `File` > `Preferences` > `Cursor Settings` > `MCP` > `Add new global MCP 
 
 ### Custom Port
 
-The server listens for the Editor on WebSocket port `52000` by default. To change it, append `--port <number>` to the `npx` args (e.g. `npx -y @playcanvas/editor-mcp-server --port 52001`) and set the same port in the Editor's MCP popover.
+The server listens for the Editor on WebSocket port `52000` by default. To change it, append `--port <number>` to the `npx` args and set the same port in the Editor's MCP popover.
 
-## Connecting the Editor to the MCP Server
+## Connecting the Editor
 
 1. Open your project in the PlayCanvas Editor.
 2. Click the MCP button at the bottom of the toolbar (below the Publish button).
 3. Check that the port matches your MCP config (default `52000`) and click `CONNECT`.
 
-Launch windows opened via `launch_start` (or the Launch button) connect automatically as the runtime peer.
+You can now issue commands from your MCP client.
 
 > [!NOTE]
-> You can currently only connect one instance of the PlayCanvas Editor to the MCP Server at any one time.
+> Only one Editor instance can be connected to the MCP server at a time.
 
-You should now be able to issue commands from your MCP client.
+## Available Tools
+
+| Category | Tools                                                                                                                                                                                         |
+| -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Entity   | `list_entities`, `resolve_entities`, `create_entities`, `delete_entities`, `duplicate_entities`, `modify_entities`, `reparent_entity`, `add_components`, `remove_components`, `add_script_component_script`, `attach_script` |
+| Asset    | `list_assets`, `create_assets`, `delete_assets`, `instantiate_template_assets`, `set_script_text`, `script_parse`, `set_material_diffuse`, `set_material_properties`                          |
+| Scene    | `query_scene_settings`, `modify_scene_settings`                                                                                                                                               |
+| Store    | `store_search`, `store_get`, `store_download`                                                                                                                                                 |
+| Viewport | `capture_viewport`, `focus_viewport`                                                                                                                                                          |
+| Runtime  | `launch_start`, `launch_stop`, `capture_runtime`, `read_runtime_logs`, `query_runtime_state`, `inject_input`                                                                                  |
+
+The Runtime tools drive a real Launch instance (the Editor's Launch button) so an agent can verify that a scene actually *runs*: screenshot the running app, read its console output, query live entity state, and inject keyboard/mouse/touch input. Allow pop-ups for the editor origin so `launch_start` can open the launch window — it reuses your existing PlayCanvas login session.
+
+Every tool returns a consistent `{ data, meta }` envelope: `meta.status` is `ok` or `error` (with an actionable message), list tools paginate via `limit`/`offset` and `meta.nextCursor`, and mutating tools return the resulting entity/asset summaries so follow-up list calls are rarely needed.
 
 ## Development
 
-To hack on the server itself:
+To hack on the server itself, ensure you have [Node.js](https://nodejs.org/) 22.18 or later installed. Follow these steps:
 
-```sh
-git clone https://github.com/playcanvas/editor-mcp-server.git
-cd editor-mcp-server
-npm install
-npm run watch   # or: npm start
-```
+1. Clone the repository:
 
-There is no build step during development — Node 22.18+ runs the TypeScript source directly. Point your MCP client at the checkout instead of the npm package with `"command": "node"` and `"args": ["/path/to/editor-mcp-server/src/server.ts"]`. `npm run debug` starts the server under the MCP Inspector, and `npm run build` produces the self-contained bundle that gets published.
+    ```sh
+    git clone https://github.com/playcanvas/editor-mcp-server.git
+    cd editor-mcp-server
+    ```
 
-The server only accepts WebSocket connections from `playcanvas.com` origins and localhost. If your editor is served from another host, list it in the `MCP_ALLOWED_ORIGINS` environment variable (comma-separated exact origins) in your MCP client config.
+2. Install dependencies:
+
+    ```sh
+    npm install
+    ```
+
+3. Start the server (Node runs the TypeScript source directly — no build step):
+
+    ```sh
+    npm run watch
+    ```
+
+4. Point your MCP client at the checkout instead of the npm package with `"command": "node"` and `"args": ["/path/to/editor-mcp-server/src/server.ts"]`.
+
+`npm run debug` starts the server under the MCP Inspector and `npm run build` produces the self-contained bundle that gets published.
+
+> [!NOTE]
+> The server only accepts WebSocket connections from `playcanvas.com` origins and localhost. If your editor is served from another host, list it in the `MCP_ALLOWED_ORIGINS` environment variable (comma-separated exact origins) in your MCP client config.
