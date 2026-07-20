@@ -5,6 +5,27 @@ import type { WSS } from '../../wss.ts';
 
 export const register = (server: McpServer, wss: WSS) => {
     server.registerTool(
+        'get_asset_text',
+        {
+            description: [
+                'Read the full text contents of a text-based asset (script, text, json, css, html, or shader), returned as text.',
+                'When NOT to use: to read a script\'s declared name or attribute definitions (use script_parse), to read binary assets like textures or models, or to list assets (use list_assets).'
+            ].join(' '),
+            annotations: {
+                title: 'Get Asset Text',
+                readOnlyHint: true,
+                openWorldHint: false
+            },
+            inputSchema: {
+                assetId: z.number().describe('Asset id of a text-based asset (script, text, json, css, html, shader)')
+            }
+        },
+        ({ assetId }) => {
+            return wss.call('assets:file:text:get', assetId);
+        }
+    );
+
+    server.registerTool(
         'set_script_text',
         {
             description: [

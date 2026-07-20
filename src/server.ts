@@ -10,7 +10,9 @@ import pkg from '../package.json' with { type: 'json' };
 import { register as registerAsset } from './tools/asset.ts';
 import { register as registerAssetMaterial } from './tools/assets/material.ts';
 import { register as registerAssetScript } from './tools/assets/script.ts';
+import { register as registerEditor } from './tools/editor.ts';
 import { register as registerEntity } from './tools/entity.ts';
+import { register as registerProject } from './tools/project.ts';
 import { register as registerRuntime } from './tools/runtime.ts';
 import { register as registerScene } from './tools/scene.ts';
 import { register as registerStore } from './tools/store.ts';
@@ -159,9 +161,11 @@ registerAsset(mcp, wss);
 registerAssetMaterial(mcp, wss);
 registerAssetScript(mcp, wss);
 registerScene(mcp, wss);
+registerProject(mcp, wss);
 registerStore(mcp, wss);
 registerViewport(mcp, wss);
 registerRuntime(mcp, wss);
+registerEditor(mcp, wss);
 
 // Start receiving messages on stdin and sending messages on stdout
 const transport = new StdioServerTransport();

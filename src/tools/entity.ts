@@ -297,4 +297,47 @@ export const register = (server: McpServer, wss: WSS) => {
             return wss.call('entities:script:attach', id, scriptName);
         }
     );
+
+    server.registerTool(
+        'search_entities',
+        {
+            description: [
+                'Fuzzy-search entities by name and return the best matches ranked by relevance (each as a compact summary).',
+                'Use this to find an entity when you only know part of its name. When NOT to use: to filter by component or tag (use list_entities) or to find entities using a script (use find_entities_by_script).'
+            ].join(' '),
+            annotations: {
+                title: 'Search Entities',
+                readOnlyHint: true,
+                openWorldHint: false
+            },
+            inputSchema: {
+                query: z.string().describe('Name (or partial name) to fuzzy-match against'),
+                limit: z.number().int().min(1).optional().describe('Max results to return (default: all matches)')
+            }
+        },
+        ({ query, limit }) => {
+            return wss.call('entities:search', query, limit);
+        }
+    );
+
+    server.registerTool(
+        'find_entities_by_script',
+        {
+            description: [
+                'List the entities whose script component uses a given (registered) script name. Returns compact entity summaries.',
+                'When NOT to use: to search entities by name (use search_entities) or to read a script\'s source (use get_asset_text).'
+            ].join(' '),
+            annotations: {
+                title: 'Find Entities By Script',
+                readOnlyHint: true,
+                openWorldHint: false
+            },
+            inputSchema: {
+                script: z.string().describe('Registered script name to look up')
+            }
+        },
+        ({ script }) => {
+            return wss.call('entities:byScript', script);
+        }
+    );
 };

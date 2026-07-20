@@ -50,4 +50,28 @@ export const register = (server: McpServer, wss: WSS) => {
             return wss.call('viewport:focus', ids, { view, yaw, pitch });
         }
     );
+
+    server.registerTool(
+        'focus_camera',
+        {
+            description: [
+                'Aim the current editor camera to look at a world-space point from a given distance. Useful for framing an exact location before capture_viewport.',
+                'When NOT to use: to frame specific entities (use focus_viewport) or to move an in-scene camera entity (use modify_entities on its transform).'
+            ].join(' '),
+            annotations: {
+                title: 'Focus Camera',
+                readOnlyHint: false,
+                destructiveHint: false,
+                idempotentHint: true,
+                openWorldHint: false
+            },
+            inputSchema: {
+                point: z.array(z.number()).length(3).describe('World-space point [x, y, z] to look at'),
+                distance: z.number().describe('Distance from the point at which to place the camera')
+            }
+        },
+        ({ point, distance }) => {
+            return wss.call('camera:focus:point', point, distance);
+        }
+    );
 };
