@@ -3,8 +3,10 @@ import { z } from 'zod';
 
 import type { WSS } from '../wss.ts';
 
-// how long to wait for the editor to reload and reconnect after a branch-changing op
-const RELOAD_WAIT_MS = 20_000;
+// how long to wait for the editor to reload and reconnect after a branch-changing op.
+// the reconnect fires on the reloaded page's DOMContentLoaded (before assets stream in),
+// so this scales with page render/network, not project size.
+const RELOAD_WAIT_MS = 60_000;
 
 // fire a branch-changing method, wait for the editor to reload+reconnect, then
 // return fresh status — so the agent sees one clean call across the reload
