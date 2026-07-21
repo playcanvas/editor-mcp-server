@@ -81,6 +81,8 @@ class WSS {
 
     private _id = 0;
 
+    private _editorGeneration = 0;
+
     private _pingInterval: ReturnType<typeof setInterval> | null = null;
 
     private _port: number;
@@ -149,6 +151,7 @@ class WSS {
             let role: Role = 'editor';
             if (!this._sockets.editor) {
                 this._sockets.editor = ws;
+                this._editorGeneration++;
                 this._startPing();
             }
             console.error('[WSS] Peer connected (assumed editor; awaiting registration)');
@@ -182,6 +185,7 @@ class WSS {
                         this._sockets[role] = ws;
                         console.error('[WSS] Registered', role);
                         if (role === 'editor') {
+                            this._editorGeneration++;
                             this._startPing();
                         }
                         return;
@@ -288,6 +292,42 @@ class WSS {
         return new Promise((resolve) => {
             const check = () => {
                 if (this.hasRuntime()) {
+                    resolve(true);
+                    return;
+                }
+                if (Date.now() - start >= timeoutMs) {
+                    resolve(false);
+                    return;
+                }
+                setTimeout(check, 250);
+            };
+            check();
+        });
+    }
+
+    /**
+     * The current editor-connection generation. Increments each time an editor
+     * peer takes the editor slot, so callers can detect a reload → reconnect
+     * (not merely "a socket is present").
+     */
+    get editorGeneration() {
+        return this._editorGeneration;
+    }
+
+    /**
+     * Wait until a NEWER editor generation than `sinceGen` is connected, up to a
+     * timeout. Used by branch-changing VCS tools: capture the generation, fire
+     * the op that reloads the editor, then await the reloaded page reconnecting.
+     *
+     * @param sinceGen - The generation captured before triggering the reload.
+     * @param timeoutMs - Maximum time to wait in milliseconds.
+     * @returns Resolves true once a newer editor generation is connected, false on timeout.
+     */
+    waitForEditor(sinceGen: number, timeoutMs: number): Promise<boolean> {
+        const start = Date.now();
+        return new Promise((resolve) => {
+            const check = () => {
+                if (this._editorGeneration > sinceGen && this._sockets.editor?.readyState === WebSocket.OPEN) {
                     resolve(true);
                     return;
                 }
