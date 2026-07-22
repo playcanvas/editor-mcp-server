@@ -4,6 +4,7 @@ import { WebSocketServer, WebSocket } from 'ws';
 const PING_DELAY = 1000;
 
 const DEFAULT_TIMEOUT = 60_000;
+const PROTOCOL_VERSION = 1;
 
 // How often a standby instance retries binding the port. Multiple MCP clients
 // (agents) each run their own server; only one can own the port and talk to the
@@ -71,11 +72,14 @@ type RawResult = {
  * page that handles `runtime:*` methods (capture, logs, etc.).
  */
 type Role = 'editor' | 'runtime';
+type Capabilities = { protocolVersion?: number; methods?: Set<string> };
 
 class WSS {
     private _server!: WebSocketServer;
 
     private _sockets: Record<Role, WebSocket | undefined> = { editor: undefined, runtime: undefined };
+
+    private _capabilities: Record<Role, Capabilities | undefined> = { editor: undefined, runtime: undefined };
 
     private _callbacks = new Map<number, (res: RawResult) => void>();
 
@@ -144,10 +148,6 @@ class WSS {
         // lives for its whole life; it must NOT be re-added per disconnect (that
         // leaks listeners and double-handles messages).
         server.on('connection', (ws) => {
-            // Default new peers to the editor role so clients that don't send a
-            // `{ register }` handshake (e.g. older editor builds) still work.
-            // A `{ register }` message can reassign the socket — notably the
-            // launch page registers itself as 'runtime'.
             let role: Role = 'editor';
             if (!this._sockets.editor) {
                 this._sockets.editor = ws;
@@ -180,9 +180,14 @@ class WSS {
                         // Vacate the optimistic slot if we're switching roles.
                         if (newRole !== role && this._sockets[role] === ws) {
                             this._sockets[role] = undefined;
+                            this._capabilities[role] = undefined;
                         }
                         role = newRole;
                         this._sockets[role] = ws;
+                        this._capabilities[role] = {
+                            protocolVersion: Number.isInteger(msg.protocolVersion) ? msg.protocolVersion : undefined,
+                            methods: Array.isArray(msg.methods) ? new Set(msg.methods.filter((name: unknown) => typeof name === 'string')) : undefined
+                        };
                         console.error('[WSS] Registered', role);
                         if (role === 'editor') {
                             this._editorGeneration++;
@@ -203,6 +208,7 @@ class WSS {
             ws.on('close', () => {
                 if (this._sockets[role] === ws) {
                     this._sockets[role] = undefined;
+                    this._capabilities[role] = undefined;
                     console.error('[WSS] Disconnected', role);
                     if (role === 'editor' && this._pingInterval) {
                         clearInterval(this._pingInterval);
@@ -262,6 +268,7 @@ class WSS {
                 this._sockets[role]?.close();
             } catch { /* already closing */ }
             this._sockets[role] = undefined;
+            this._capabilities[role] = undefined;
         });
         try {
             this._server.close();
@@ -360,6 +367,18 @@ class WSS {
             }
             if (socket.readyState !== WebSocket.OPEN) {
                 reject(new Error(`${role === 'runtime' ? 'Runtime' : 'Editor'} socket not open. Reconnect (or re-run launch_start) and retry.`));
+                return;
+            }
+            const capabilities = this._capabilities[role];
+            if (
+                capabilities?.protocolVersion !== undefined &&
+                capabilities.protocolVersion !== PROTOCOL_VERSION
+            ) {
+                reject(new Error(`${role === 'runtime' ? 'Runtime' : 'Editor'} advertises incompatible protocol ${capabilities.protocolVersion}; expected ${PROTOCOL_VERSION}. Reload it with a compatible build and reconnect.`));
+                return;
+            }
+            if (capabilities?.methods && !capabilities.methods.has(name)) {
+                reject(new Error(`${role === 'runtime' ? 'Runtime' : 'Editor'} does not support '${name}'. Reload it with a compatible build and reconnect.`));
                 return;
             }
             const timer = setTimeout(() => {
@@ -504,6 +523,7 @@ class WSS {
         (['editor', 'runtime'] as Role[]).forEach((role) => {
             this._sockets[role]?.close(1000, 'FORCE');
             this._sockets[role] = undefined;
+            this._capabilities[role] = undefined;
         });
         this._server.close();
         console.error('[WSS] Closed');

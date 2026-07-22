@@ -7,6 +7,91 @@ import { EntityIdSchema } from './schema/common.ts';
 
 export const register = (server: McpServer, wss: WSS) => {
     server.registerTool(
+        'query_viewport_state',
+        {
+            description:
+                'Read the exact editor viewport camera and overlay state so it can be restored after visual inspection.',
+            annotations: {
+                title: 'Query Viewport State',
+                readOnlyHint: true,
+                openWorldHint: false
+            }
+        },
+        () => wss.call('viewport:state:get')
+    );
+
+    server.registerTool(
+        'set_viewport_state',
+        {
+            description:
+                "Set the editor viewport camera transform, projection, grid, bones, icon size, and expanded state. This controls the editor view, not an entity's persisted enabled state.",
+            annotations: {
+                title: 'Set Viewport State',
+                readOnlyHint: false,
+                destructiveHint: false,
+                idempotentHint: true,
+                openWorldHint: false
+            },
+            inputSchema: {
+                cameraId: z
+                    .string()
+                    .optional()
+                    .describe(
+                        'Editor camera name (perspective/top/front/etc.) or camera entity resource_id'
+                    ),
+                position: z.array(z.number()).length(3).optional(),
+                rotation: z.array(z.number()).length(3).optional(),
+                projection: z.enum(['perspective', 'orthographic']).optional(),
+                orthoHeight: z.number().positive().optional(),
+                grid: z
+                    .object({
+                        divisions: z.number().int().min(0).optional(),
+                        size: z.number().min(0).optional()
+                    })
+                    .optional(),
+                bones: z.boolean().optional(),
+                iconSize: z.number().min(0).max(100).optional(),
+                expanded: z.boolean().optional()
+            }
+        },
+        (state) => wss.call('viewport:state:set', state)
+    );
+
+    server.registerTool(
+        'query_viewport_visibility',
+        {
+            description:
+                'List entities hidden only in the editor viewport. This does not read or change persisted entity enabled values.',
+            annotations: {
+                title: 'Query Viewport Visibility',
+                readOnlyHint: true,
+                openWorldHint: false
+            }
+        },
+        () => wss.call('viewport:visibility:get')
+    );
+
+    server.registerTool(
+        'set_viewport_visibility',
+        {
+            description:
+                'Hide or show entities only in the editor viewport without changing their persisted enabled values.',
+            annotations: {
+                title: 'Set Viewport Visibility',
+                readOnlyHint: false,
+                destructiveHint: false,
+                idempotentHint: true,
+                openWorldHint: false
+            },
+            inputSchema: {
+                ids: z.array(EntityIdSchema).nonempty(),
+                hidden: z.boolean()
+            }
+        },
+        ({ ids, hidden }) => wss.call('viewport:visibility:set', ids, hidden)
+    );
+
+    server.registerTool(
         'capture_viewport',
         {
             description: [

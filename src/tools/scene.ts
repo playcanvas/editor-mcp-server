@@ -93,7 +93,7 @@ export const register = (server: McpServer, wss: WSS) => {
         {
             description: [
                 'Load (switch the editor to) a scene by its uniqueId. This unloads the current scene and opens the target one.',
-                'Loading is asynchronous: the tool returns once the switch has been requested, before it completes.',
+                'By default the tool returns after queuing the load. Set wait=true to return only after the requested scene is active.',
                 'When NOT to use: to read a scene without switching (use get_scene) or to create a new scene (use create_scene).'
             ].join(' '),
             annotations: {
@@ -104,12 +104,12 @@ export const register = (server: McpServer, wss: WSS) => {
                 openWorldHint: false
             },
             inputSchema: {
-                uniqueId: z.union([z.number(), z.string()]).describe('Scene uniqueId (the "uniqueId" field from list_scenes, not id)')
+                uniqueId: z.union([z.number(), z.string()]).describe('Scene uniqueId (the "uniqueId" field from list_scenes, not id)'),
+                wait: z.boolean().optional().describe('Wait until the editor reports the requested scene is active')
             }
         },
-        ({ uniqueId }) => {
-            return wss.call('scene:load', uniqueId);
-        }
+        ({ uniqueId, wait }) =>
+            wait === undefined ? wss.call('scene:load', uniqueId) : wss.call('scene:load', uniqueId, { wait })
     );
 
     server.registerTool(

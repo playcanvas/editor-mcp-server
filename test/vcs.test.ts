@@ -28,7 +28,7 @@ const connectFakeEditor = (port: number, answers: Record<string, unknown>) => {
     return new Promise<WebSocket>((resolve) => {
         const ws = new WebSocket(`ws://127.0.0.1:${port}`);
         ws.on('open', () => {
-            ws.send(JSON.stringify({ register: 'editor' }));
+            ws.send(JSON.stringify({ register: 'editor', protocolVersion: 1, methods: ['ping', ...Object.keys(answers)] }));
             resolve(ws);
         });
         ws.on('message', (buf) => {
@@ -110,7 +110,10 @@ test('vcs lifecycle tools: arg passthrough, apply_merge finalize reload, error p
     // a fake editor that records every method + args it receives, then answers
     const connect = () => new Promise<WebSocket>((resolve) => {
         const ws = new WebSocket(`ws://127.0.0.1:${PORT2}`);
-        ws.on('open', () => { ws.send(JSON.stringify({ register: 'editor' })); resolve(ws); });
+        ws.on('open', () => {
+            ws.send(JSON.stringify({ register: 'editor', protocolVersion: 1, methods: ['ping', ...Object.keys(answers)] }));
+            resolve(ws);
+        });
         ws.on('message', (buf) => {
             const msg = JSON.parse(buf.toString());
             if (!msg.name || msg.name === 'ping') return;

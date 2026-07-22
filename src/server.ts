@@ -7,11 +7,15 @@ import { WebSocket } from 'ws';
 
 import pkg from '../package.json' with { type: 'json' };
 
+import { register as registerAnimation } from './tools/animation.ts';
+import { register as registerAnimStateGraph } from './tools/animstategraph.ts';
 import { register as registerAsset } from './tools/asset.ts';
 import { register as registerAssetMaterial } from './tools/assets/material.ts';
 import { register as registerAssetScript } from './tools/assets/script.ts';
+import { register as registerBuild } from './tools/build.ts';
 import { register as registerEditor } from './tools/editor.ts';
 import { register as registerEntity } from './tools/entity.ts';
+import { register as registerProcessing } from './tools/processing.ts';
 import { register as registerProject } from './tools/project.ts';
 import { register as registerRuntime } from './tools/runtime.ts';
 import { register as registerScene } from './tools/scene.ts';
@@ -161,6 +165,10 @@ registerEntity(mcp, wss);
 registerAsset(mcp, wss);
 registerAssetMaterial(mcp, wss);
 registerAssetScript(mcp, wss);
+registerAnimation(mcp, wss);
+registerAnimStateGraph(mcp, wss);
+registerProcessing(mcp, wss);
+registerBuild(mcp, wss);
 registerScene(mcp, wss);
 registerProject(mcp, wss);
 registerStore(mcp, wss);
