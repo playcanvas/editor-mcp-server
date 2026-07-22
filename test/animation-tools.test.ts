@@ -58,6 +58,22 @@ test('animation authoring schemas enforce structural boundaries', () => {
         false
     );
     assert.equal(
+        AnimationEventOperationSchema.safeParse({
+            kind: 'event.add',
+            name: 'jumpOff',
+            time: 1.01
+        }).success,
+        false
+    );
+    assert.equal(
+        AnimationEventOperationSchema.safeParse({
+            kind: 'event.update',
+            id: 1,
+            properties: { time: 1.01 }
+        }).success,
+        false
+    );
+    assert.equal(
         AnimStateGraphOperationSchema.safeParse({
             kind: 'transition.update',
             id: 4,

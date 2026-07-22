@@ -149,7 +149,12 @@ class WSS {
         // leaks listeners and double-handles messages).
         server.on('connection', (ws) => {
             let role: Role = 'editor';
-            console.error('[WSS] Peer connected; awaiting registration');
+            if (!this._sockets.editor) {
+                this._sockets.editor = ws;
+                this._editorGeneration++;
+                this._startPing();
+            }
+            console.error('[WSS] Peer connected (assumed editor; awaiting registration)');
             ws.on('message', (data) => {
                 try {
                     const msg = JSON.parse(data.toString());
@@ -365,11 +370,14 @@ class WSS {
                 return;
             }
             const capabilities = this._capabilities[role];
-            if (capabilities?.protocolVersion !== PROTOCOL_VERSION || !capabilities.methods) {
-                reject(new Error(`${role === 'runtime' ? 'Runtime' : 'Editor'} does not advertise protocol ${PROTOCOL_VERSION} capabilities. Reload it with a compatible build and reconnect.`));
+            if (
+                capabilities?.protocolVersion !== undefined &&
+                capabilities.protocolVersion !== PROTOCOL_VERSION
+            ) {
+                reject(new Error(`${role === 'runtime' ? 'Runtime' : 'Editor'} advertises incompatible protocol ${capabilities.protocolVersion}; expected ${PROTOCOL_VERSION}. Reload it with a compatible build and reconnect.`));
                 return;
             }
-            if (!capabilities.methods.has(name)) {
+            if (capabilities?.methods && !capabilities.methods.has(name)) {
                 reject(new Error(`${role === 'runtime' ? 'Runtime' : 'Editor'} does not support '${name}'. Reload it with a compatible build and reconnect.`));
                 return;
             }

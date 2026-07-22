@@ -7,7 +7,7 @@ const IdSchema = z.number().int().min(0).max(Number.MAX_SAFE_INTEGER);
 const EventPropertiesSchema = z
     .object({
         name: z.string().min(1).optional(),
-        time: z.number().finite().min(0).optional(),
+        time: z.number().finite().min(0).max(1).optional(),
         number: z.number().finite().nullable().optional(),
         string: z.string().optional()
     })
@@ -20,7 +20,7 @@ export const AnimationEventOperationSchema = z.discriminatedUnion('kind', [
             kind: z.literal('event.add'),
             id: IdSchema.optional(),
             name: z.string().min(1),
-            time: z.number().finite().min(0),
+            time: z.number().finite().min(0).max(1),
             properties: z
                 .object({
                     number: z.number().finite().nullable().optional(),
@@ -62,7 +62,7 @@ export const register = (server: McpServer, wss: WSS) => {
         'modify_animation_events',
         {
             description:
-                'Add, update, or remove GLB animation events as one undoable transaction. Event ids remain stable and generated ids are returned.',
+                'Add, update, or remove GLB animation events as one undoable transaction. Times are normalized from 0 to 1. Event ids remain stable and generated ids are returned.',
             annotations: {
                 title: 'Modify Animation Events',
                 readOnlyHint: false,

@@ -39,7 +39,7 @@ export const register = (server: McpServer, wss: WSS) => {
             description: [
                 'Create one or more native data/text assets. Imported binary assets use upload_assets.',
                 'Each asset is { type, options }; options vary by type (e.g. material takes data, script takes filename/text, template takes an entity id).',
-                'Returns succeeded and failed entries so network-backed batches never hide partial results.',
+                'Successful batches return the existing asset-summary array. Failed batches retain error status and expose succeeded and failed entries in response metadata.',
                 'When NOT to use: to add an existing asset to an entity (use add_components/modify_entities) or to change a material\'s look after creation (use set_material_properties).'
             ].join(' '),
             annotations: {

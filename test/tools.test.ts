@@ -4,7 +4,7 @@ import { test } from 'node:test';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 
 import { register as registerBuild } from '../src/tools/build.ts';
-import { register as registerProcessing } from '../src/tools/processing.ts';
+import { register as registerProcessing, SpritePropsSchema } from '../src/tools/processing.ts';
 import { register as registerViewport } from '../src/tools/viewport.ts';
 import type { WSS } from '../src/wss.ts';
 
@@ -77,4 +77,9 @@ test('processing, viewport, and build tools route stable driver methods', async 
         name: 'builds:download',
         message: 'start failed'
     });
+});
+
+test('sprite modification accepts tiled render mode', () => {
+    assert.equal(SpritePropsSchema.safeParse({ renderMode: 2 }).success, true);
+    assert.equal(SpritePropsSchema.safeParse({ renderMode: 3 }).success, false);
 });

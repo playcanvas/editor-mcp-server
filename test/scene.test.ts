@@ -19,7 +19,7 @@ const makeServer = () => {
     };
 };
 
-test('load_scene delegates readiness to the editor driver', async () => {
+test('load_scene preserves immediate loading and optionally waits for readiness', async () => {
     const calls: { name: string; args: unknown[] }[] = [];
     const wss = {
         call: async (name: string, ...args: unknown[]) => {
@@ -31,7 +31,11 @@ test('load_scene delegates readiness to the editor driver', async () => {
     register(server as unknown as McpServer, wss as unknown as WSS);
 
     const result = await server.tools.load_scene({ uniqueId: 'scene-2' });
+    await server.tools.load_scene({ uniqueId: 'scene-3', wait: true });
 
-    assert.deepEqual(calls, [{ name: 'scene:load', args: ['scene-2'] }]);
+    assert.deepEqual(calls, [
+        { name: 'scene:load', args: ['scene-2'] },
+        { name: 'scene:load', args: ['scene-3', { wait: true }] }
+    ]);
     assert.deepEqual(JSON.parse(result.content[0].text), { name: 'scene:load', data: { uniqueId: 'scene-2' } });
 });

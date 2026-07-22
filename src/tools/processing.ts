@@ -14,6 +14,14 @@ const FrameSchema = z.object({
     border: z.array(z.number()).length(4)
 });
 
+const SpritePropsSchema = z.object({
+    pixelsPerUnit: z.number().positive().optional(),
+    renderMode: z.number().int().min(0).max(2).optional(),
+    frameKeys: z.array(z.union([z.string(), z.number()])).optional(),
+    textureAtlasAsset: IdSchema.optional(),
+    frames: z.record(FrameSchema).optional()
+});
+
 export const register = (server: McpServer, wss: WSS) => {
     server.registerTool(
         'bake_lightmaps',
@@ -150,15 +158,7 @@ export const register = (server: McpServer, wss: WSS) => {
             },
             inputSchema: {
                 id: IdSchema.describe('Sprite or texture atlas asset id'),
-                props: z.object({
-                    pixelsPerUnit: z.number().positive().optional(),
-                    renderMode: z.number().int().min(0).max(1).optional(),
-                    frameKeys: z
-                        .array(z.union([z.string(), z.number()]))
-                        .optional(),
-                    textureAtlasAsset: IdSchema.optional(),
-                    frames: z.record(FrameSchema).optional()
-                })
+                props: SpritePropsSchema
             }
         },
         ({ id, props }) => wss.call('assets:sprite:modify', id, props)
@@ -186,3 +186,5 @@ export const register = (server: McpServer, wss: WSS) => {
             wss.call('assets:bundle:modify', id, { add, remove })
     );
 };
+
+export { SpritePropsSchema };

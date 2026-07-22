@@ -120,13 +120,31 @@ test('waitForEditor tracks editor connection generation', async () => {
             ws.send(JSON.stringify({ register: 'editor' }));
             resolve(ws);
         });
+        ws.on('message', (data) => {
+            const { id } = JSON.parse(data.toString());
+            ws.send(JSON.stringify({ id, res: { data: 'legacy pong' } }));
+        });
     });
     await wss2.waitForEditor(gen1, 2000);
+    const legacyPong = envelope(await wss2.call('ping'));
+    assert.equal(legacyPong.meta.status, 'ok');
+    assert.equal(legacyPong.data, 'legacy pong');
+
+    const gen2 = wss2.editorGeneration;
+    const incompatibleEditor = await new Promise<WebSocket>((resolve) => {
+        const ws = new WebSocket(`ws://127.0.0.1:${PORT2}`);
+        ws.on('open', () => {
+            ws.send(JSON.stringify({ register: 'editor', protocolVersion: 2, methods: ['ping'] }));
+            resolve(ws);
+        });
+    });
+    await wss2.waitForEditor(gen2, 2000);
     const incompatible = envelope(await wss2.call('ping'));
     assert.equal(incompatible.meta.status, 'error');
-    assert.match(incompatible.meta.message, /does not advertise protocol 1 capabilities/);
+    assert.match(incompatible.meta.message, /advertises incompatible protocol 2/);
 
     ed.close();
     legacy.close();
+    incompatibleEditor.close();
     wss2.close();
 });
