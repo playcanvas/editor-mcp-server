@@ -86,15 +86,23 @@ You can now issue commands from your MCP client.
 
 ## Available Tools
 
-| Category | Tools                                                                                                                                                                                         |
-| -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Entity   | `list_entities`, `resolve_entities`, `create_entities`, `delete_entities`, `duplicate_entities`, `modify_entities`, `reparent_entity`, `add_components`, `remove_components`, `add_script_component_script`, `attach_script` |
-| Asset    | `list_assets`, `create_assets`, `delete_assets`, `instantiate_template_assets`, `set_script_text`, `script_parse`, `set_material_diffuse`, `set_material_properties`                          |
-| Scene    | `query_scene_settings`, `modify_scene_settings`                                                                                                                                               |
-| Store    | `store_search`, `store_get`, `store_download`                                                                                                                                                 |
-| Viewport | `capture_viewport`, `focus_viewport`                                                                                                                                                          |
-| Runtime  | `launch_start`, `launch_stop`, `capture_runtime`, `read_runtime_logs`, `query_runtime_state`, `inject_input`                                                                                  |
-| VCS      | `vcs_status`, `list_branches`, `create_branch`, `switch_branch`, `close_branch`, `open_branch`, `delete_branch`, `list_checkpoints`, `create_checkpoint`, `get_checkpoint`, `restore_checkpoint`, `hard_reset_checkpoint`, `start_merge`, `get_merge`, `resolve_conflicts`, `get_conflict_file`, `apply_merge`, `cancel_merge`, `diff_checkpoints` |
+All tools act on the project open in the connected Editor. The server does not discover, select, create, delete, transfer, or administer projects, and project IDs are not tool inputs.
+
+| Category | Tools |
+| --- | --- |
+| Entity | `list_entities`, `resolve_entities`, `search_entities`, `find_entities_by_script`, `create_entities`, `modify_entities`, `duplicate_entities`, `reparent_entity`, `delete_entities`, `add_components`, `remove_components` |
+| Scripts | `get_asset_text`, `set_asset_text`, `set_script_text`, `script_parse`, `add_script_component_script`, `attach_script`, `add_entity_scripts`, `remove_entity_scripts`, `move_entity_script` |
+| Assets | `list_assets`, `create_assets`, `upload_assets`, `modify_assets`, `move_assets`, `duplicate_assets`, `replace_asset`, `reimport_assets`, `download_asset`, `delete_assets`, `set_material_diffuse`, `set_material_properties` |
+| Templates | `instantiate_template_assets`, `get_template_overrides`, `apply_template_overrides`, `revert_template_overrides`, `unlink_template_instances` |
+| Animation | `get_anim_state_graph`, `modify_anim_state_graph`, `get_animation_events`, `modify_animation_events` |
+| Processing | `bake_lightmaps`, `unwrap_model_asset`, `cancel_model_unwrap`, `convert_texture_asset`, `create_texture_atlas`, `create_cubemap_from_texture`, `modify_sprite_asset`, `modify_bundle_asset` |
+| Scene | `list_scenes`, `get_scene`, `load_scene`, `create_scene`, `duplicate_scene`, `delete_scene`, `query_scene_settings`, `modify_scene_settings`, `query_project_settings`, `modify_project_settings` |
+| Viewport | `query_viewport_state`, `set_viewport_state`, `query_viewport_visibility`, `set_viewport_visibility`, `capture_viewport`, `focus_viewport`, `focus_camera` |
+| Editor | `get_selection`, `set_selection`, `clear_selection`, `set_transform_gizmo`, `undo`, `redo` |
+| Builds | `list_builds`, `get_build`, `create_build`, `download_build`, `delete_build` |
+| Store | `store_search`, `store_get`, `store_download` |
+| Runtime | `launch_start`, `launch_stop`, `capture_runtime`, `read_runtime_logs`, `query_runtime_state`, `inject_input` |
+| VCS | `vcs_status`, `list_branches`, `create_branch`, `switch_branch`, `close_branch`, `open_branch`, `delete_branch`, `list_checkpoints`, `create_checkpoint`, `get_checkpoint`, `restore_checkpoint`, `hard_reset_checkpoint`, `start_merge`, `get_merge`, `resolve_conflicts`, `get_conflict_file`, `apply_merge`, `cancel_merge`, `diff_checkpoints` |
 
 The Runtime tools drive a real Launch instance (the Editor's Launch button) so an agent can verify that a scene actually *runs*: screenshot the running app, read its console output, query live entity state, and inject keyboard/mouse/touch input. Allow pop-ups for the editor origin so `launch_start` can open the launch window — it reuses your existing PlayCanvas login session.
 

@@ -297,3 +297,69 @@ export const TextCreateSchema = z.object({
         text: z.string().optional()
     }).optional()
 }).describe('Text asset');
+
+export const AnimStateGraphCreateSchema = z.object({
+    type: z.literal('animstategraph'),
+    options: z.object({
+        folder: AssetIdSchema.optional(),
+        name: z.string().optional(),
+        preload: z.boolean().optional()
+    }).optional()
+}).describe('Animation state graph asset');
+
+export const BundleCreateSchema = z.object({
+    type: z.literal('bundle'),
+    options: z.object({
+        assets: z.array(AssetIdSchema).optional(),
+        folder: AssetIdSchema.optional(),
+        name: z.string().optional(),
+        preload: z.boolean().optional()
+    }).optional()
+}).describe('Bundle asset');
+
+export const CubemapCreateSchema = z.object({
+    type: z.literal('cubemap'),
+    options: z.object({
+        anisotropy: z.number().optional(),
+        folder: AssetIdSchema.optional(),
+        magFilter: z.number().int().optional(),
+        minFilter: z.number().int().optional(),
+        name: z.string().optional(),
+        preload: z.boolean().optional(),
+        textures: z.array(AssetIdSchema.nullable()).max(6).optional()
+    }).optional()
+}).describe('Cubemap asset');
+
+export const JsonCreateSchema = z.object({
+    type: z.literal('json'),
+    options: z.object({
+        folder: AssetIdSchema.optional(),
+        json: z.any().optional(),
+        name: z.string().optional(),
+        preload: z.boolean().optional(),
+        spaces: z.number().int().min(0).max(10).optional()
+    }).optional()
+}).describe('JSON asset');
+
+export const I18nCreateSchema = z.object({
+    type: z.literal('i18n'),
+    options: z.object({
+        folder: AssetIdSchema.optional(),
+        localizationData: z.record(z.any()).optional(),
+        name: z.string().optional(),
+        preload: z.boolean().optional()
+    }).optional()
+}).describe('Localization JSON asset');
+
+export const SpriteCreateSchema = z.object({
+    type: z.literal('sprite'),
+    options: z.object({
+        folder: AssetIdSchema.optional(),
+        frameKeys: z.array(z.union([z.string(), z.number()])).optional(),
+        name: z.string().optional(),
+        pixelsPerUnit: z.number().positive().optional(),
+        preload: z.boolean().optional(),
+        renderMode: z.number().int().optional(),
+        textureAtlas: AssetIdSchema.optional()
+    }).optional()
+}).describe('Sprite asset');

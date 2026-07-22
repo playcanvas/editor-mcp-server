@@ -26,6 +26,25 @@ export const register = (server: McpServer, wss: WSS) => {
     );
 
     server.registerTool(
+        'set_asset_text',
+        {
+            description: 'Overwrite the full contents of a CSS, HTML, JSON, script, shader, or text asset.',
+            annotations: {
+                title: 'Set Asset Text',
+                readOnlyHint: false,
+                destructiveHint: false,
+                idempotentHint: true,
+                openWorldHint: false
+            },
+            inputSchema: {
+                assetId: z.number().describe('Text-based asset id'),
+                text: z.string().describe('Full replacement contents')
+            }
+        },
+        ({ assetId, text }) => wss.call('assets:text:set', assetId, text)
+    );
+
+    server.registerTool(
         'set_script_text',
         {
             description: [
@@ -46,7 +65,7 @@ export const register = (server: McpServer, wss: WSS) => {
             }
         },
         ({ assetId, text }) => {
-            return wss.call('assets:script:text:set', assetId, text);
+            return wss.call('assets:text:set', assetId, text);
         }
     );
 

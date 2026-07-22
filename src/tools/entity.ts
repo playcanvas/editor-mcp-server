@@ -290,12 +290,79 @@ export const register = (server: McpServer, wss: WSS) => {
             },
             inputSchema: {
                 id: EntityIdSchema,
-                scriptName: z.string().describe('Registered script name to attach')
+                scriptName: z.string().describe('Registered script name to attach'),
+                attributes: z.record(z.any()).optional().describe('Initial script attribute values'),
+                index: z.number().int().min(0).optional().describe('Execution order index')
             }
         },
-        ({ id, scriptName }) => {
-            return wss.call('entities:script:attach', id, scriptName);
+        ({ id, scriptName, attributes, index }) => {
+            return wss.call('entities:scripts:add', {
+                entityIds: [id],
+                script: scriptName,
+                attributes,
+                index
+            });
         }
+    );
+
+    server.registerTool(
+        'add_entity_scripts',
+        {
+            description: 'Attach a parsed script to one or more entities, creating script components when needed.',
+            annotations: {
+                title: 'Add Entity Scripts',
+                readOnlyHint: false,
+                destructiveHint: false,
+                idempotentHint: true,
+                openWorldHint: false
+            },
+            inputSchema: {
+                entityIds: z.array(EntityIdSchema).nonempty(),
+                script: z.string().min(1).describe('Registered script name'),
+                attributes: z.record(z.any()).optional(),
+                index: z.number().int().min(0).optional().describe('Execution order index')
+            }
+        },
+        (options) => wss.call('entities:scripts:add', options)
+    );
+
+    server.registerTool(
+        'remove_entity_scripts',
+        {
+            description: 'Remove a script from one or more entities.',
+            annotations: {
+                title: 'Remove Entity Scripts',
+                readOnlyHint: false,
+                destructiveHint: true,
+                idempotentHint: true,
+                openWorldHint: false
+            },
+            inputSchema: {
+                entityIds: z.array(EntityIdSchema).nonempty(),
+                script: z.string().min(1).describe('Registered script name')
+            }
+        },
+        (options) => wss.call('entities:scripts:remove', options)
+    );
+
+    server.registerTool(
+        'move_entity_script',
+        {
+            description: 'Move a script to a new execution-order index on an entity.',
+            annotations: {
+                title: 'Move Entity Script',
+                readOnlyHint: false,
+                destructiveHint: false,
+                idempotentHint: true,
+                openWorldHint: false
+            },
+            inputSchema: {
+                entityId: EntityIdSchema,
+                script: z.string().min(1).describe('Registered script name'),
+                index: z.number().int().min(0).describe('New execution-order index')
+            }
+        },
+        (options) => wss.call('entities:scripts:move', options)
     );
 
     server.registerTool(
