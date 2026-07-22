@@ -6,6 +6,20 @@ import type { WSS } from '../wss.ts';
 import { EntityIdSchema } from './schema/common.ts';
 import { ComponentsSchema, ComponentNameSchema, EntitySchema } from './schema/entity.ts';
 
+const EntityEditSchema = z.union([
+    z.object({
+        id: EntityIdSchema,
+        path: z.string().min(1).describe('Property path in dot notation, e.g. "position", "components.light.intensity"'),
+        op: z.literal('set').optional().describe('Defaults to set'),
+        value: z.custom((value) => value !== undefined, 'Required for set').describe('Vectors are arrays, e.g. position [0,1,0].')
+    }),
+    z.object({
+        id: EntityIdSchema,
+        path: z.string().min(1).describe('Component property path in dot notation'),
+        op: z.literal('unset')
+    }).strict()
+]);
+
 export const register = (server: McpServer, wss: WSS) => {
     server.registerTool(
         'create_entities',
@@ -56,12 +70,7 @@ export const register = (server: McpServer, wss: WSS) => {
                 openWorldHint: false
             },
             inputSchema: {
-                edits: z.array(z.object({
-                    id: EntityIdSchema,
-                    path: z.string().describe('Property path in dot notation, e.g. "position", "components.light.intensity"'),
-                    op: z.enum(['set', 'unset']).optional().describe('Defaults to set; unset is only supported for component properties'),
-                    value: z.any().optional().describe('Required for set. Vectors are arrays, e.g. position [0,1,0].')
-                })).nonempty()
+                edits: z.array(EntityEditSchema).nonempty()
             }
         },
         ({ edits }) => {
@@ -409,3 +418,5 @@ export const register = (server: McpServer, wss: WSS) => {
         }
     );
 };
+
+export { EntityEditSchema };

@@ -3,17 +3,20 @@ import test from 'node:test';
 
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 
-import { register } from '../src/tools/project.ts';
+import { register, SettingEditSchema } from '../src/tools/project.ts';
 import type { WSS } from '../src/wss.ts';
 
 type Handler = (args: Record<string, unknown>) => unknown;
+type Config = { annotations?: { destructiveHint?: boolean } };
 
 test('generic settings tools route scope and path edits', () => {
     const tools: Record<string, Handler> = {};
+    const configs: Record<string, Config> = {};
     const calls: { name: string; args: unknown[] }[] = [];
     const server = {
-        registerTool(name: string, _config: unknown, handler: Handler) {
+        registerTool(name: string, config: unknown, handler: Handler) {
             tools[name] = handler;
+            configs[name] = config as Config;
         }
     } as unknown as McpServer;
     const wss = {
@@ -23,6 +26,7 @@ test('generic settings tools route scope and path edits', () => {
     } as unknown as WSS;
 
     register(server, wss);
+    tools.query_settings({ scope: 'projectUser' });
     tools.query_settings({ scope: 'projectUser', path: 'editor.pipeline' });
     tools.modify_settings({
         scope: 'projectUser',
@@ -33,6 +37,7 @@ test('generic settings tools route scope and path edits', () => {
     });
 
     assert.deepEqual(calls, [
+        { name: 'settings:query', args: ['projectUser'] },
         { name: 'settings:query', args: ['projectUser', 'editor.pipeline'] },
         {
             name: 'settings:modify',
@@ -45,4 +50,9 @@ test('generic settings tools route scope and path edits', () => {
             ]
         }
     ]);
+    assert.equal(configs.modify_settings.annotations?.destructiveHint, true);
+    assert.equal(SettingEditSchema.safeParse({ path: 'editor.pipeline.useGlb' }).success, false);
+    assert.equal(SettingEditSchema.safeParse({ path: 'editor.pipeline.useGlb', value: true }).success, true);
+    assert.equal(SettingEditSchema.safeParse({ path: 'editor.pipeline.useGlb', op: 'unset' }).success, true);
+    assert.equal(SettingEditSchema.safeParse({ path: 'editor.pipeline.useGlb', op: 'unset', value: true }).success, false);
 });

@@ -5,7 +5,7 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 
 import { register as registerAssets } from '../src/tools/asset.ts';
 import { register as registerScripts } from '../src/tools/assets/script.ts';
-import { register as registerEntities } from '../src/tools/entity.ts';
+import { register as registerEntities, EntityEditSchema } from '../src/tools/entity.ts';
 import {
     AnimStateGraphCreateSchema,
     BundleCreateSchema,
@@ -19,6 +19,7 @@ import { SceneSettingsSchema } from '../src/tools/schema/scene-settings.ts';
 import type { WSS } from '../src/wss.ts';
 
 type Handler = (args: Record<string, unknown>) => unknown;
+type Config = { annotations?: { destructiveHint?: boolean } };
 
 test('native asset create schemas accept their editor API inputs', () => {
     const cases = [
@@ -52,14 +53,21 @@ test('configuration schemas preserve arbitrary component and scene fields', () =
     assert.deepEqual(ComponentsSchema.parse(components), components);
     assert.equal(ComponentNameSchema.parse('custom'), 'custom');
     assert.deepEqual(SceneSettingsSchema.parse(settings), settings);
+    const id = '123e4567-e89b-12d3-a456-426614174000';
+    assert.equal(EntityEditSchema.safeParse({ id, path: 'name' }).success, false);
+    assert.equal(EntityEditSchema.safeParse({ id, path: 'name', value: 'Player' }).success, true);
+    assert.equal(EntityEditSchema.safeParse({ id, path: 'components.camera.fov', op: 'unset' }).success, true);
+    assert.equal(EntityEditSchema.safeParse({ id, path: 'components.camera.fov', op: 'unset', value: 60 }).success, false);
 });
 
 test('asset, template, text, and script tools route stable driver methods', () => {
     const tools: Record<string, Handler> = {};
+    const configs: Record<string, Config> = {};
     const calls: { name: string; args: unknown[] }[] = [];
     const server = {
-        registerTool(name: string, _config: unknown, handler: Handler) {
+        registerTool(name: string, config: unknown, handler: Handler) {
             tools[name] = handler;
+            configs[name] = config as Config;
         }
     } as unknown as McpServer;
     const wss = {
@@ -71,6 +79,7 @@ test('asset, template, text, and script tools route stable driver methods', () =
     registerAssets(server, wss);
     registerScripts(server, wss);
     registerEntities(server, wss);
+    assert.equal(configs.upload_assets.annotations?.destructiveHint, true);
 
     tools.instantiate_template_assets({ ids: [7], parentId: 'root', index: 2 });
     assert.deepEqual(calls.at(-1), {

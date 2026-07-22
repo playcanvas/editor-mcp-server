@@ -4,11 +4,17 @@ import { z } from 'zod';
 import type { WSS } from '../wss.ts';
 
 const SettingsScopeSchema = z.enum(['project', 'projectUser', 'projectPrivate', 'user', 'session', 'scene']);
-const SettingEditSchema = z.object({
-    path: z.string().min(1).describe('Dot-notation settings path'),
-    op: z.enum(['set', 'unset']).optional().describe('Defaults to set'),
-    value: z.any().optional().describe('Required for set; omitted for unset')
-});
+const SettingEditSchema = z.union([
+    z.object({
+        path: z.string().min(1).describe('Dot-notation settings path'),
+        op: z.literal('set').optional().describe('Defaults to set'),
+        value: z.custom((value) => value !== undefined, 'Required for set')
+    }),
+    z.object({
+        path: z.string().min(1).describe('Dot-notation settings path'),
+        op: z.literal('unset')
+    }).strict()
+]);
 
 export const register = (server: McpServer, wss: WSS) => {
     server.registerTool(
@@ -70,7 +76,7 @@ export const register = (server: McpServer, wss: WSS) => {
                 path: z.string().min(1).optional()
             }
         },
-        ({ scope, path }) => wss.call('settings:query', scope, path)
+        ({ scope, path }) => path === undefined ? wss.call('settings:query', scope) : wss.call('settings:query', scope, path)
     );
 
     server.registerTool(
@@ -84,7 +90,7 @@ export const register = (server: McpServer, wss: WSS) => {
             annotations: {
                 title: 'Modify Settings',
                 readOnlyHint: false,
-                destructiveHint: false,
+                destructiveHint: true,
                 idempotentHint: true,
                 openWorldHint: false
             },
