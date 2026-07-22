@@ -5,7 +5,7 @@ import { AssetIdSchema, RgbSchema, RgbaSchema, Vec2Schema, Vec3Schema, Vec4Schem
 
 const AudioListenerSchema = z.object({
     enabled: z.boolean().optional()
-}).describe('Audio listener component');
+}).passthrough().describe('Audio listener component');
 
 const CameraSchema = z.object({
     enabled: z.boolean().optional(),
@@ -39,7 +39,7 @@ const CameraSchema = z.object({
         z.literal(0).describe('None'),
         z.literal(1).describe('sRGB')
     ]).optional()
-}).describe('Camera component');
+}).passthrough().describe('Camera component');
 
 const CollisionSchema = z.object({
     enabled: z.boolean().optional(),
@@ -57,7 +57,7 @@ const CollisionSchema = z.object({
     renderAsset: AssetIdSchema.optional().describe('Render asset'),
     linearOffset: Vec3Schema.optional(),
     angularOffset: Vec3Schema.optional()
-}).describe('Collision component. Requires the Ammo physics module to be enabled in the project (IMPORT AMMO) to take effect. halfExtents/radius are in LOCAL space and are multiplied by the entity world scale — size the collider via these fields rather than relying on entity scale.');
+}).passthrough().describe('Collision component. Requires the Ammo physics module to be enabled in the project (IMPORT AMMO) to take effect. halfExtents/radius are in LOCAL space and are multiplied by the entity world scale — size the collider via these fields rather than relying on entity scale.');
 
 const ElementSchema = z.object({
     enabled: z.boolean().optional(),
@@ -100,7 +100,7 @@ const ElementSchema = z.object({
     mask: z.boolean().optional(),
     layers: z.array(z.number()).optional(),
     enableMarkup: z.boolean().optional()
-}).describe('UI element component');
+}).passthrough().describe('UI element component');
 
 const LightSchema = z.object({
     enabled: z.boolean().optional(),
@@ -168,7 +168,7 @@ const LightSchema = z.object({
     cookieOffset: Vec2Schema.optional(),
     isStatic: z.boolean().optional(),
     layers: z.array(z.number().int().min(0)).optional()
-}).describe('Light component');
+}).passthrough().describe('Light component');
 
 const RenderSchema = z.object({
     enabled: z.boolean().optional(),
@@ -186,7 +186,7 @@ const RenderSchema = z.object({
     rootBone: z.string().nullable().optional(),
     aabbCenter: Vec3Schema.optional(),
     aabbHalfExtents: Vec3Schema.optional()
-}).describe('Render component');
+}).passthrough().describe('Render component');
 
 const RigidBodySchema = z.object({
     enabled: z.boolean().optional(),
@@ -198,7 +198,7 @@ const RigidBodySchema = z.object({
     angularFactor: Vec3Schema.optional(),
     friction: z.number().min(0).max(1).optional(),
     restitution: z.number().min(0).max(1).optional().describe('Bounciness')
-}).describe('Rigidbody component. Requires the Ammo physics module to be enabled in the project (IMPORT AMMO); without it the body will not simulate. Usually paired with a collision component.');
+}).passthrough().describe('Rigidbody component. Requires the Ammo physics module to be enabled in the project (IMPORT AMMO); without it the body will not simulate. Usually paired with a collision component.');
 
 const ScreenSchema = z.object({
     enabled: z.boolean().optional(),
@@ -208,20 +208,20 @@ const ScreenSchema = z.object({
     resolution: Vec2Schema.optional(),
     referenceResolution: Vec2Schema.optional(),
     priority: z.number().int().min(0).max(127).optional()
-}).describe('Screen component');
+}).passthrough().describe('Screen component');
 
 const ScriptAttributeSchema = z.any().describe('Script attribute values');
 
 const ScriptInstanceSchema = z.object({
     enabled: z.boolean().optional(),
     attributes: z.record(ScriptAttributeSchema).optional()
-});
+}).passthrough();
 
 const ScriptSchema = z.object({
     enabled: z.boolean().optional(),
     order: z.array(z.string()).optional().describe('Script execution order'),
     scripts: z.record(ScriptInstanceSchema).optional().describe('Script instances')
-}).describe('Script component');
+}).passthrough().describe('Script component');
 
 const SoundSlotSchema = z.object({
     name: z.string().optional(),
@@ -233,7 +233,7 @@ const SoundSlotSchema = z.object({
     loop: z.boolean().optional(),
     autoPlay: z.boolean().optional(),
     overlap: z.boolean().optional()
-}).partial();
+}).partial().passthrough();
 
 const SoundSchema = z.object({
     enabled: z.boolean().optional(),
@@ -257,7 +257,7 @@ const SoundSchema = z.object({
             pitch: 1
         }
     }).describe('Sound slots')
-}).describe('Sound component');
+}).passthrough().describe('Sound component');
 
 // Loosely-typed component schemas. These cover component types the editor
 // supports adding/removing but for which we don't (yet) enumerate every field.
@@ -300,30 +300,9 @@ export const ComponentsSchema = z.object({
     script: ScriptSchema.optional(),
     sound: SoundSchema.optional(),
     sprite: SpriteSchema.optional()
-}).describe('Entity components');
+}).passthrough().describe('Entity components');
 
-export const ComponentNameSchema = z.enum([
-    'anim',
-    'animation',
-    'audiolistener',
-    'button',
-    'camera',
-    'collision',
-    'element',
-    'layoutchild',
-    'layoutgroup',
-    'light',
-    'model',
-    'particlesystem',
-    'render',
-    'rigidbody',
-    'screen',
-    'script',
-    'scrollbar',
-    'scrollview',
-    'sound',
-    'sprite'
-]);
+export const ComponentNameSchema = z.string().min(1).describe('Editor component type');
 
 export const EntitySchema: z.ZodOptional<ZodTypeAny> = z.lazy(() => z.object({
     name: z.string().optional(),

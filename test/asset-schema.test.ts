@@ -14,6 +14,8 @@ import {
     JsonCreateSchema,
     SpriteCreateSchema
 } from '../src/tools/schema/asset.ts';
+import { ComponentNameSchema, ComponentsSchema } from '../src/tools/schema/entity.ts';
+import { SceneSettingsSchema } from '../src/tools/schema/scene-settings.ts';
 import type { WSS } from '../src/wss.ts';
 
 type Handler = (args: Record<string, unknown>) => unknown;
@@ -35,6 +37,21 @@ test('native asset create schemas accept their editor API inputs', () => {
     }));
     assert.equal(SpriteCreateSchema.safeParse({ type: 'sprite', options: { renderMode: 2 } }).success, true);
     assert.equal(SpriteCreateSchema.safeParse({ type: 'sprite', options: { renderMode: 3 } }).success, false);
+});
+
+test('configuration schemas preserve arbitrary component and scene fields', () => {
+    const components = {
+        camera: { fov: 60, customProjection: true },
+        custom: { enabled: true, value: 1 }
+    };
+    const settings = {
+        render: { skyDepthWrite: true, futureSetting: 1 },
+        custom: { enabled: true }
+    };
+
+    assert.deepEqual(ComponentsSchema.parse(components), components);
+    assert.equal(ComponentNameSchema.parse('custom'), 'custom');
+    assert.deepEqual(SceneSettingsSchema.parse(settings), settings);
 });
 
 test('asset, template, text, and script tools route stable driver methods', () => {
@@ -74,6 +91,14 @@ test('asset, template, text, and script tools route stable driver methods', () =
     assert.deepEqual(calls.at(-1), {
         name: 'entities:scripts:add',
         args: [{ entityIds: ['player'], script: 'controller', attributes: { speed: 2 }, index: 0 }]
+    });
+
+    tools.modify_entities({
+        edits: [{ id: 'player', path: 'components.camera.customProjection', op: 'unset' }]
+    });
+    assert.deepEqual(calls.at(-1), {
+        name: 'entities:modify',
+        args: [[{ id: 'player', path: 'components.camera.customProjection', op: 'unset' }]]
     });
 
     tools.get_template_overrides({ entityId: 'player' });

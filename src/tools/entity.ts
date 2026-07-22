@@ -41,7 +41,7 @@ export const register = (server: McpServer, wss: WSS) => {
         'modify_entities',
         {
             description: [
-                'Set properties on existing entities by dot-notation path.',
+                'Set or unset properties on existing entities by dot-notation path.',
                 'Valid top-level paths: "name", "enabled", "position" ([x,y,z] local), "rotation" ([x,y,z] euler degrees), "scale" ([x,y,z]), "tags".',
                 'Component properties use "components.<type>.<prop>", e.g. "components.light.intensity", "components.camera.fov", "components.render.castShadows", "components.script.scripts.<name>.attributes.<attr>" (the entity must already have that component; add it with add_components first).',
                 'Each edit targets one entity id + one path. Returns the post-edit summaries of the affected entities.',
@@ -59,7 +59,8 @@ export const register = (server: McpServer, wss: WSS) => {
                 edits: z.array(z.object({
                     id: EntityIdSchema,
                     path: z.string().describe('Property path in dot notation, e.g. "position", "components.light.intensity"'),
-                    value: z.any().describe('New value. Vectors are arrays, e.g. position [0,1,0]; colors are [r,g,b] 0-1.')
+                    op: z.enum(['set', 'unset']).optional().describe('Defaults to set; unset is only supported for component properties'),
+                    value: z.any().optional().describe('Required for set. Vectors are arrays, e.g. position [0,1,0].')
                 })).nonempty()
             }
         },

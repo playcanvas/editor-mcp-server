@@ -96,7 +96,8 @@ All tools act on the project open in the connected Editor. The server does not d
 | Templates | `instantiate_template_assets`, `get_template_overrides`, `apply_template_overrides`, `revert_template_overrides`, `unlink_template_instances` |
 | Animation | `get_anim_state_graph`, `modify_anim_state_graph`, `get_animation_events`, `modify_animation_events` |
 | Processing | `bake_lightmaps`, `unwrap_model_asset`, `cancel_model_unwrap`, `convert_texture_asset`, `create_texture_atlas`, `create_cubemap_from_texture`, `modify_sprite_asset`, `modify_bundle_asset` |
-| Scene | `list_scenes`, `get_scene`, `load_scene`, `create_scene`, `duplicate_scene`, `delete_scene`, `query_scene_settings`, `modify_scene_settings`, `query_project_settings`, `modify_project_settings` |
+| Scene | `list_scenes`, `get_scene`, `load_scene`, `create_scene`, `duplicate_scene`, `rename_scene`, `delete_scene`, `query_scene_settings`, `modify_scene_settings` |
+| Settings | `query_settings`, `modify_settings`, `query_project_settings`, `modify_project_settings` |
 | Viewport | `query_viewport_state`, `set_viewport_state`, `query_viewport_visibility`, `set_viewport_visibility`, `capture_viewport`, `focus_viewport`, `focus_camera` |
 | Editor | `get_selection`, `set_selection`, `clear_selection`, `set_transform_gizmo`, `undo`, `redo` |
 | Builds | `list_builds`, `get_build`, `create_build`, `download_build`, `delete_build` |

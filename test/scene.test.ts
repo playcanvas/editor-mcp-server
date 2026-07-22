@@ -32,10 +32,12 @@ test('load_scene preserves immediate loading and optionally waits for readiness'
 
     const result = await server.tools.load_scene({ uniqueId: 'scene-2' });
     await server.tools.load_scene({ uniqueId: 'scene-3', wait: true });
+    await server.tools.rename_scene({ name: 'Gameplay' });
 
     assert.deepEqual(calls, [
         { name: 'scene:load', args: ['scene-2'] },
-        { name: 'scene:load', args: ['scene-3', { wait: true }] }
+        { name: 'scene:load', args: ['scene-3', { wait: true }] },
+        { name: 'scene:name:set', args: ['Gameplay'] }
     ]);
     assert.deepEqual(JSON.parse(result.content[0].text), { name: 'scene:load', data: { uniqueId: 'scene-2' } });
 });

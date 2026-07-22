@@ -156,7 +156,7 @@ export const register = (server: McpServer, wss: WSS) => {
     server.registerTool(
         'upload_assets',
         {
-            description: `Upload local files into the designated project. Files are limited to ${MAX_FILE_BYTES / 1024 / 1024} MiB each; the result separates succeeded and failed entries.`,
+            description: `Upload local files into the designated project, or replace an existing asset source by providing its id. Files are limited to ${MAX_FILE_BYTES / 1024 / 1024} MiB each; the result separates succeeded and failed entries.`,
             annotations: {
                 title: 'Upload Assets',
                 readOnlyHint: false,
@@ -166,6 +166,7 @@ export const register = (server: McpServer, wss: WSS) => {
             },
             inputSchema: {
                 assets: z.array(z.object({
+                    id: AssetIdSchema.optional().describe('Existing asset id whose source file should be replaced'),
                     path: z.string().min(1).describe('Local file path'),
                     type: z.enum(['animation', 'audio', 'binary', 'css', 'font', 'gsplat', 'html', 'json', 'scene', 'script', 'shader', 'text', 'texture', 'textureatlas', 'wasm']).describe('PlayCanvas import type; use scene for model source files such as GLB or FBX'),
                     folder: AssetIdSchema.optional(),
@@ -174,7 +175,7 @@ export const register = (server: McpServer, wss: WSS) => {
                     data: z.record(z.any()).optional(),
                     preload: z.boolean().optional(),
                     mime: z.string().optional(),
-                    settings: z.record(z.any()).optional().describe('Texture or scene import settings')
+                    settings: z.record(z.any()).optional().describe('Per-upload texture or scene import overrides; saved defaults are under projectUser editor.pipeline settings')
                 })).nonempty()
             }
         },
@@ -190,7 +191,12 @@ export const register = (server: McpServer, wss: WSS) => {
                         throw new Error(`${path} exceeds the ${MAX_FILE_BYTES / 1024 / 1024} MiB upload limit.`);
                     }
                     const filename = basename(path);
-                    return { ...asset, path, filename, name: asset.name || filename };
+                    return {
+                        ...asset,
+                        path,
+                        filename,
+                        name: asset.name || (asset.id === undefined ? filename : undefined)
+                    };
                 }));
                 return Promise.all(files.map(async ({ path, ...asset }) => ({
                     ...asset,

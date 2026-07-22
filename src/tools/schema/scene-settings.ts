@@ -4,7 +4,7 @@ import { AssetIdSchema, RgbSchema, Vec3Schema } from './common.ts';
 
 const PhysicsSchema = z.object({
     gravity: Vec3Schema.optional().describe('Gravity force')
-}).describe('Physics settings');
+}).passthrough().describe('Physics settings');
 
 const RenderSchema = z.object({
     fog: z.enum(['none', 'linear', 'exp', 'exp2']).optional(),
@@ -55,11 +55,11 @@ const RenderSchema = z.object({
     lightingCookiesEnabled: z.boolean().optional(),
     lightingAreaLightsEnabled: z.boolean().optional(),
     lightingShadowsEnabled: z.boolean().optional()
-}).describe('Render settings');
+}).passthrough().describe('Render settings');
 
 const SceneSettingsSchema = z.object({
     physics: PhysicsSchema.optional(),
     render: RenderSchema.optional()
-}).describe('Scene settings');
+}).passthrough().describe('Scene settings');
 
 export { SceneSettingsSchema };

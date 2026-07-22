@@ -3,6 +3,13 @@ import { z } from 'zod';
 
 import type { WSS } from '../wss.ts';
 
+const SettingsScopeSchema = z.enum(['project', 'projectUser', 'projectPrivate', 'user', 'session', 'scene']);
+const SettingEditSchema = z.object({
+    path: z.string().min(1).describe('Dot-notation settings path'),
+    op: z.enum(['set', 'unset']).optional().describe('Defaults to set'),
+    value: z.any().optional().describe('Required for set; omitted for unset')
+});
+
 export const register = (server: McpServer, wss: WSS) => {
     server.registerTool(
         'modify_project_settings',
@@ -45,4 +52,49 @@ export const register = (server: McpServer, wss: WSS) => {
             return wss.call('project:settings:query');
         }
     );
+
+    server.registerTool(
+        'query_settings',
+        {
+            description: [
+                'Read any Editor settings scope: project, current scene, per-project user preferences (including editor.pipeline asset import defaults), global user preferences, session settings, or private project settings.',
+                'Omit path for the complete scope or provide a dot path for one value.'
+            ].join(' '),
+            annotations: {
+                title: 'Query Settings',
+                readOnlyHint: true,
+                openWorldHint: false
+            },
+            inputSchema: {
+                scope: SettingsScopeSchema,
+                path: z.string().min(1).optional()
+            }
+        },
+        ({ scope, path }) => wss.call('settings:query', scope, path)
+    );
+
+    server.registerTool(
+        'modify_settings',
+        {
+            description: [
+                'Set or unset arbitrary Editor settings by dot path in project, scene, projectUser, user, session, or projectPrivate scope.',
+                'Asset import defaults are in projectUser under editor.pipeline.*. Project, scene, and private settings require project write access.',
+                'Query the scope first to discover current paths and values.'
+            ].join(' '),
+            annotations: {
+                title: 'Modify Settings',
+                readOnlyHint: false,
+                destructiveHint: false,
+                idempotentHint: true,
+                openWorldHint: false
+            },
+            inputSchema: {
+                scope: SettingsScopeSchema,
+                edits: z.array(SettingEditSchema).nonempty()
+            }
+        },
+        ({ scope, edits }) => wss.call('settings:modify', scope, edits)
+    );
 };
+
+export { SettingEditSchema, SettingsScopeSchema };
