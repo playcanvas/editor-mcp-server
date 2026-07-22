@@ -60,3 +60,39 @@ test('origin validation on websocket upgrade', async () => {
     assert.equal(await attempt('https://evilplaycanvas.com'), false, 'lookalike origin must be rejected');
     assert.equal(await attempt('http://192.168.1.10:3000'), false, 'LAN origin must be rejected');
 });
+
+const PORT2 = 52998;
+
+const connectEditor = (port: number) => new Promise<WebSocket>((resolve) => {
+    const ws = new WebSocket(`ws://127.0.0.1:${port}`);
+    ws.on('open', () => {
+        ws.send(JSON.stringify({ register: 'editor' }));
+        resolve(ws);
+    });
+});
+
+test('waitForEditor tracks editor connection generation', async () => {
+    const wss2 = new WSS(PORT2);
+    // wait for the server to listen
+    for (let i = 0; i < 40; i++) {
+        const up = await new Promise<boolean>((r) => {
+            const ws = new WebSocket(`ws://127.0.0.1:${PORT2}`);
+            ws.on('open', () => { ws.close(); r(true); });
+            ws.on('error', () => r(false));
+        });
+        if (up) break;
+        await new Promise(r => setTimeout(r, 50));
+    }
+
+    const gen0 = wss2.editorGeneration;
+    const ed = await connectEditor(PORT2);
+    const back = await wss2.waitForEditor(gen0, 2000);
+    assert.equal(back, true, 'a freshly connected editor bumps the generation');
+
+    const gen1 = wss2.editorGeneration;
+    const none = await wss2.waitForEditor(gen1, 300);
+    assert.equal(none, false, 'no new editor within the timeout resolves false');
+
+    ed.close();
+    wss2.close();
+});

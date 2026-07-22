@@ -16,6 +16,7 @@ import { register as registerProject } from './tools/project.ts';
 import { register as registerRuntime } from './tools/runtime.ts';
 import { register as registerScene } from './tools/scene.ts';
 import { register as registerStore } from './tools/store.ts';
+import { register as registerVcs } from './tools/vcs.ts';
 import { register as registerViewport } from './tools/viewport.ts';
 import { WSS } from './wss.ts';
 
@@ -166,6 +167,7 @@ registerStore(mcp, wss);
 registerViewport(mcp, wss);
 registerRuntime(mcp, wss);
 registerEditor(mcp, wss);
+registerVcs(mcp, wss);
 
 // Start receiving messages on stdin and sending messages on stdout
 const transport = new StdioServerTransport();
