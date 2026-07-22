@@ -94,7 +94,7 @@ You can now issue commands from your MCP client.
 | Store    | `store_search`, `store_get`, `store_download`                                                                                                                                                 |
 | Viewport | `capture_viewport`, `focus_viewport`                                                                                                                                                          |
 | Runtime  | `launch_start`, `launch_stop`, `capture_runtime`, `read_runtime_logs`, `query_runtime_state`, `inject_input`                                                                                  |
-| VCS      | `vcs_status`, `list_branches`, `create_branch`, `switch_branch`, `list_checkpoints`, `create_checkpoint`, `restore_checkpoint`, `hard_reset_checkpoint` |
+| VCS      | `vcs_status`, `list_branches`, `create_branch`, `switch_branch`, `close_branch`, `open_branch`, `delete_branch`, `list_checkpoints`, `create_checkpoint`, `get_checkpoint`, `restore_checkpoint`, `hard_reset_checkpoint`, `start_merge`, `get_merge`, `resolve_conflicts`, `get_conflict_file`, `apply_merge`, `cancel_merge`, `diff_checkpoints` |
 
 The Runtime tools drive a real Launch instance (the Editor's Launch button) so an agent can verify that a scene actually *runs*: screenshot the running app, read its console output, query live entity state, and inject keyboard/mouse/touch input. Allow pop-ups for the editor origin so `launch_start` can open the launch window — it reuses your existing PlayCanvas login session.
 

@@ -82,3 +82,77 @@ test('vcs tools: status passthrough and reload wait', async () => {
 
     wss.close();
 });
+
+test('vcs lifecycle tools: arg passthrough, apply_merge finalize reload, error passthrough', async () => {
+    const PORT2 = 52996;
+    const wss = new WSS(PORT2);
+    for (let i = 0; i < 40; i++) {
+        const up = await new Promise<boolean>((r) => {
+            const ws = new WebSocket(`ws://127.0.0.1:${PORT2}`);
+            ws.on('open', () => { ws.close(); r(true); });
+            ws.on('error', () => r(false));
+        });
+        if (up) break;
+        await new Promise(r => setTimeout(r, 50));
+    }
+
+    const server = makeServer();
+    register(server as unknown as McpServer, wss);
+
+    const received: { name: string; args: unknown[] }[] = [];
+    const answers: Record<string, unknown> = {
+        'vcs:status': { projectId: 1, branch: { id: 'b1', name: 'main', latestCheckpointId: 'c1' }, mergeInProgress: false },
+        'vcs:branch:close': { id: 'b2', closed: true },
+        'vcs:merge:create': { id: 'm1', mergeProgressStatus: 'merge_auto_ended', conflicts: [{ id: 'x1' }], numConflicts: 1 },
+        'vcs:conflict:resolve': [{ id: 'x1', useSrc: true }],
+        'vcs:merge:apply': { status: 'applying', mergeId: 'm1' }
+    };
+    // a fake editor that records every method + args it receives, then answers
+    const connect = () => new Promise<WebSocket>((resolve) => {
+        const ws = new WebSocket(`ws://127.0.0.1:${PORT2}`);
+        ws.on('open', () => { ws.send(JSON.stringify({ register: 'editor' })); resolve(ws); });
+        ws.on('message', (buf) => {
+            const msg = JSON.parse(buf.toString());
+            if (!msg.name || msg.name === 'ping') return;
+            received.push({ name: msg.name, args: msg.args });
+            const res = msg.name in answers ? { data: answers[msg.name] } : { error: `no answer for ${msg.name}` };
+            ws.send(JSON.stringify({ id: msg.id, res }));
+        });
+    });
+    let editor = await connect();
+    await wss.waitForEditor(0, 2000);
+
+    // arg passthrough: object args reach the editor method verbatim
+    const closed = text(await server.tools.close_branch({ branchId: 'b2' }));
+    assert.equal(closed.data.closed, true);
+    assert.equal(received.at(-1)!.name, 'vcs:branch:close');
+    assert.deepEqual(received.at(-1)!.args, [{ branchId: 'b2' }]);
+
+    // resolution enum is passed through (source|dest|revert → useSrc/useDst mapping is editor-side)
+    const resolved = text(await server.tools.resolve_conflicts({ mergeId: 'm1', conflictIds: ['x1'], resolution: 'source' }));
+    assert.equal(resolved.data[0].useSrc, true);
+    assert.deepEqual(received.at(-1)!.args, [{ mergeId: 'm1', conflictIds: ['x1'], resolution: 'source' }]);
+
+    const merge = text(await server.tools.start_merge({ sourceBranchId: 'b2' }));
+    assert.equal(merge.data.numConflicts, 1);
+    assert.equal(received.at(-1)!.name, 'vcs:merge:create');
+
+    // apply_merge finalize:false → plain call, no reload
+    const review = text(await server.tools.apply_merge({ mergeId: 'm1', finalize: false }));
+    assert.equal(review.meta.status, 'ok');
+    assert.deepEqual(received.at(-1)!, { name: 'vcs:merge:apply', args: [{ mergeId: 'm1', finalize: false }] });
+
+    // apply_merge finalize:true → reload flow: fire, simulate reload by reconnecting a new
+    // editor (generation bump), then the tool re-queries vcs:status
+    const applyPromise = server.tools.apply_merge({ mergeId: 'm1', finalize: true });
+    setTimeout(async () => { editor.close(); editor = await connect(); }, 200);
+    const applied = text(await applyPromise);
+    assert.equal(applied.data.branch.name, 'main', 'apply_merge finalize returns fresh status after reconnect');
+
+    // error passthrough: an unanswered method surfaces as meta.status error
+    const err = text(await server.tools.get_merge({ mergeId: 'nope' }));
+    assert.equal(err.meta.status, 'error');
+
+    editor.close();
+    wss.close();
+});
