@@ -359,7 +359,7 @@ export const SpriteCreateSchema = z.object({
         name: z.string().optional(),
         pixelsPerUnit: z.number().positive().optional(),
         preload: z.boolean().optional(),
-        renderMode: z.number().int().optional(),
+        renderMode: z.number().int().min(0).max(2).optional(),
         textureAtlas: AssetIdSchema.optional()
     }).optional()
 }).describe('Sprite asset');

@@ -1,4 +1,7 @@
 import assert from 'node:assert';
+import { mkdtemp, readFile, readdir, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { test } from 'node:test';
 
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
@@ -82,4 +85,59 @@ test('processing, viewport, and build tools route stable driver methods', async 
 test('sprite modification accepts tiled render mode', () => {
     assert.equal(SpritePropsSchema.safeParse({ renderMode: 2 }).success, true);
     assert.equal(SpritePropsSchema.safeParse({ renderMode: 3 }).success, false);
+});
+
+test('download_build streams artifacts without clobbering files', async (t) => {
+    const dir = await mkdtemp(join(tmpdir(), 'editor-mcp-'));
+    const path = join(dir, 'build.zip');
+    const tools: Record<string, Handler> = {};
+    let content = 'first';
+    t.after(() => rm(dir, { recursive: true, force: true }));
+    t.mock.method(globalThis, 'fetch', async () => new Response(content));
+    registerBuild(
+        {
+            registerTool(name: string, _config: unknown, handler: Handler) {
+                tools[name] = handler;
+            }
+        } as unknown as McpServer,
+        {
+            raw(name: string) {
+                return Promise.resolve(
+                    name === 'builds:download'
+                        ? { data: { id: 7 } }
+                        : {
+                              data: {
+                                  status: 'complete',
+                                  artifacts: [{ type: 'download', url: 'https://example.com/build.zip' }]
+                              }
+                          }
+                );
+            },
+            fail(name: string, message: string) {
+                return { name, message };
+            },
+            ok(name: string, data: unknown) {
+                return { name, data };
+            }
+        } as unknown as WSS
+    );
+    const options = {
+        name: 'Download',
+        sceneIds: [1],
+        format: 'static',
+        outputPath: path
+    };
+
+    assert.deepEqual(await tools.download_build(options), {
+        name: 'builds:download',
+        data: { buildId: 7, path, bytes: 5 }
+    });
+    content = 'second';
+    assert.match((await tools.download_build(options) as { message: string }).message, /EEXIST/);
+    assert.equal(await readFile(path, 'utf8'), 'first');
+    assert.deepEqual(await readdir(dir), ['build.zip']);
+
+    await tools.download_build({ ...options, overwrite: true });
+    assert.equal(await readFile(path, 'utf8'), 'second');
+    assert.deepEqual(await readdir(dir), ['build.zip']);
 });

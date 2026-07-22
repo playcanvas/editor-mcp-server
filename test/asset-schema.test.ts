@@ -33,6 +33,8 @@ test('native asset create schemas accept their editor API inputs', () => {
         type: 'cubemap',
         options: { textures: [1, 2, 3, 4, 5, 6, 7] }
     }));
+    assert.equal(SpriteCreateSchema.safeParse({ type: 'sprite', options: { renderMode: 2 } }).success, true);
+    assert.equal(SpriteCreateSchema.safeParse({ type: 'sprite', options: { renderMode: 3 } }).success, false);
 });
 
 test('asset, template, text, and script tools route stable driver methods', () => {

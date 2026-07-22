@@ -1,5 +1,9 @@
-import { writeFile } from 'node:fs/promises';
+import { randomUUID } from 'node:crypto';
+import { createWriteStream } from 'node:fs';
+import { link, rename, stat, unlink } from 'node:fs/promises';
 import { resolve } from 'node:path';
+import { Readable } from 'node:stream';
+import { pipeline } from 'node:stream/promises';
 
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
@@ -186,13 +190,25 @@ export const register = (server: McpServer, wss: WSS) => {
                     `Artifact download failed (${response.status} ${response.statusText}).`
                 );
             }
+            if (!response.body) {
+                return wss.fail('builds:download', 'Artifact download returned no response body.');
+            }
             const path = resolve(outputPath);
-            const bytes = new Uint8Array(await response.arrayBuffer());
-            const error = await writeFile(path, bytes, {
-                flag: overwrite ? 'w' : 'wx'
-            }).then(
-                () => null,
-                (err) => (err instanceof Error ? err : new Error(String(err)))
+            const temp = `${path}.${randomUUID()}.tmp`;
+            const done = pipeline(Readable.fromWeb(response.body), createWriteStream(temp, { flags: 'wx' })).then(
+                async () => {
+                    const bytes = (await stat(temp)).size;
+                    await (overwrite ? rename(temp, path) : link(temp, path));
+                    await unlink(temp).catch(() => null);
+                    return bytes;
+                }
+            );
+            const [error, bytes] = await done.then(
+                (bytes) => [null, bytes] as const,
+                async (err) => {
+                    await unlink(temp).catch(() => null);
+                    return [err instanceof Error ? err : new Error(String(err)), 0] as const;
+                }
             );
             if (error) {
                 return wss.fail('builds:download', error.message);
@@ -200,7 +216,7 @@ export const register = (server: McpServer, wss: WSS) => {
             return wss.ok('builds:download', {
                 buildId: Number(id),
                 path,
-                bytes: bytes.byteLength
+                bytes
             });
         }
     );
