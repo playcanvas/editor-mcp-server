@@ -106,7 +106,8 @@ export const register = (server: McpServer, wss: WSS) => {
                 ...fields,
                 description: z.string().max(10000).optional(),
                 version: z.string().max(20).optional(),
-                releaseNotes: z.string().max(10000).optional()
+                releaseNotes: z.string().max(10000).optional(),
+                imageS3Key: z.string().min(1).optional()
             }
         },
         (options) => wss.call('builds:create', options)
@@ -219,6 +220,22 @@ export const register = (server: McpServer, wss: WSS) => {
                 bytes
             });
         }
+    );
+
+    server.registerTool(
+        'set_primary_build',
+        {
+            description: 'Set a completed publish build as the project primary build.',
+            annotations: {
+                title: 'Set Primary Build',
+                readOnlyHint: false,
+                destructiveHint: false,
+                idempotentHint: true,
+                openWorldHint: false
+            },
+            inputSchema: { buildId: z.number().int().positive() }
+        },
+        ({ buildId }) => wss.call('builds:primary:set', buildId)
     );
 
     server.registerTool(

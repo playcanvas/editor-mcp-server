@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { AssetIdSchema, RgbSchema, Vec3Schema } from './common.ts';
+import { AssetRefSchema, RgbSchema, Vec3Schema } from './common.ts';
 
 const PhysicsSchema = z.object({
     gravity: Vec3Schema.optional().describe('Gravity force')
@@ -25,7 +25,7 @@ const RenderSchema = z.object({
     ]).optional(),
     tonemapping: z.number().optional(),
     exposure: z.number().optional(),
-    skybox: AssetIdSchema.optional().describe('Skybox cubemap'),
+    skybox: AssetRefSchema.optional().describe('Skybox cubemap'),
     skyType: z.enum(['infinite', 'box', 'dome']).optional(),
     skyMeshPosition: Vec3Schema.optional(),
     skyMeshRotation: Vec3Schema.optional(),

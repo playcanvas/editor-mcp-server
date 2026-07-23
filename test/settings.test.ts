@@ -53,6 +53,7 @@ test('generic settings tools route scope and path edits', () => {
     assert.equal(configs.modify_settings.annotations?.destructiveHint, true);
     assert.equal(SettingEditSchema.safeParse({ path: 'editor.pipeline.useGlb' }).success, false);
     assert.equal(SettingEditSchema.safeParse({ path: 'editor.pipeline.useGlb', value: true }).success, true);
+    assert.equal(SettingEditSchema.safeParse({ path: 'editor.pipeline.useGlb', value: true, extra: true }).success, false);
     assert.equal(SettingEditSchema.safeParse({ path: 'editor.pipeline.useGlb', op: 'unset' }).success, true);
     assert.equal(SettingEditSchema.safeParse({ path: 'editor.pipeline.useGlb', op: 'unset', value: true }).success, false);
 });

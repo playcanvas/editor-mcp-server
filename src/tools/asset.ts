@@ -1,5 +1,6 @@
-import { readFile, stat, writeFile } from 'node:fs/promises';
-import { basename, resolve } from 'node:path';
+import { randomUUID } from 'node:crypto';
+import { link, open, readFile, rename, stat, unlink } from 'node:fs/promises';
+import { basename, dirname, join, resolve } from 'node:path';
 
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
@@ -22,15 +23,128 @@ import {
     TemplateCreateSchema,
     TextCreateSchema
 } from './schema/asset.ts';
-import { AssetIdSchema, EntityIdSchema } from './schema/common.ts';
+import { AssetIdSchema, AssetRefSchema, EntityIdSchema } from './schema/common.ts';
 
-// ponytail: base64 keeps one transport; add streaming if 20 mib imports are common
 const MAX_FILE_BYTES = 20 * 1024 * 1024;
+const MAX_CHUNK_BYTES = 1024 * 1024;
+const MAX_TRANSFER_BYTES = 512 * 1024 * 1024;
 const AssetOverrideSchema = z.object({
     resource_id: EntityIdSchema,
     override_type: z.string().min(1),
     path: z.string().optional()
 }).passthrough();
+const AssetEditSchema = z.union([
+    z.object({
+        id: AssetIdSchema,
+        path: z.string().min(1),
+        op: z.literal('set').optional(),
+        value: z.any()
+    }).strict(),
+    z.object({ id: AssetIdSchema, path: z.string().min(1), op: z.literal('unset') }).strict(),
+    z.object({
+        id: AssetIdSchema,
+        path: z.string().min(1),
+        op: z.literal('insert'),
+        value: z.any(),
+        index: z.number().int().min(0).optional()
+    }).strict(),
+    z.object({
+        id: AssetIdSchema,
+        path: z.string().min(1),
+        op: z.literal('remove'),
+        index: z.number().int().min(0)
+    }).strict(),
+    z.object({
+        id: AssetIdSchema,
+        path: z.string().min(1),
+        op: z.literal('move'),
+        index: z.number().int().min(0),
+        to: z.number().int().min(0)
+    }).strict()
+]);
+
+const settle = <T>(promise: Promise<T>) =>
+    promise.then((data) => [null, data] as const, (error) => [error, null] as const);
+
+const message = (error: unknown) => error instanceof Error ? error.message : String(error);
+
+const upload = async (wss: WSS, item: Record<string, unknown>, path: string, size: number) => {
+    if (size <= MAX_FILE_BYTES) {
+        const [readError, bytes] = await settle(readFile(path));
+        if (readError || !bytes) {
+            throw readError;
+        }
+        const raw = await wss.raw('assets:upload', [{ ...item, base64: bytes.toString('base64') }]);
+        if (raw.error) {
+            throw new Error(raw.error);
+        }
+        const data = raw.data as {
+            succeeded?: { asset: unknown }[];
+            failed?: { message: string }[];
+        };
+        if (data.failed?.length) {
+            throw new Error(data.failed[0].message);
+        }
+        if (!data.succeeded?.length) {
+            throw new Error('Editor returned no uploaded asset.');
+        }
+        return data.succeeded[0].asset;
+    }
+    if (size > MAX_TRANSFER_BYTES) {
+        throw new Error(`${path} exceeds the ${MAX_TRANSFER_BYTES / 1024 / 1024} MiB upload limit.`);
+    }
+
+    const start = await wss.raw('files:upload:start', item, size);
+    if (start.error) {
+        throw new Error(start.error);
+    }
+    const id = (start.data as { transferId?: string })?.transferId;
+    if (!id) {
+        throw new Error('Editor returned an invalid upload transfer.');
+    }
+
+    const [openError, file] = await settle(open(path, 'r'));
+    if (openError || !file) {
+        await settle(wss.raw('files:transfer:cancel', id));
+        throw openError;
+    }
+
+    let offset = 0;
+    let failure: unknown;
+    const bytes = Buffer.allocUnsafe(MAX_CHUNK_BYTES);
+    while (!failure && offset < size) {
+        const [readError, result] = await settle(file.read(bytes, 0, Math.min(bytes.length, size - offset), offset));
+        if (readError || !result?.bytesRead) {
+            failure = readError || new Error(`Unexpected end of file at byte ${offset}.`);
+            break;
+        }
+        const [sendError, raw] = await settle(
+            wss.raw('files:upload:append', id, offset, bytes.subarray(0, result.bytesRead).toString('base64'))
+        );
+        if (sendError || raw?.error) {
+            failure = sendError || new Error(raw?.error);
+            break;
+        }
+        if ((raw.data as { offset?: number })?.offset !== offset + result.bytesRead) {
+            failure = new Error(`Editor returned an invalid upload offset at byte ${offset}.`);
+            break;
+        }
+        offset += result.bytesRead;
+    }
+    const [closeError] = await settle(file.close());
+    failure ||= closeError;
+    if (failure) {
+        await settle(wss.raw('files:transfer:cancel', id));
+        throw failure;
+    }
+
+    const finish = await wss.raw('files:upload:finish', id);
+    if (finish.error) {
+        await settle(wss.raw('files:transfer:cancel', id));
+        throw new Error(finish.error);
+    }
+    return finish.data;
+};
 
 export const register = (server: McpServer, wss: WSS) => {
     server.registerTool(
@@ -105,6 +219,26 @@ export const register = (server: McpServer, wss: WSS) => {
     );
 
     server.registerTool(
+        'get_asset',
+        {
+            description: 'Get the complete JSON for one project asset by id.',
+            annotations: { title: 'Get Asset', readOnlyHint: true, openWorldHint: false },
+            inputSchema: { id: AssetIdSchema }
+        },
+        ({ id }) => wss.call('assets:get', id)
+    );
+
+    server.registerTool(
+        'get_asset_references',
+        {
+            description: 'List the project assets, entities, or settings that reference an asset.',
+            annotations: { title: 'Get Asset References', readOnlyHint: true, openWorldHint: false },
+            inputSchema: { id: AssetIdSchema }
+        },
+        ({ id }) => wss.call('assets:references:get', id)
+    );
+
+    server.registerTool(
         'delete_assets',
         {
             description: [
@@ -120,11 +254,12 @@ export const register = (server: McpServer, wss: WSS) => {
                 openWorldHint: false
             },
             inputSchema: {
-                ids: z.array(AssetIdSchema).nonempty()
+                ids: z.array(AssetIdSchema).nonempty(),
+                rejectReferenced: z.boolean().optional().describe('Fail before deletion if any asset is referenced')
             }
         },
-        ({ ids }) => {
-            return wss.call('assets:delete', ids);
+        ({ ids, rejectReferenced }) => {
+            return wss.call('assets:delete', ids, { rejectReferenced });
         }
     );
 
@@ -156,7 +291,7 @@ export const register = (server: McpServer, wss: WSS) => {
     server.registerTool(
         'upload_assets',
         {
-            description: `Upload local files into the designated project, or replace an existing asset source by providing its id. Files are limited to ${MAX_FILE_BYTES / 1024 / 1024} MiB each; the result separates succeeded and failed entries.`,
+            description: `Upload local files into the designated project, or replace an existing asset source by providing its id. Files are limited to ${MAX_TRANSFER_BYTES / 1024 / 1024} MiB each; the result separates succeeded and failed entries.`,
             annotations: {
                 title: 'Upload Assets',
                 readOnlyHint: false,
@@ -180,38 +315,42 @@ export const register = (server: McpServer, wss: WSS) => {
             }
         },
         async ({ assets }) => {
-            const [error, payload] = await Promise.resolve().then(async () => {
-                const files = await Promise.all(assets.map(async (asset) => {
-                    const path = resolve(asset.path);
-                    const info = await stat(path);
-                    if (!info.isFile()) {
-                        throw new Error(`Not a file: ${path}`);
-                    }
-                    if (info.size > MAX_FILE_BYTES) {
-                        throw new Error(`${path} exceeds the ${MAX_FILE_BYTES / 1024 / 1024} MiB upload limit.`);
-                    }
-                    const filename = basename(path);
-                    return {
-                        ...asset,
-                        path,
-                        filename,
-                        name: asset.name || (asset.id === undefined ? filename : undefined)
-                    };
-                }));
-                return Promise.all(files.map(async ({ path, ...asset }) => ({
-                    ...asset,
-                    base64: await readFile(path).then((bytes) => {
-                        if (bytes.length > MAX_FILE_BYTES) {
-                            throw new Error(`${path} exceeds the ${MAX_FILE_BYTES / 1024 / 1024} MiB upload limit.`);
+            const results = [];
+            for (const [index, asset] of assets.entries()) {
+                const path = resolve(asset.path);
+                const filename = basename(path);
+                const [infoError, info] = await settle(stat(path));
+                if (infoError || !info?.isFile()) {
+                    results.push({
+                        error: {
+                            index,
+                            filename,
+                            message: infoError ? message(infoError) : `Not a file: ${path}`
                         }
-                        return bytes.toString('base64');
-                    })
-                })));
-            }).then((data) => [null, data] as const, (err) => [err, null] as const);
-            if (error) {
-                return wss.fail('assets:upload', error instanceof Error ? error.message : String(error));
+                    });
+                    continue;
+                }
+                const item = { ...asset } as Record<string, unknown>;
+                delete item.path;
+                const [error, data] = await settle(
+                    upload(
+                        wss,
+                        {
+                            ...item,
+                            filename,
+                            name: asset.name || (asset.id === undefined ? filename : undefined)
+                        },
+                        path,
+                        info.size
+                    )
+                );
+                results.push(error
+                    ? { error: { index, filename, message: message(error) } }
+                    : { result: { index, asset: data } });
             }
-            return wss.call('assets:upload', payload);
+            const succeeded = results.flatMap((item) => ('result' in item ? [item.result] : []));
+            const failed = results.flatMap((item) => ('error' in item ? [item.error] : []));
+            return wss.ok('assets:upload', { succeeded, failed }, { partial: failed.length > 0 });
         }
     );
 
@@ -222,18 +361,12 @@ export const register = (server: McpServer, wss: WSS) => {
             annotations: {
                 title: 'Modify Assets',
                 readOnlyHint: false,
-                destructiveHint: false,
+                destructiveHint: true,
                 idempotentHint: false,
                 openWorldHint: false
             },
             inputSchema: {
-                edits: z.array(z.union([
-                    z.object({ id: AssetIdSchema, path: z.string().min(1), op: z.literal('set').optional(), value: z.any() }),
-                    z.object({ id: AssetIdSchema, path: z.string().min(1), op: z.literal('unset') }),
-                    z.object({ id: AssetIdSchema, path: z.string().min(1), op: z.literal('insert'), value: z.any(), index: z.number().int().min(0).optional() }),
-                    z.object({ id: AssetIdSchema, path: z.string().min(1), op: z.literal('remove'), index: z.number().int().min(0) }),
-                    z.object({ id: AssetIdSchema, path: z.string().min(1), op: z.literal('move'), index: z.number().int().min(0), to: z.number().int().min(0) })
-                ])).nonempty()
+                edits: z.array(AssetEditSchema).nonempty()
             }
         },
         ({ edits }) => wss.call('assets:modify', edits)
@@ -246,7 +379,7 @@ export const register = (server: McpServer, wss: WSS) => {
             annotations: { title: 'Move Assets', readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
             inputSchema: {
                 ids: z.array(AssetIdSchema).nonempty(),
-                folderId: AssetIdSchema.nullable().optional()
+                folderId: AssetRefSchema.optional()
             }
         },
         ({ ids, folderId }) => wss.call('assets:move', ids, folderId)
@@ -255,7 +388,7 @@ export const register = (server: McpServer, wss: WSS) => {
     server.registerTool(
         'duplicate_assets',
         {
-            description: 'Queue asset duplication in the current folders. The editor confirms the accepted source ids; list_assets to resolve the generated copies.',
+            description: 'Duplicate assets in their current folders and return the created asset summaries.',
             annotations: { title: 'Duplicate Assets', readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
             inputSchema: { ids: z.array(AssetIdSchema).nonempty() }
         },
@@ -288,7 +421,7 @@ export const register = (server: McpServer, wss: WSS) => {
     server.registerTool(
         'download_asset',
         {
-            description: `Download an asset to a local file. Downloads are limited to ${MAX_FILE_BYTES / 1024 / 1024} MiB and never overwrite unless overwrite=true.`,
+            description: `Download an asset to a local file. Downloads are limited to ${MAX_TRANSFER_BYTES / 1024 / 1024} MiB and never overwrite unless overwrite=true.`,
             annotations: { title: 'Download Asset', readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: false },
             inputSchema: {
                 assetId: AssetIdSchema,
@@ -299,33 +432,114 @@ export const register = (server: McpServer, wss: WSS) => {
         async ({ assetId, path, overwrite }) => {
             const output = resolve(path);
             if (!overwrite && await stat(output).then(() => true, () => false)) {
-                return wss.fail('assets:file:get', `File already exists: ${output}. Set overwrite=true to replace it.`);
+                return wss.fail('files:download:start', `File already exists: ${output}. Set overwrite=true to replace it.`);
             }
-            const raw = await wss.raw('assets:file:get', assetId);
-            if (raw.error) {
-                return wss.fail('assets:file:get', raw.error);
+            const temp = join(dirname(output), `.${basename(output)}.${randomUUID()}.tmp`);
+            const [openError, file] = await settle(open(temp, 'wx'));
+            if (openError || !file) {
+                return wss.fail('files:download:start', message(openError));
             }
-            const data = raw.data as { base64?: string; filename?: string; mime?: string };
-            if (
-                typeof data?.base64 !== 'string' ||
-                data.base64.length > Math.ceil(MAX_FILE_BYTES / 3) * 4 ||
-                data.base64.length % 4 !== 0 ||
-                !/^[a-z\d+/]*={0,2}$/i.test(data.base64)
-            ) {
-                return wss.fail('assets:file:get', 'Editor returned invalid or oversized asset data.');
+
+            let failure: unknown;
+            let id: string | undefined;
+            let filename: string | undefined;
+            let mime: string | undefined;
+            let size = 0;
+            const [startError, start] = await settle(wss.raw('files:download:start', assetId, MAX_FILE_BYTES));
+            if (startError || start?.error) {
+                failure = startError || new Error(start?.error);
+            } else {
+                const data = start?.data as {
+                    transferId?: string;
+                    size?: number;
+                    filename?: string;
+                    mime?: string;
+                    base64?: string;
+                };
+                id = data.transferId;
+                filename = data.filename;
+                mime = data.mime;
+                size = data.size ?? -1;
+                if (!Number.isInteger(size) || size < 0 || size > MAX_TRANSFER_BYTES) {
+                    failure = new Error('Editor returned an invalid or oversized download transfer.');
+                } else if (typeof data.base64 === 'string') {
+                    if (
+                        data.base64.length > Math.ceil(MAX_FILE_BYTES / 3) * 4 ||
+                        data.base64.length % 4 !== 0 ||
+                        !/^[a-z\d+/]*={0,2}$/i.test(data.base64)
+                    ) {
+                        failure = new Error('Editor returned invalid inline asset data.');
+                    } else {
+                        const bytes = Buffer.from(data.base64, 'base64');
+                        if (bytes.length !== size) {
+                            failure = new Error('Editor returned an invalid inline asset length.');
+                        } else {
+                            const [writeError, result] = await settle(file.write(bytes, 0, bytes.length, 0));
+                            failure = writeError || (result?.bytesWritten !== bytes.length
+                                ? new Error('Failed to write the complete asset.')
+                                : null);
+                        }
+                    }
+                } else if (!id) {
+                    failure = new Error('Editor returned an invalid download transfer.');
+                } else {
+                    let offset = 0;
+                    while (!failure && offset < size) {
+                        const [readError, raw] = await settle(
+                            wss.raw('files:download:read', id, offset, Math.min(MAX_CHUNK_BYTES, size - offset))
+                        );
+                        if (readError || raw?.error) {
+                            failure = readError || new Error(raw?.error);
+                            break;
+                        }
+                        const chunk = raw?.data as { offset?: number; base64?: string };
+                        if (
+                            typeof chunk?.base64 !== 'string' ||
+                            chunk.base64.length > Math.ceil(MAX_CHUNK_BYTES / 3) * 4 ||
+                            chunk.base64.length % 4 !== 0 ||
+                            !/^[a-z\d+/]*={0,2}$/i.test(chunk.base64)
+                        ) {
+                            failure = new Error(`Editor returned an invalid download chunk at byte ${offset}.`);
+                            break;
+                        }
+                        const bytes = Buffer.from(chunk.base64, 'base64');
+                        if (!bytes.length || bytes.length > MAX_CHUNK_BYTES || chunk.offset !== offset + bytes.length) {
+                            failure = new Error(`Editor returned an invalid download offset at byte ${offset}.`);
+                            break;
+                        }
+                        const [writeError, result] = await settle(file.write(bytes, 0, bytes.length, offset));
+                        if (writeError || result?.bytesWritten !== bytes.length) {
+                            failure = writeError || new Error(`Failed to write the download chunk at byte ${offset}.`);
+                            break;
+                        }
+                        offset += bytes.length;
+                    }
+                    if (!failure) {
+                        const [finishError, finish] = await settle(wss.raw('files:transfer:finish', id));
+                        failure = finishError || (finish?.error ? new Error(finish.error) : null);
+                    }
+                }
             }
-            const bytes = Buffer.from(data.base64, 'base64');
-            if (bytes.length > MAX_FILE_BYTES) {
-                return wss.fail('assets:file:get', `Asset exceeds the ${MAX_FILE_BYTES / 1024 / 1024} MiB download limit.`);
+
+            const [closeError] = await settle(file.close());
+            failure ||= closeError;
+            if (failure) {
+                if (id) {
+                    await settle(wss.raw('files:transfer:cancel', id));
+                }
+                await settle(unlink(temp));
+                return wss.fail('files:download:start', message(failure));
             }
-            const error = await writeFile(output, bytes, { flag: overwrite ? 'w' : 'wx' }).then(
-                () => null,
-                (err) => (err instanceof Error ? err : new Error(String(err)))
-            );
-            if (error) {
-                return wss.fail('assets:file:get', error.message);
+
+            const [moveError] = overwrite ? await settle(rename(temp, output)) : await settle(link(temp, output));
+            if (moveError) {
+                await settle(unlink(temp));
+                return wss.fail('files:download:start', message(moveError));
             }
-            return wss.ok('assets:file:get', { path: output, filename: data.filename, mime: data.mime, bytes: bytes.length });
+            if (!overwrite) {
+                await settle(unlink(temp));
+            }
+            return wss.ok('files:download:start', { path: output, filename, mime, bytes: size });
         }
     );
 
@@ -369,3 +583,5 @@ export const register = (server: McpServer, wss: WSS) => {
         (options) => wss.call('templates:unlink', options)
     );
 };
+
+export { AssetEditSchema };

@@ -9,7 +9,7 @@ const SettingEditSchema = z.union([
         path: z.string().min(1).describe('Dot-notation settings path'),
         op: z.literal('set').optional().describe('Defaults to set'),
         value: z.custom((value) => value !== undefined, 'Required for set')
-    }),
+    }).strict(),
     z.object({
         path: z.string().min(1).describe('Dot-notation settings path'),
         op: z.literal('unset')

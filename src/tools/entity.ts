@@ -12,7 +12,7 @@ const EntityEditSchema = z.union([
         path: z.string().min(1).describe('Property path in dot notation, e.g. "position", "components.light.intensity"'),
         op: z.literal('set').optional().describe('Defaults to set'),
         value: z.custom((value) => value !== undefined, 'Required for set').describe('Vectors are arrays, e.g. position [0,1,0].')
-    }),
+    }).strict(),
     z.object({
         id: EntityIdSchema,
         path: z.string().min(1).describe('Component property path in dot notation'),
@@ -65,7 +65,7 @@ export const register = (server: McpServer, wss: WSS) => {
             annotations: {
                 title: 'Modify Entities',
                 readOnlyHint: false,
-                destructiveHint: false,
+                destructiveHint: true,
                 idempotentHint: true,
                 openWorldHint: false
             },
@@ -153,6 +153,22 @@ export const register = (server: McpServer, wss: WSS) => {
         ({ ids }) => {
             return wss.call('entities:delete', ids);
         }
+    );
+
+    server.registerTool(
+        'get_entity',
+        {
+            description: 'Get the complete edit-time JSON for one entity by resource_id.',
+            annotations: {
+                title: 'Get Entity',
+                readOnlyHint: true,
+                openWorldHint: false
+            },
+            inputSchema: {
+                id: EntityIdSchema
+            }
+        },
+        ({ id }) => wss.call('entities:get', id)
     );
 
     server.registerTool(

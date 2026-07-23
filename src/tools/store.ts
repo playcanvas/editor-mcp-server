@@ -3,6 +3,8 @@ import { z } from 'zod';
 
 import type { WSS } from '../wss.ts';
 
+import { AssetIdSchema } from './schema/common.ts';
+
 const orderEnum = {
     'asc': 1,
     'desc': -1
@@ -81,11 +83,102 @@ export const register = (server: McpServer, wss: WSS) => {
                     author: z.string(),
                     authorUrl: z.string().url(),
                     license: z.string()
-                }).describe('License info from store_get')
+                }).describe('License info from store_get'),
+                folder: AssetIdSchema.optional()
             }
         },
-        ({ id, name, license }) => {
-            return wss.call('store:playcanvas:clone', id, name, license);
+        ({ id, name, license, folder }) => {
+            return wss.call('store:playcanvas:clone', id, name, license, folder);
         }
+    );
+
+    server.registerTool(
+        'list_store_licenses',
+        {
+            description: 'List valid Store licenses for project imports.',
+            annotations: { title: 'List Store Licenses', readOnlyHint: true, openWorldHint: true }
+        },
+        () => wss.call('store:licenses:list')
+    );
+
+    server.registerTool(
+        'sketchfab_search',
+        {
+            description: 'Search downloadable Sketchfab models.',
+            annotations: { title: 'Search Sketchfab', readOnlyHint: true, openWorldHint: true },
+            inputSchema: {
+                search: z.string().optional(),
+                order: z.string().optional(),
+                cursor: z.string().optional(),
+                limit: z.number().int().min(1).max(24).optional()
+            }
+        },
+        ({ search, order, cursor, limit }) =>
+            wss.call('store:sketchfab:list', { search, order, skip: cursor, limit })
+    );
+
+    server.registerTool(
+        'sketchfab_get',
+        {
+            description: 'Get a Sketchfab model by uid.',
+            annotations: { title: 'Get Sketchfab Model', readOnlyHint: true, openWorldHint: true },
+            inputSchema: { uid: z.string().min(1) }
+        },
+        ({ uid }) => wss.call('store:sketchfab:get', uid)
+    );
+
+    server.registerTool(
+        'sketchfab_import',
+        {
+            description: 'Import a downloadable Sketchfab model into the current project.',
+            annotations: {
+                title: 'Import Sketchfab Model',
+                readOnlyHint: false,
+                destructiveHint: false,
+                idempotentHint: false,
+                openWorldHint: true
+            },
+            inputSchema: {
+                uid: z.string().min(1),
+                name: z.string().min(1),
+                license: z.string().min(1),
+                folder: AssetIdSchema.optional()
+            }
+        },
+        ({ uid, name, license, folder }) => wss.call('store:sketchfab:clone', uid, name, license, folder)
+    );
+
+    server.registerTool(
+        'my_assets_search',
+        {
+            description: 'Search assets owned by the current user.',
+            annotations: { title: 'Search My Assets', readOnlyHint: true, openWorldHint: true },
+            inputSchema: {
+                search: z.string().optional(),
+                skip: z.number().int().min(0).optional(),
+                limit: z.number().int().min(1).optional()
+            }
+        },
+        (options) => wss.call('store:myassets:list', options)
+    );
+
+    server.registerTool(
+        'my_assets_import',
+        {
+            description: 'Import an asset owned by the current user into the current project.',
+            annotations: {
+                title: 'Import My Asset',
+                readOnlyHint: false,
+                destructiveHint: false,
+                idempotentHint: false,
+                openWorldHint: false
+            },
+            inputSchema: {
+                id: z.string().min(1),
+                name: z.string().min(1),
+                folder: AssetIdSchema.optional()
+            }
+        },
+        ({ id, name, folder }) => wss.call('store:myassets:clone', id, name, folder)
     );
 };

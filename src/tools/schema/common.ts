@@ -9,5 +9,6 @@ export const Vec2Schema = z.array(z.number()).length(2).describe('[x,y]');
 export const Vec3Schema = z.array(z.number()).length(3).describe('[x,y,z]');
 
 export const Vec4Schema = z.array(z.number()).length(4).describe('[x,y,z,w]');
-export const AssetIdSchema = z.number().int().nullable().describe('Asset ID');
+export const AssetIdSchema = z.number().int().positive().describe('Asset ID');
+export const AssetRefSchema = AssetIdSchema.nullable().describe('Nullable asset reference');
 export const EntityIdSchema = z.string().uuid().describe('Entity ID');

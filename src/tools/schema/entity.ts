@@ -1,7 +1,7 @@
 import { z  } from 'zod';
 import type { ZodTypeAny } from 'zod';
 
-import { AssetIdSchema, RgbSchema, RgbaSchema, Vec2Schema, Vec3Schema, Vec4Schema } from './common.ts';
+import { AssetRefSchema, RgbSchema, RgbaSchema, Vec2Schema, Vec3Schema, Vec4Schema } from './common.ts';
 
 const AudioListenerSchema = z.object({
     enabled: z.boolean().optional()
@@ -53,8 +53,8 @@ const CollisionSchema = z.object({
     ]).optional(),
     height: z.number().min(0).optional(),
     convexHull: z.boolean().optional(),
-    asset: AssetIdSchema.optional().describe('Model asset'),
-    renderAsset: AssetIdSchema.optional().describe('Render asset'),
+    asset: AssetRefSchema.optional().describe('Model asset'),
+    renderAsset: AssetRefSchema.optional().describe('Render asset'),
     linearOffset: Vec3Schema.optional(),
     angularOffset: Vec3Schema.optional()
 }).passthrough().describe('Collision component. Requires the Ammo physics module to be enabled in the project (IMPORT AMMO) to take effect. halfExtents/radius are in LOCAL space and are multiplied by the entity world scale — size the collider via these fields rather than relying on entity scale.');
@@ -66,7 +66,7 @@ const ElementSchema = z.object({
     pivot: Vec2Schema.optional(),
     text: z.string().optional(),
     key: z.string().nullable().optional().describe('Localization key'),
-    fontAsset: AssetIdSchema.optional(),
+    fontAsset: AssetRefSchema.optional(),
     fontSize: z.number().optional(),
     minFontSize: z.number().optional(),
     maxFontSize: z.number().optional(),
@@ -78,8 +78,8 @@ const ElementSchema = z.object({
     spacing: z.number().optional().describe('Letter spacing'),
     color: RgbSchema.optional(),
     opacity: z.number().min(0).max(1).optional(),
-    textureAsset: AssetIdSchema.optional(),
-    spriteAsset: AssetIdSchema.optional(),
+    textureAsset: AssetRefSchema.optional(),
+    spriteAsset: AssetRefSchema.optional(),
     spriteFrame: z.number().optional(),
     pixelsPerUnit: z.number().nullable().optional(),
     width: z.number().optional(),
@@ -91,7 +91,7 @@ const ElementSchema = z.object({
     shadowColor: RgbaSchema.optional(),
     shadowOffset: Vec2Schema.optional(),
     rect: Vec4Schema.optional().describe('Texture rect [u,v,w,h]'),
-    materialAsset: AssetIdSchema.optional(),
+    materialAsset: AssetRefSchema.optional(),
     autoWidth: z.boolean().optional(),
     autoHeight: z.boolean().optional(),
     fitMode: z.enum(['stretch', 'contain', 'cover']).optional(),
@@ -159,7 +159,7 @@ const LightSchema = z.object({
         z.literal(2).describe('Disk'),
         z.literal(3).describe('Sphere')
     ]).optional(),
-    cookieAsset: AssetIdSchema.optional(),
+    cookieAsset: AssetRefSchema.optional(),
     cookieIntensity: z.number().min(0).max(1).optional(),
     cookieFalloff: z.boolean().optional(),
     cookieChannel: z.enum(['r', 'g', 'b', 'a', 'rgb']).optional(),
@@ -173,8 +173,8 @@ const LightSchema = z.object({
 const RenderSchema = z.object({
     enabled: z.boolean().optional(),
     type: z.enum(['asset', 'box', 'capsule', 'sphere', 'cylinder', 'cone', 'plane']).optional(),
-    asset: z.number().int().nullable().optional().describe('Render asset'),
-    materialAssets: z.array(z.number().int().nullable()).optional(),
+    asset: AssetRefSchema.optional().describe('Render asset'),
+    materialAssets: z.array(AssetRefSchema).optional(),
     layers: z.array(z.number().int().min(0)).optional(),
     batchGroupId: z.number().int().nullable().optional(),
     castShadows: z.boolean().optional(),
@@ -227,7 +227,7 @@ const SoundSlotSchema = z.object({
     name: z.string().optional(),
     volume: z.number().min(0).max(1).optional(),
     pitch: z.number().min(0).optional(),
-    asset: AssetIdSchema.optional().describe('Audio asset'),
+    asset: AssetRefSchema.optional().describe('Audio asset'),
     startTime: z.number().optional(),
     duration: z.number().nullable().optional(),
     loop: z.boolean().optional(),

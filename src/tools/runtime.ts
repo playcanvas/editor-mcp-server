@@ -25,12 +25,18 @@ export const register = (server: McpServer, wss: WSS) => {
             },
             inputSchema: {
                 device: z.enum(['webgpu', 'webgl2', 'webgl1']).optional().describe('Graphics device to launch with (default: project setting)'),
+                engineVersion: z.string().min(1).optional(),
+                profiler: z.boolean().optional(),
+                debug: z.boolean().optional(),
+                concatenate: z.boolean().optional(),
+                bundles: z.boolean().optional(),
+                miniStats: z.boolean().optional(),
                 waitMs: z.number().int().min(0).max(60000).optional().describe('How long to wait for the runtime to connect before returning (default 20000)')
             }
         },
-        async ({ device, waitMs }) => {
+        async ({ waitMs, ...options }) => {
             try {
-                const opened = await wss.raw('launch:start', { device });
+                const opened = await wss.raw('launch:start', options);
                 if (opened?.error) {
                     return wss.fail('launch:start', opened.error);
                 }
