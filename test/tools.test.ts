@@ -200,6 +200,7 @@ test('download_build streams artifacts without clobbering files', async (t) => {
     const dir = await mkdtemp(join(tmpdir(), 'editor-mcp-'));
     const path = join(dir, 'build.zip');
     const tools: Record<string, Handler> = {};
+    const calls: { name: string; args: unknown[] }[] = [];
     let content = 'first';
     t.after(() => rm(dir, { recursive: true, force: true }));
     t.mock.method(globalThis, 'fetch', async () => new Response(content));
@@ -210,10 +211,13 @@ test('download_build streams artifacts without clobbering files', async (t) => {
             }
         } as unknown as McpServer,
         {
-            raw(name: string) {
+            raw(name: string, ...args: unknown[]) {
+                calls.push({ name, args });
                 return Promise.resolve(
                     name === 'builds:download'
-                        ? { data: { id: 7 } }
+                        ? { data: { id: 9 } }
+                        : name === 'builds:list'
+                          ? { data: [{ id: 7, job_id: 9 }] }
                         : {
                               data: {
                                   status: 'complete',
@@ -241,6 +245,11 @@ test('download_build streams artifacts without clobbering files', async (t) => {
         name: 'builds:download',
         data: { buildId: 7, path, bytes: 5 }
     });
+    assert.deepEqual(calls.slice(0, 3), [
+        { name: 'builds:download', args: [{ name: 'Download', sceneIds: [1], format: 'static' }] },
+        { name: 'builds:list', args: [{ limit: 500, filters: { type: 'download' } }] },
+        { name: 'builds:get', args: [7] }
+    ]);
     content = 'second';
     assert.match((await tools.download_build(options) as { message: string }).message, /EEXIST/);
     assert.equal(await readFile(path, 'utf8'), 'first');

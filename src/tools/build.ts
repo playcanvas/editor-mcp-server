@@ -17,10 +17,9 @@ const IdSchema = z.number().int().positive();
 type BuildStart = {
     id?: number;
     build_job_id?: number;
-    result?: { id?: number };
 };
 type Artifact = { type: string; url: string };
-type Build = { status?: string; message?: string; artifacts?: Artifact[] };
+type Build = { id?: number; job_id?: number; status?: string; message?: string; artifacts?: Artifact[] };
 
 const fields = {
     name: z.string().min(1).max(1000),
@@ -138,11 +137,21 @@ export const register = (server: McpServer, wss: WSS) => {
                 return wss.fail('builds:download', started.error);
             }
             const data = started.data as BuildStart | undefined;
-            const id = data?.id ?? data?.build_job_id ?? data?.result?.id;
+            let id = data?.build_job_id;
+            if (!id && data?.id) {
+                const listed = await raw(wss, 'builds:list', {
+                    limit: 500,
+                    filters: { type: 'download' }
+                });
+                if (listed.error) {
+                    return wss.fail('builds:download', listed.error);
+                }
+                id = (listed.data as Build[] | undefined)?.find((build) => build.job_id === data.id)?.id;
+            }
             if (!id) {
                 return wss.fail(
                     'builds:download',
-                    'The build started but returned no build id. Use list_builds to inspect its status.'
+                    'The build started but its durable build job was not found. Use list_builds to inspect its status.'
                 );
             }
             const deadline = Date.now() + BUILD_TIMEOUT_MS;
