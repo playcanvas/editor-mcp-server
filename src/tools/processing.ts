@@ -145,6 +145,98 @@ export const register = (server: McpServer, wss: WSS) => {
     );
 
     server.registerTool(
+        'process_font_asset',
+        {
+            description: 'Rebuild a font asset for an explicit character set and optional inversion setting.',
+            annotations: {
+                title: 'Process Font Asset',
+                readOnlyHint: false,
+                destructiveHint: true,
+                idempotentHint: true,
+                openWorldHint: false
+            },
+            inputSchema: {
+                id: IdSchema,
+                characters: z.string().min(1),
+                invert: z.boolean().optional()
+            }
+        },
+        ({ id, characters, invert }) => wss.call('assets:font:process', id, { characters, invert })
+    );
+
+    server.registerTool(
+        'generate_texture_metadata',
+        {
+            description: 'Generate missing pipeline metadata for a texture asset.',
+            annotations: {
+                title: 'Generate Texture Metadata',
+                readOnlyHint: false,
+                destructiveHint: false,
+                idempotentHint: true,
+                openWorldHint: false
+            },
+            inputSchema: { id: IdSchema }
+        },
+        ({ id }) => wss.call('assets:texture:metadata', id)
+    );
+
+    server.registerTool(
+        'process_texture_variants',
+        {
+            description: 'Compress or remove explicit texture variants and wait for processing to settle.',
+            annotations: {
+                title: 'Process Texture Variants',
+                readOnlyHint: false,
+                destructiveHint: true,
+                idempotentHint: true,
+                openWorldHint: false
+            },
+            inputSchema: {
+                id: IdSchema,
+                formats: z.array(z.enum(['basis', 'dxt', 'etc1', 'etc2', 'pvr'])).nonempty(),
+                remove: z.boolean().optional(),
+                force: z.boolean().optional()
+            }
+        },
+        ({ id, ...options }) => wss.call('assets:texture:variants', id, options)
+    );
+
+    server.registerTool(
+        'prefilter_cubemap',
+        {
+            description: 'Generate runtime lighting data for a cubemap.',
+            annotations: {
+                title: 'Prefilter Cubemap',
+                readOnlyHint: false,
+                destructiveHint: true,
+                idempotentHint: true,
+                openWorldHint: false
+            },
+            inputSchema: {
+                id: IdSchema,
+                legacy: z.boolean().optional().describe('Generate the compatibility DDS format for older engines')
+            }
+        },
+        ({ id, legacy }) => wss.call('assets:cubemap:prefilter', id, legacy)
+    );
+
+    server.registerTool(
+        'clear_cubemap_prefilter',
+        {
+            description: 'Remove generated runtime lighting data from a cubemap.',
+            annotations: {
+                title: 'Clear Cubemap Prefilter',
+                readOnlyHint: false,
+                destructiveHint: true,
+                idempotentHint: true,
+                openWorldHint: false
+            },
+            inputSchema: { id: IdSchema }
+        },
+        ({ id }) => wss.call('assets:cubemap:prefilter:clear', id)
+    );
+
+    server.registerTool(
         'modify_sprite_asset',
         {
             description:
@@ -172,7 +264,7 @@ export const register = (server: McpServer, wss: WSS) => {
             annotations: {
                 title: 'Modify Bundle Asset',
                 readOnlyHint: false,
-                destructiveHint: false,
+                destructiveHint: true,
                 idempotentHint: true,
                 openWorldHint: false
             },

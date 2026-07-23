@@ -1,10 +1,10 @@
 import { z } from 'zod';
 
-import { AssetIdSchema, RgbSchema, Vec3Schema } from './common.ts';
+import { AssetRefSchema, RgbSchema, Vec3Schema } from './common.ts';
 
 const PhysicsSchema = z.object({
     gravity: Vec3Schema.optional().describe('Gravity force')
-}).describe('Physics settings');
+}).passthrough().describe('Physics settings');
 
 const RenderSchema = z.object({
     fog: z.enum(['none', 'linear', 'exp', 'exp2']).optional(),
@@ -25,7 +25,7 @@ const RenderSchema = z.object({
     ]).optional(),
     tonemapping: z.number().optional(),
     exposure: z.number().optional(),
-    skybox: AssetIdSchema.optional().describe('Skybox cubemap'),
+    skybox: AssetRefSchema.optional().describe('Skybox cubemap'),
     skyType: z.enum(['infinite', 'box', 'dome']).optional(),
     skyMeshPosition: Vec3Schema.optional(),
     skyMeshRotation: Vec3Schema.optional(),
@@ -55,11 +55,11 @@ const RenderSchema = z.object({
     lightingCookiesEnabled: z.boolean().optional(),
     lightingAreaLightsEnabled: z.boolean().optional(),
     lightingShadowsEnabled: z.boolean().optional()
-}).describe('Render settings');
+}).passthrough().describe('Render settings');
 
 const SceneSettingsSchema = z.object({
     physics: PhysicsSchema.optional(),
     render: RenderSchema.optional()
-}).describe('Scene settings');
+}).passthrough().describe('Scene settings');
 
 export { SceneSettingsSchema };

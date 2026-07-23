@@ -107,6 +107,26 @@ export const register = (server: McpServer, wss: WSS) => {
     );
 
     server.registerTool(
+        'read_editor_logs',
+        {
+            description: 'Read recent edit-time Editor console logs with filters and pagination.',
+            annotations: {
+                title: 'Read Editor Logs',
+                readOnlyHint: true,
+                openWorldHint: false
+            },
+            inputSchema: {
+                types: z.array(z.enum(['info', 'warn', 'error'])).nonempty().optional(),
+                search: z.string().min(1).optional(),
+                since: z.number().int().nonnegative().optional().describe('Minimum Unix timestamp in milliseconds'),
+                limit: z.number().int().min(1).max(500).optional(),
+                offset: z.number().int().nonnegative().optional()
+            }
+        },
+        (options) => wss.call('editor:logs', options)
+    );
+
+    server.registerTool(
         'set_transform_gizmo',
         {
             description: [

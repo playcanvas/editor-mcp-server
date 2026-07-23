@@ -6,6 +6,20 @@ import type { WSS } from '../wss.ts';
 import { EntityIdSchema } from './schema/common.ts';
 import { ComponentsSchema, ComponentNameSchema, EntitySchema } from './schema/entity.ts';
 
+const EntityEditSchema = z.union([
+    z.object({
+        id: EntityIdSchema,
+        path: z.string().min(1).describe('Property path in dot notation, e.g. "position", "components.light.intensity"'),
+        op: z.literal('set').optional().describe('Defaults to set'),
+        value: z.custom((value) => value !== undefined, 'Required for set').describe('Vectors are arrays, e.g. position [0,1,0].')
+    }).strict(),
+    z.object({
+        id: EntityIdSchema,
+        path: z.string().min(1).describe('Component property path in dot notation'),
+        op: z.literal('unset')
+    }).strict()
+]);
+
 export const register = (server: McpServer, wss: WSS) => {
     server.registerTool(
         'create_entities',
@@ -41,7 +55,7 @@ export const register = (server: McpServer, wss: WSS) => {
         'modify_entities',
         {
             description: [
-                'Set properties on existing entities by dot-notation path.',
+                'Set or unset properties on existing entities by dot-notation path.',
                 'Valid top-level paths: "name", "enabled", "position" ([x,y,z] local), "rotation" ([x,y,z] euler degrees), "scale" ([x,y,z]), "tags".',
                 'Component properties use "components.<type>.<prop>", e.g. "components.light.intensity", "components.camera.fov", "components.render.castShadows", "components.script.scripts.<name>.attributes.<attr>" (the entity must already have that component; add it with add_components first).',
                 'Each edit targets one entity id + one path. Returns the post-edit summaries of the affected entities.',
@@ -51,16 +65,12 @@ export const register = (server: McpServer, wss: WSS) => {
             annotations: {
                 title: 'Modify Entities',
                 readOnlyHint: false,
-                destructiveHint: false,
+                destructiveHint: true,
                 idempotentHint: true,
                 openWorldHint: false
             },
             inputSchema: {
-                edits: z.array(z.object({
-                    id: EntityIdSchema,
-                    path: z.string().describe('Property path in dot notation, e.g. "position", "components.light.intensity"'),
-                    value: z.any().describe('New value. Vectors are arrays, e.g. position [0,1,0]; colors are [r,g,b] 0-1.')
-                })).nonempty()
+                edits: z.array(EntityEditSchema).nonempty()
             }
         },
         ({ edits }) => {
@@ -143,6 +153,22 @@ export const register = (server: McpServer, wss: WSS) => {
         ({ ids }) => {
             return wss.call('entities:delete', ids);
         }
+    );
+
+    server.registerTool(
+        'get_entity',
+        {
+            description: 'Get the complete edit-time JSON for one entity by resource_id.',
+            annotations: {
+                title: 'Get Entity',
+                readOnlyHint: true,
+                openWorldHint: false
+            },
+            inputSchema: {
+                id: EntityIdSchema
+            }
+        },
+        ({ id }) => wss.call('entities:get', id)
     );
 
     server.registerTool(
@@ -408,3 +434,5 @@ export const register = (server: McpServer, wss: WSS) => {
         }
     );
 };
+
+export { EntityEditSchema };

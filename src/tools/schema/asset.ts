@@ -1,11 +1,11 @@
 import { z } from 'zod';
 
-import { AssetIdSchema, EntityIdSchema, RgbSchema, Vec2Schema, Vec3Schema } from './common.ts';
+import { AssetIdSchema, AssetRefSchema, EntityIdSchema, RgbSchema, Vec2Schema, Vec3Schema } from './common.ts';
 
 export const MaterialSchema = z.object({
     name: z.string().optional(),
     ambient: RgbSchema.optional(),
-    aoMap: AssetIdSchema.optional(),
+    aoMap: AssetRefSchema.optional(),
     aoMapChannel: z.enum(['r', 'g', 'b', 'a', 'rgb']).optional(),
     aoMapUv: z.number().int().min(0).max(7).optional(),
     aoMapTiling: Vec2Schema.optional(),
@@ -15,7 +15,7 @@ export const MaterialSchema = z.object({
     aoVertexColorChannel: z.enum(['r', 'g', 'b', 'a', 'rgb']).optional(),
     aoIntensity: z.number().optional(),
     diffuse: RgbSchema.optional(),
-    diffuseMap: AssetIdSchema.optional(),
+    diffuseMap: AssetRefSchema.optional(),
     diffuseMapChannel: z.enum(['r', 'g', 'b', 'a', 'rgb']).optional(),
     diffuseMapUv: z.number().int().min(0).max(7).optional(),
     diffuseMapTiling: Vec2Schema.optional(),
@@ -24,7 +24,7 @@ export const MaterialSchema = z.object({
     diffuseVertexColor: z.boolean().optional(),
     diffuseVertexColorChannel: z.enum(['r', 'g', 'b', 'a', 'rgb']).optional(),
     specular: RgbSchema.optional(),
-    specularMap: AssetIdSchema.optional(),
+    specularMap: AssetRefSchema.optional(),
     specularMapChannel: z.enum(['r', 'g', 'b', 'a', 'rgb']).optional(),
     specularMapUv: z.number().int().min(0).max(7).optional(),
     specularMapTiling: Vec2Schema.optional(),
@@ -36,7 +36,7 @@ export const MaterialSchema = z.object({
     specularVertexColorChannel: z.enum(['r', 'g', 'b', 'a', 'rgb']).optional(),
     occludeSpecular: z.number().int().min(0).max(2).optional(),
     specularityFactor: z.number().optional(),
-    specularityFactorMap: AssetIdSchema.optional(),
+    specularityFactorMap: AssetRefSchema.optional(),
     specularityFactorMapChannel: z.enum(['r', 'g', 'b', 'a', 'rgb']).optional(),
     specularityFactorMapUv: z.number().int().min(0).max(7).optional(),
     specularityFactorMapTiling: Vec2Schema.optional(),
@@ -49,7 +49,7 @@ export const MaterialSchema = z.object({
     anisotropy: z.number().min(-1).max(1).optional(),
     useMetalness: z.boolean().optional(),
     metalness: z.number().min(0).max(1).optional(),
-    metalnessMap: AssetIdSchema.optional(),
+    metalnessMap: AssetRefSchema.optional(),
     metalnessMapChannel: z.enum(['r', 'g', 'b', 'a', 'rgb']).optional(),
     metalnessMapUv: z.number().int().min(0).max(7).optional(),
     metalnessMapTiling: Vec2Schema.optional(),
@@ -60,7 +60,7 @@ export const MaterialSchema = z.object({
     useMetalnessSpecularColor: z.boolean().optional(),
     conserveEnergy: z.boolean().optional(),
     shininess: z.number().min(0).max(100).optional(),
-    glossMap: AssetIdSchema.optional(),
+    glossMap: AssetRefSchema.optional(),
     glossMapChannel: z.enum(['r', 'g', 'b', 'a', 'rgb']).optional(),
     glossMapUv: z.number().int().min(0).max(7).optional(),
     glossMapTiling: Vec2Schema.optional(),
@@ -70,7 +70,7 @@ export const MaterialSchema = z.object({
     glossVertexColorChannel: z.enum(['r', 'g', 'b', 'a', 'rgb']).optional(),
     glossInvert: z.boolean().optional(),
     clearCoat: z.number().min(0).max(1).optional(),
-    clearCoatMap: AssetIdSchema.optional(),
+    clearCoatMap: AssetRefSchema.optional(),
     clearCoatMapChannel: z.enum(['r', 'g', 'b', 'a', 'rgb']).optional(),
     clearCoatMapUv: z.number().int().min(0).max(7).optional(),
     clearCoatMapTiling: Vec2Schema.optional(),
@@ -79,7 +79,7 @@ export const MaterialSchema = z.object({
     clearCoatVertexColor: z.boolean().optional(),
     clearCoatVertexColorChannel: z.enum(['r', 'g', 'b', 'a', 'rgb']).optional(),
     clearCoatGloss: z.number().min(0).max(1).optional(),
-    clearCoatGlossMap: AssetIdSchema.optional(),
+    clearCoatGlossMap: AssetRefSchema.optional(),
     clearCoatGlossMapChannel: z.enum(['r', 'g', 'b', 'a', 'rgb']).optional(),
     clearCoatGlossMapUv: z.number().int().min(0).max(7).optional(),
     clearCoatGlossMapTiling: Vec2Schema.optional(),
@@ -88,14 +88,14 @@ export const MaterialSchema = z.object({
     clearCoatGlossVertexColor: z.boolean().optional(),
     clearCoatGlossVertexColorChannel: z.enum(['r', 'g', 'b', 'a', 'rgb']).optional(),
     clearCoatGlossInvert: z.boolean().optional(),
-    clearCoatNormalMap: AssetIdSchema.optional(),
+    clearCoatNormalMap: AssetRefSchema.optional(),
     clearCoatNormalMapUv: z.number().int().min(0).max(7).optional(),
     clearCoatNormalMapTiling: Vec2Schema.optional(),
     clearCoatNormalMapOffset: Vec2Schema.optional(),
     clearCoatNormalMapRotation: z.number().optional(),
     useSheen: z.boolean().optional(),
     sheen: RgbSchema.optional(),
-    sheenMap: AssetIdSchema.optional(),
+    sheenMap: AssetRefSchema.optional(),
     sheenMapChannel: z.enum(['r', 'g', 'b', 'a', 'rgb']).optional(),
     sheenMapUv: z.number().int().min(0).max(7).optional(),
     sheenMapTiling: Vec2Schema.optional(),
@@ -104,7 +104,7 @@ export const MaterialSchema = z.object({
     sheenVertexColor: z.boolean().optional(),
     sheenVertexColorChannel: z.enum(['r', 'g', 'b', 'a', 'rgb']).optional(),
     sheenGloss: z.number().optional(),
-    sheenGlossMap: AssetIdSchema.optional(),
+    sheenGlossMap: AssetRefSchema.optional(),
     sheenGlossMapChannel: z.enum(['r', 'g', 'b', 'a', 'rgb']).optional(),
     sheenGlossMapUv: z.number().int().min(0).max(7).optional(),
     sheenGlossMapTiling: Vec2Schema.optional(),
@@ -114,7 +114,7 @@ export const MaterialSchema = z.object({
     sheenGlossVertexColorChannel: z.enum(['r', 'g', 'b', 'a', 'rgb']).optional(),
     sheenGlossInvert: z.boolean().optional(),
     emissive: RgbSchema.optional(),
-    emissiveMap: AssetIdSchema.optional(),
+    emissiveMap: AssetRefSchema.optional(),
     emissiveMapChannel: z.enum(['r', 'g', 'b', 'a', 'rgb']).optional(),
     emissiveMapUv: z.number().int().min(0).max(7).optional(),
     emissiveMapTiling: Vec2Schema.optional(),
@@ -123,7 +123,7 @@ export const MaterialSchema = z.object({
     emissiveIntensity: z.number().min(0).max(10).optional(),
     emissiveVertexColor: z.boolean().optional(),
     emissiveVertexColorChannel: z.enum(['r', 'g', 'b', 'a', 'rgb']).optional(),
-    normalMap: AssetIdSchema.optional(),
+    normalMap: AssetRefSchema.optional(),
     normalMapUv: z.number().int().min(0).max(7).optional(),
     normalMapTiling: Vec2Schema.optional(),
     normalMapOffset: Vec2Schema.optional(),
@@ -131,7 +131,7 @@ export const MaterialSchema = z.object({
     bumpMapFactor: z.number().optional(),
     useDynamicRefraction: z.boolean().optional(),
     refraction: z.number().min(0).max(1).optional(),
-    refractionMap: AssetIdSchema.optional(),
+    refractionMap: AssetRefSchema.optional(),
     refractionMapChannel: z.enum(['r', 'g', 'b', 'a', 'rgb']).optional(),
     refractionMapUv: z.number().int().min(0).max(7).optional(),
     refractionMapTiling: Vec2Schema.optional(),
@@ -142,7 +142,7 @@ export const MaterialSchema = z.object({
     refractionIndex: z.number().min(0).max(1).optional(),
     dispersion: z.number().min(0).max(10).optional(),
     thickness: z.number().optional(),
-    thicknessMap: AssetIdSchema.optional(),
+    thicknessMap: AssetRefSchema.optional(),
     thicknessMapChannel: z.enum(['r', 'g', 'b', 'a', 'rgb']).optional(),
     thicknessMapUv: z.number().int().min(0).max(7).optional(),
     thicknessMapTiling: Vec2Schema.optional(),
@@ -154,14 +154,14 @@ export const MaterialSchema = z.object({
     attenuationDistance: z.number().optional(),
     useIridescence: z.boolean().optional(),
     iridescence: z.number().optional(),
-    iridescenceMap: AssetIdSchema.optional(),
+    iridescenceMap: AssetRefSchema.optional(),
     iridescenceMapChannel: z.enum(['r', 'g', 'b', 'a', 'rgb']).optional(),
     iridescenceMapUv: z.number().int().min(0).max(7).optional(),
     iridescenceMapTiling: Vec2Schema.optional(),
     iridescenceMapOffset: Vec2Schema.optional(),
     iridescenceMapRotation: z.number().optional(),
     iridescenceRefractionIndex: z.number().optional(),
-    iridescenceThicknessMap: AssetIdSchema.optional(),
+    iridescenceThicknessMap: AssetRefSchema.optional(),
     iridescenceThicknessMapChannel: z.enum(['r', 'g', 'b', 'a', 'rgb']).optional(),
     iridescenceThicknessMapUv: z.number().int().min(0).max(7).optional(),
     iridescenceThicknessMapTiling: Vec2Schema.optional(),
@@ -169,7 +169,7 @@ export const MaterialSchema = z.object({
     iridescenceThicknessMapRotation: z.number().optional(),
     iridescenceThicknessMin: z.number().optional(),
     iridescenceThicknessMax: z.number().optional(),
-    heightMap: AssetIdSchema.optional(),
+    heightMap: AssetRefSchema.optional(),
     heightMapChannel: z.enum(['r', 'g', 'b', 'a', 'rgb']).optional(),
     heightMapUv: z.number().int().min(0).max(7).optional(),
     heightMapTiling: Vec2Schema.optional(),
@@ -180,7 +180,7 @@ export const MaterialSchema = z.object({
     alphaTest: z.number().min(0).max(1).optional(),
     alphaFade: z.number().min(0).max(1).optional(),
     opacity: z.number().min(0).max(1).optional(),
-    opacityMap: AssetIdSchema.optional(),
+    opacityMap: AssetRefSchema.optional(),
     opacityMapChannel: z.enum(['r', 'g', 'b', 'a', 'rgb']).optional(),
     opacityMapUv: z.number().int().min(0).max(7).optional(),
     opacityMapTiling: Vec2Schema.optional(),
@@ -192,14 +192,14 @@ export const MaterialSchema = z.object({
     opacityDither: z.enum(['none', 'bayer8', 'bluenoise', 'ignnoise']).optional(),
     opacityShadowDither: z.enum(['none', 'bayer8', 'bluenoise', 'ignnoise']).optional(),
     reflectivity: z.number().min(0).max(1).optional(),
-    sphereMap: AssetIdSchema.optional(),
-    cubeMap: AssetIdSchema.optional(),
+    sphereMap: AssetRefSchema.optional(),
+    cubeMap: AssetRefSchema.optional(),
     cubeMapProjection: z.number().int().min(0).max(1).optional(),
     cubeMapProjectionBox: z.object({
         center: Vec3Schema,
         halfExtents: Vec3Schema
     }).optional(),
-    lightMap: AssetIdSchema.optional(),
+    lightMap: AssetRefSchema.optional(),
     lightMapChannel: z.enum(['r', 'g', 'b', 'a', 'rgb']).optional(),
     lightMapUv: z.number().int().min(0).max(7).optional(),
     lightMapTiling: Vec2Schema.optional(),
@@ -218,7 +218,7 @@ export const MaterialSchema = z.object({
     useSkybox: z.boolean().optional(),
     useTonemap: z.boolean().optional(),
     twoSidedLighting: z.boolean().optional()
-});
+}).passthrough();
 
 export const CssCreateSchema = z.object({
     type: z.literal('css'),
@@ -261,11 +261,12 @@ export const MaterialCreateSchema = z.object({
 export const ScriptCreateSchema = z.object({
     type: z.literal('script'),
     options: z.object({
-        filename: z.string().optional(),
+        filename: z.string().min(1),
+        data: z.record(z.any()).optional(),
         folder: AssetIdSchema.optional(),
         preload: z.boolean().optional(),
         text: z.string().optional()
-    }).optional()
+    })
 }).describe('Script asset');
 
 export const ShaderCreateSchema = z.object({
@@ -301,6 +302,7 @@ export const TextCreateSchema = z.object({
 export const AnimStateGraphCreateSchema = z.object({
     type: z.literal('animstategraph'),
     options: z.object({
+        data: z.record(z.any()).optional(),
         folder: AssetIdSchema.optional(),
         name: z.string().optional(),
         preload: z.boolean().optional()
@@ -326,7 +328,7 @@ export const CubemapCreateSchema = z.object({
         minFilter: z.number().int().optional(),
         name: z.string().optional(),
         preload: z.boolean().optional(),
-        textures: z.array(AssetIdSchema.nullable()).max(6).optional()
+        textures: z.array(AssetRefSchema).max(6).optional()
     }).optional()
 }).describe('Cubemap asset');
 

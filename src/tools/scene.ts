@@ -49,6 +49,24 @@ export const register = (server: McpServer, wss: WSS) => {
     );
 
     server.registerTool(
+        'rename_scene',
+        {
+            description: 'Rename the currently loaded scene. Load another scene first to rename it.',
+            annotations: {
+                title: 'Rename Scene',
+                readOnlyHint: false,
+                destructiveHint: false,
+                idempotentHint: true,
+                openWorldHint: false
+            },
+            inputSchema: {
+                name: z.string()
+            }
+        },
+        ({ name }) => wss.call('scene:name:set', name)
+    );
+
+    server.registerTool(
         'list_scenes',
         {
             description: [
