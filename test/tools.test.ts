@@ -111,15 +111,16 @@ test('processing, viewport, and build tools route stable driver methods', async 
         args: [{ types: ['error'], limit: 10 }]
     });
 
-    tools.sketchfab_import({ uid: 'model', name: 'Model', license: 'cc0', folder: 7 });
+    const license = { id: 'cc0', author: 'Author', authorUrl: 'https://example.com' };
+    tools.sketchfab_import({ uid: 'model', name: 'Model', license, folder: 7 });
     assert.deepEqual(calls.at(-1), {
         name: 'store:sketchfab:clone',
-        args: ['model', 'Model', 'cc0', 7]
+        args: ['model', 'Model', license, 7]
     });
-    tools.my_assets_import({ id: 'owned', name: 'Owned', folder: 7 });
+    tools.my_assets_import({ id: 9, name: 'Owned', folder: 7 });
     assert.deepEqual(calls.at(-1), {
         name: 'store:myassets:clone',
-        args: ['owned', 'Owned', 7]
+        args: [9, 'Owned', 7]
     });
 
     const failed = await tools.download_build({

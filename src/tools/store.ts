@@ -141,7 +141,11 @@ export const register = (server: McpServer, wss: WSS) => {
             inputSchema: {
                 uid: z.string().min(1),
                 name: z.string().min(1),
-                license: z.string().min(1),
+                license: z.object({
+                    id: z.string().min(1),
+                    author: z.string().min(1),
+                    authorUrl: z.string().url()
+                }),
                 folder: AssetIdSchema.optional()
             }
         },
@@ -174,7 +178,7 @@ export const register = (server: McpServer, wss: WSS) => {
                 openWorldHint: false
             },
             inputSchema: {
-                id: z.string().min(1),
+                id: AssetIdSchema,
                 name: z.string().min(1),
                 folder: AssetIdSchema.optional()
             }
