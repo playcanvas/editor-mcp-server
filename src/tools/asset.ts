@@ -28,6 +28,28 @@ import { AssetIdSchema, AssetRefSchema, EntityIdSchema } from './schema/common.t
 const MAX_FILE_BYTES = 20 * 1024 * 1024;
 const MAX_CHUNK_BYTES = 1024 * 1024;
 const MAX_TRANSFER_BYTES = 512 * 1024 * 1024;
+const AssetPipelineSchema = z.object({
+    pow2: z.boolean(),
+    searchRelatedAssets: z.boolean(),
+    overwriteModel: z.boolean(),
+    overwriteAnimation: z.boolean(),
+    overwriteMaterial: z.boolean(),
+    overwriteTexture: z.boolean(),
+    preserveMapping: z.boolean(),
+    useGlb: z.boolean(),
+    animSampleRate: z.number(),
+    animCurveTolerance: z.number(),
+    animEnableCubic: z.boolean(),
+    animUseFbxFilename: z.boolean(),
+    useContainers: z.boolean(),
+    meshCompression: z.enum(['none', 'draco']),
+    dracoDecodeSpeed: z.number(),
+    dracoMeshSize: z.number(),
+    unwrapUv: z.boolean(),
+    unwrapUvTexelsPerMeter: z.number(),
+    importMorphNormals: z.boolean(),
+    useUniqueIndices: z.boolean()
+}).partial().strict();
 const AssetOverrideSchema = z.object({
     resource_id: EntityIdSchema,
     override_type: z.string().min(1),
@@ -310,7 +332,7 @@ export const register = (server: McpServer, wss: WSS) => {
                     data: z.record(z.any()).optional(),
                     preload: z.boolean().optional(),
                     mime: z.string().optional(),
-                    settings: z.record(z.any()).optional().describe('Per-upload texture or scene import overrides; saved defaults are under projectUser editor.pipeline settings')
+                    settings: AssetPipelineSchema.optional().describe('Per-upload texture or scene import overrides; saved defaults are under projectUser editor.pipeline settings')
                 })).nonempty()
             }
         },
@@ -412,7 +434,7 @@ export const register = (server: McpServer, wss: WSS) => {
             annotations: { title: 'Reimport Assets', readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: false },
             inputSchema: {
                 ids: z.array(AssetIdSchema).nonempty(),
-                settings: z.record(z.any()).optional()
+                settings: AssetPipelineSchema.optional()
             }
         },
         ({ ids, settings }) => wss.call('assets:reimport', ids, settings)
@@ -584,4 +606,4 @@ export const register = (server: McpServer, wss: WSS) => {
     );
 };
 
-export { AssetEditSchema };
+export { AssetEditSchema, AssetPipelineSchema };

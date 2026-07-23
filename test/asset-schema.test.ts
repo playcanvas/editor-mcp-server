@@ -3,7 +3,7 @@ import test from 'node:test';
 
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 
-import { register as registerAssets, AssetEditSchema } from '../src/tools/asset.ts';
+import { register as registerAssets, AssetEditSchema, AssetPipelineSchema } from '../src/tools/asset.ts';
 import { register as registerScripts } from '../src/tools/assets/script.ts';
 import { register as registerEntities, EntityEditSchema } from '../src/tools/entity.ts';
 import {
@@ -69,6 +69,35 @@ test('configuration schemas preserve arbitrary component and scene fields', () =
     assert.equal(EntityEditSchema.safeParse({ id, path: 'name', value: 'Player', extra: true }).success, false);
     assert.equal(EntityEditSchema.safeParse({ id, path: 'components.camera.fov', op: 'unset' }).success, true);
     assert.equal(EntityEditSchema.safeParse({ id, path: 'components.camera.fov', op: 'unset', value: 60 }).success, false);
+});
+
+test('asset pipeline settings match the backend fields', () => {
+    const settings = {
+        pow2: true,
+        searchRelatedAssets: true,
+        overwriteModel: true,
+        overwriteAnimation: true,
+        overwriteMaterial: true,
+        overwriteTexture: true,
+        preserveMapping: true,
+        useGlb: true,
+        animSampleRate: 10,
+        animCurveTolerance: 0,
+        animEnableCubic: false,
+        animUseFbxFilename: false,
+        useContainers: true,
+        meshCompression: 'draco',
+        dracoDecodeSpeed: 0,
+        dracoMeshSize: 0.5,
+        unwrapUv: false,
+        unwrapUvTexelsPerMeter: 16,
+        importMorphNormals: true,
+        useUniqueIndices: false
+    } as const;
+
+    assert.deepEqual(AssetPipelineSchema.parse(settings), settings);
+    assert.equal(AssetPipelineSchema.safeParse({ meshCompression: true }).success, false);
+    assert.equal(AssetPipelineSchema.safeParse({ futureSetting: true }).success, false);
 });
 
 test('asset, template, text, and script tools route stable driver methods', () => {
