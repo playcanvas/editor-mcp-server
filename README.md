@@ -1,5 +1,7 @@
 # PlayCanvas Editor MCP Server
 
+[![MCP Toplist](https://mcptoplist.com/badge/glama%2Fplaycanvas%2Feditor-mcp-server.svg)](https://mcptoplist.com/server/glama%2Fplaycanvas%2Feditor-mcp-server)
+
 [![CI](https://img.shields.io/github/actions/workflow/status/playcanvas/editor-mcp-server/.github%2Fworkflows%2Fci.yml?label=ci)](https://github.com/playcanvas/editor-mcp-server/actions/workflows/ci.yml)
 [![NPM Version](https://img.shields.io/npm/v/@playcanvas/editor-mcp-server)](https://www.npmjs.com/package/@playcanvas/editor-mcp-server)
 [![License](https://img.shields.io/github/license/playcanvas/editor-mcp-server)](https://github.com/playcanvas/editor-mcp-server/blob/main/LICENSE)
