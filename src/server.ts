@@ -7,6 +7,7 @@ import { WebSocket } from 'ws';
 
 import pkg from '../package.json' with { type: 'json' };
 
+import { parsePids } from './pids.ts';
 import { register as registerAnimation } from './tools/animation.ts';
 import { register as registerAnimStateGraph } from './tools/animstategraph.ts';
 import { register as registerAsset } from './tools/asset.ts';
@@ -26,17 +27,13 @@ import { WSS } from './wss.ts';
 
 const PORT = parseInt(process.env.PORT || '52000', 10);
 
-// Return the *deduped* list of PIDs listening on the port. A single process can
-// produce multiple lsof/netstat lines (e.g. IPv4 + IPv6), so we must dedupe —
-// otherwise a multi-line result would break the kill command and deadlock.
+// deduped PIDs listening on the port; parsing lives in parsePids so it's unit-testable
 const findPids = (port: number): string[] => {
     try {
         const cmd = process.platform === 'win32' ?
-            `netstat -ano | findstr :${port}` :
+            'netstat -ano -p TCP' :
             `lsof -nP -iTCP:${port} -sTCP:LISTEN -t`;
-        const lines = execSync(cmd).toString().split('\n');
-        const pids = lines.map(line => line.trim().split(/\s+/).pop() || '').filter(p => /^\d+$/.test(p));
-        return Array.from(new Set(pids));
+        return parsePids(execSync(cmd).toString(), process.platform, port);
     } catch {
         // No listener (lsof/netstat exit non-zero when nothing matches).
         return [];
