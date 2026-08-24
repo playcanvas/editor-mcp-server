@@ -28,10 +28,8 @@ const allowedOrigin = (origin: string) => {
     return extra.split(',').map(s => s.trim()).filter(Boolean).includes(origin);
 };
 
-// Chrome 142+ (websockets from 147) gates requests from a public page to loopback behind
-// the Local Network Access permission, granted *per origin*. A blocked socket looks exactly
-// like "nothing is listening", so failures must name the permission — the editor and the
-// launch page are separate origins and each needs its own grant.
+// Chromium gates public→loopback behind a per-origin permission (Chrome 142+, websockets
+// from 147). A blocked socket looks like "nothing is listening", so failures must name it.
 const LNA_EDITOR_HINT = 'If it stays on "Connecting", the browser may be blocking its connection to 127.0.0.1: allow local access for the editor origin in site settings ("Apps on device" in Chrome).';
 const LNA_LAUNCH_HINT = 'If it never connects: allow popups for the editor origin, and allow local access for launch.playcanvas.com in site settings ("Apps on device" in Chrome) — this editor build has the launch page dial the server directly, so it needs its own grant to reach 127.0.0.1.';
 const RELAY_LAUNCH_HINT = 'If it never connects, allow popups for the editor origin so the launch window can open; the editor relays to it, so no extra browser permission is involved.';
@@ -101,10 +99,8 @@ class WSS {
 
     private _listening = false;
 
-    // set once the editor peer declares it relays for the launch page instead of the launch
-    // page opening its own socket, so only one origin ever needs local network access. This
-    // is the editor's *mode*, not liveness — `_capabilities.runtime` tracks whether a launch
-    // page is currently attached, and only an editor disconnect clears the mode.
+    // the editor's mode, not liveness: `_capabilities.runtime` tracks whether a launch page
+    // is attached. Cleared only on editor disconnect.
     private _relay = false;
 
     private _bindTimer: ReturnType<typeof setTimeout> | null = null;
@@ -209,12 +205,9 @@ class WSS {
                         }
                         return;
                     }
-                    // The editor announces the launch page it relays for: the methods that
-                    // page advertises, or null once its window is gone. There is no runtime
-                    // socket in this mode — `runtime:*` frames ride the editor socket.
+                    // the launch page the editor relays for, or null once its window is gone
                     if ('runtime' in msg && role === 'editor') {
-                        // only a relaying editor sends this frame at all, including the
-                        // `null` it announces on register and when its window goes away
+                        // only a relaying editor sends this frame at all, `null` included
                         this._relay = true;
                         this._capabilities.runtime = msg.runtime ? {
                             protocolVersion: Number.isInteger(msg.runtime.protocolVersion) ? msg.runtime.protocolVersion : undefined,
@@ -259,10 +252,8 @@ class WSS {
                     ws.close();
                 } catch { /* already closing */ }
             });
-            // greet the peer so it can choose the relay path; an older server says nothing,
-            // which is the page's signal to dial from the launch page itself instead. Sent
-            // last so the error handler above is already in place for probe sockets that
-            // connect and immediately close.
+            // advertise the relay path; sent last so the error handler above covers probe
+            // sockets that connect and close immediately
             if (ws.readyState === WebSocket.OPEN) {
                 ws.send(JSON.stringify({ hello: { protocolVersion: PROTOCOL_VERSION, relay: true } }));
             }
@@ -395,8 +386,7 @@ class WSS {
         // `runtime:*` methods go to the launch page; everything else (including
         // `launch:*` control + `ping`) goes to the editor page.
         const role: Role = name.startsWith('runtime:') ? 'runtime' : 'editor';
-        // in relay mode the launch page has no socket of its own: its frames ride the editor
-        // socket unchanged, so only the target differs
+        // relayed launch pages have no socket: their frames ride the editor's
         const socket = role === 'runtime' && this._relay ? this._sockets.editor : this._sockets[role];
         return new Promise<RawResult>((resolve, reject) => {
             const id = this._id++;
