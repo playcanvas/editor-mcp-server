@@ -28,6 +28,14 @@ const allowedOrigin = (origin: string) => {
     return extra.split(',').map(s => s.trim()).filter(Boolean).includes(origin);
 };
 
+// Chrome 142+ (websockets from 147) gates requests from a public page to loopback behind
+// the Local Network Access permission, granted *per origin*. A blocked socket looks exactly
+// like "nothing is listening", so failures must name the permission — the editor and the
+// launch page are separate origins and each needs its own grant.
+const LNA_EDITOR_HINT = 'If it stays on "Connecting", the browser may be blocking its connection to 127.0.0.1: allow local access for the editor origin in site settings ("Apps on device" in Chrome).';
+const LNA_LAUNCH_HINT = 'If it never connects: allow popups for the editor origin, and allow local access for launch.playcanvas.com in site settings ("Apps on device" in Chrome) — this editor build has the launch page dial the server directly, so it needs its own grant to reach 127.0.0.1.';
+const RELAY_LAUNCH_HINT = 'If it never connects, allow popups for the editor origin so the launch window can open; the editor relays to it, so no extra browser permission is involved.';
+
 /**
  * Metadata attached to every tool response. `status`/`message` describe the
  * outcome; the pagination fields describe a list slice. Everything lives under
@@ -92,6 +100,12 @@ class WSS {
     private _port: number;
 
     private _listening = false;
+
+    // set once the editor peer declares it relays for the launch page instead of the launch
+    // page opening its own socket, so only one origin ever needs local network access. This
+    // is the editor's *mode*, not liveness — `_capabilities.runtime` tracks whether a launch
+    // page is currently attached, and only an editor disconnect clears the mode.
+    private _relay = false;
 
     private _bindTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -195,6 +209,20 @@ class WSS {
                         }
                         return;
                     }
+                    // The editor announces the launch page it relays for: the methods that
+                    // page advertises, or null once its window is gone. There is no runtime
+                    // socket in this mode — `runtime:*` frames ride the editor socket.
+                    if ('runtime' in msg && role === 'editor') {
+                        // only a relaying editor sends this frame at all, including the
+                        // `null` it announces on register and when its window goes away
+                        this._relay = true;
+                        this._capabilities.runtime = msg.runtime ? {
+                            protocolVersion: Number.isInteger(msg.runtime.protocolVersion) ? msg.runtime.protocolVersion : undefined,
+                            methods: Array.isArray(msg.runtime.methods) ? new Set(msg.runtime.methods.filter((name: unknown) => typeof name === 'string')) : undefined
+                        } : undefined;
+                        console.error(`[WSS] Runtime relay ${msg.runtime ? 'attached' : 'detached'}`);
+                        return;
+                    }
                     const { id, res } = msg;
                     const cb = this._callbacks.get(id);
                     if (cb) {
@@ -210,9 +238,14 @@ class WSS {
                     this._sockets[role] = undefined;
                     this._capabilities[role] = undefined;
                     console.error('[WSS] Disconnected', role);
-                    if (role === 'editor' && this._pingInterval) {
-                        clearInterval(this._pingInterval);
-                        this._pingInterval = null;
+                    if (role === 'editor') {
+                        // the relay lives in the editor page; a reloaded editor re-announces
+                        this._relay = false;
+                        this._capabilities.runtime = undefined;
+                        if (this._pingInterval) {
+                            clearInterval(this._pingInterval);
+                            this._pingInterval = null;
+                        }
                     }
                 }
             });
@@ -226,6 +259,13 @@ class WSS {
                     ws.close();
                 } catch { /* already closing */ }
             });
+            // greet the peer so it can choose the relay path; an older server says nothing,
+            // which is the page's signal to dial from the launch page itself instead. Sent
+            // last so the error handler above is already in place for probe sockets that
+            // connect and immediately close.
+            if (ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ hello: { protocolVersion: PROTOCOL_VERSION, relay: true } }));
+            }
         });
     }
 
@@ -285,6 +325,9 @@ class WSS {
      * @returns True if the runtime socket is open.
      */
     hasRuntime(): boolean {
+        if (this._relay) {
+            return !!this._capabilities.runtime && this._sockets.editor?.readyState === WebSocket.OPEN;
+        }
         return this._sockets.runtime?.readyState === WebSocket.OPEN;
     }
 
@@ -352,16 +395,20 @@ class WSS {
         // `runtime:*` methods go to the launch page; everything else (including
         // `launch:*` control + `ping`) goes to the editor page.
         const role: Role = name.startsWith('runtime:') ? 'runtime' : 'editor';
-        const socket = this._sockets[role];
+        // in relay mode the launch page has no socket of its own: its frames ride the editor
+        // socket unchanged, so only the target differs
+        const socket = role === 'runtime' && this._relay ? this._sockets.editor : this._sockets[role];
         return new Promise<RawResult>((resolve, reject) => {
             const id = this._id++;
+            if (role === 'runtime' && !this.hasRuntime()) {
+                reject(new Error(`No running instance connected. Call launch_start first; ${this._relay ? 'the editor relays to the launched page' : 'the launched page connects back'} automatically. ${this._relay ? RELAY_LAUNCH_HINT : LNA_LAUNCH_HINT}`));
+                return;
+            }
             if (!socket) {
-                if (role === 'runtime') {
-                    reject(new Error('No running instance connected. Call launch_start first (and allow popups for the editor); the launched page connects back automatically.'));
-                } else if (!this._listening) {
+                if (!this._listening) {
                     reject(new Error(`This MCP server is on standby because another instance owns port ${this._port} (only one instance can control the editor at a time). Close the other MCP client/instance, or start this one with MCP_TAKEOVER=1 to force takeover, then retry.`));
                 } else {
-                    reject(new Error('Editor not connected. Open the PlayCanvas Editor, click the MCP button at the bottom of the toolbar and press CONNECT, then retry.'));
+                    reject(new Error(`Editor not connected. Open the PlayCanvas Editor, click the MCP button at the bottom of the toolbar and press CONNECT, then retry. ${LNA_EDITOR_HINT}`));
                 }
                 return;
             }
@@ -530,4 +577,4 @@ class WSS {
     }
 }
 
-export { WSS };
+export { WSS, LNA_LAUNCH_HINT };
