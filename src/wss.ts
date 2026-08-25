@@ -6,18 +6,14 @@ const PING_DELAY = 1000;
 const DEFAULT_TIMEOUT = 60_000;
 const PROTOCOL_VERSION = 1;
 
-// How often a standby instance retries binding the port. Multiple MCP clients
-// (agents) each run their own server; only one can own the port and talk to the
-// editor at a time. The others stand by and take over when the owner exits.
+// how often a standby instance retries binding. each MCP client runs its own server, but
+// only one can own the port; the rest stand by and take over when the owner exits.
 const BIND_RETRY_DELAY = 3_000;
 
-// Browsers don't apply CORS to websockets, so ANY webpage the user has open
-// can attempt ws://localhost:<port> (see the MCP spec's DNS-rebinding / local
-// server compromise warnings). Only playcanvas.com pages and local editor dev
-// builds may connect; connections without an Origin header (non-browser local
-// processes, e.g. the yield handshake between server instances) are allowed.
-// Extra origins (e.g. internal editor deployments) can be allowed by setting
-// MCP_ALLOWED_ORIGINS to a comma-separated list of exact origins.
+// browsers don't apply CORS to websockets, so any open webpage can hit ws://localhost:<port>
+// (MCP spec DNS-rebinding warning). only playcanvas.com and local dev builds may connect;
+// no-Origin clients (non-browser local processes, e.g. the yield handshake) are allowed too.
+// add exact extra origins via MCP_ALLOWED_ORIGINS (comma-separated).
 const ALLOWED_ORIGINS = /^https:\/\/(?:[\w-]+\.)*playcanvas\.com$|^https?:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?$/;
 
 const allowedOrigin = (origin: string) => {
@@ -29,8 +25,9 @@ const allowedOrigin = (origin: string) => {
 };
 
 // Chromium gates public→loopback behind a per-origin permission (Chrome 142+, websockets
-// from 147). A blocked socket looks like "nothing is listening", so failures must name it.
+// from 147). a blocked socket looks like "nothing is listening", so failures must name it.
 const LNA_EDITOR_HINT = 'If it stays on "Connecting", the browser may be blocking its connection to 127.0.0.1: allow local access for the editor origin in site settings ("Apps on device" in Chrome).';
+
 // launch page has no socket of its own, so a runtime failure is only ever a blocked popup
 const LAUNCH_HINT = 'If it never connects, allow popups for the editor origin so the launch window can open; the editor relays to it, so no extra browser permission is involved.';
 
@@ -114,6 +111,7 @@ class WSS {
     private _bind() {
         const server = new WebSocketServer({
             port: this._port,
+
             // loopback only — never expose the editor bridge to the LAN
             host: '127.0.0.1',
             verifyClient: ({ origin }: { origin?: string }) => {
@@ -148,9 +146,9 @@ class WSS {
     }
 
     private _attachConnectionHandler(server: WebSocketServer) {
-        // The `connection` listener is attached once per server instance and
-        // lives for its whole life; it must NOT be re-added per disconnect (that
-        // leaks listeners and double-handles messages).
+
+        // attached once per server instance and kept for its life; re-adding it per
+        // disconnect would leak listeners and double-handle messages.
         server.on('connection', (ws) => {
             if (!this._editor) {
                 this._editor = ws;
@@ -161,12 +159,11 @@ class WSS {
             ws.on('message', (data) => {
                 try {
                     const msg = JSON.parse(data.toString());
-                    // A newer server instance politely asks us to hand off the
-                    // port so the *active* client controls the editor. We release
-                    // the port (without exiting, so our MCP client doesn't
-                    // restart us) and stand by to take it back if that instance
-                    // later exits. This is what makes "latest instance wins"
-                    // work without a kill/restart storm.
+
+                    // a newer instance asks us to hand off the port so the active client
+                    // controls the editor. we release it (without exiting, so our client
+                    // doesn't restart us) and stand by to retake it if that instance exits —
+                    // "latest wins" without a kill/restart storm.
                     if (msg.yield === true) {
                         if (this._editor === ws) {
                             this._editor = undefined;
@@ -189,6 +186,7 @@ class WSS {
                         console.error('[WSS] Registered editor');
                         return;
                     }
+
                     // the launch page the editor relays for, or null once its window is gone
                     if ('runtime' in msg && this._editor === ws) {
                         this._runtime = msg.runtime ? {
@@ -212,6 +210,7 @@ class WSS {
                 if (this._editor === ws) {
                     this._editor = undefined;
                     this._editorCaps = undefined;
+
                     // the relay lives in the editor page; a reloaded editor re-announces
                     this._runtime = undefined;
                     console.error('[WSS] Disconnected editor');
@@ -221,10 +220,9 @@ class WSS {
                     }
                 }
             });
-            // A socket 'error' with no listener is re-thrown by `ws` as an
-            // uncaught exception. With abrupt tab closes that would otherwise
-            // destabilise the whole process. Handle it and let the 'close' that
-            // follows free the slot.
+
+            // a socket 'error' with no listener is re-thrown by `ws` as an uncaught
+            // exception; handle it and let the 'close' that follows free the slot.
             ws.on('error', (err: Error) => {
                 console.error('[WSS] Socket error', err?.message ?? err);
                 try {
@@ -241,10 +239,9 @@ class WSS {
         }
         this._pingInterval = setInterval(() => {
             const editor = this._editor;
-            // Self-heal: if there is no live editor (e.g. a peer that grabbed the
-            // slot optimistically turned out to be the runtime, or the editor
-            // vanished), stop the loop instead of pinging into the void every
-            // second. A fresh editor connection restarts it.
+
+            // self-heal: with no live editor, stop the loop instead of pinging into the
+            // void every second — a fresh editor connection restarts it.
             if (!editor || editor.readyState !== WebSocket.OPEN) {
                 if (this._pingInterval) {
                     clearInterval(this._pingInterval);
@@ -267,7 +264,8 @@ class WSS {
             clearInterval(this._pingInterval);
             this._pingInterval = null;
         }
-        // Drop the editor so it reconnects to the new owner.
+
+        // drop the editor so it reconnects to the new owner
         try {
             this._editor?.close();
         } catch { /* already closing */ }
@@ -353,6 +351,7 @@ class WSS {
     }
 
     private _send(name: string, ...args: unknown[]) {
+
         // runtime:* is relayed to the launch page, everything else the editor handles; one socket
         const isRuntime = name.startsWith('runtime:');
         const socket = this._editor;
@@ -494,9 +493,9 @@ class WSS {
                 return this._wrap(name, null, 'No image data received. Ensure a scene is loaded and the viewport has rendered at least one frame, then retry.');
             }
             const mimeType = (raw.meta?.mimeType as string) || 'image/webp';
-            // Image tools still return a protocol image block, but attach a
-            // parallel text block carrying the same meta so that "all metadata
-            // lives in meta" holds for every tool (issue #11).
+
+            // image tools return the image block plus a parallel text block with the same
+            // meta, so "all metadata lives in meta" holds for every tool (issue #11).
             const meta: Meta = { tool: name, status: 'ok', ...(raw.meta || {}) };
             return {
                 content: [

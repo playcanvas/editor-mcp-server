@@ -86,6 +86,7 @@ const envelope = (result: CallToolResult) => {
 
 test('waitForEditor tracks editor connection generation', async () => {
     const wss2 = new WSS(PORT2);
+
     // wait for the server to listen
     for (let i = 0; i < 40; i++) {
         const up = await new Promise<boolean>((r) => {
