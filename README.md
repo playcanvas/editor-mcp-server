@@ -85,7 +85,7 @@ You can now issue commands from your MCP client.
 > Only one Editor instance can be connected to the MCP server at a time.
 
 > [!IMPORTANT]
-> Chromium gates a public page's connection to `127.0.0.1` behind a local access permission (Chrome 142+, extended to WebSockets in Chrome 147) granted **per origin**, so allow it when prompted. In Chrome's site settings it is `Apps on device` (loopback) — `Local network` covers LAN addresses and is not required. Only the Editor needs it: the launch page is bridged through the Editor rather than opening a socket of its own. If the Editor sits on `Connecting`, open its site settings and allow it — a blocked connection fails silently and looks exactly like a server that isn't running. Editor builds older than this relay dial the server straight from `launch.playcanvas.com`, which needs a second grant there.
+> Chromium gates a public page's connection to `127.0.0.1` behind a local access permission (Chrome 142+, extended to WebSockets in Chrome 147) granted **per origin**, so allow it when prompted. In Chrome's site settings it is `Apps on device` (loopback) — `Local network` covers LAN addresses and is not required. Only the Editor needs it: the launch page is bridged through the Editor rather than opening a socket of its own. If the Editor sits on `Connecting`, open its site settings and allow it — a blocked connection fails silently and looks exactly like a server that isn't running.
 
 ## Editor Driver Coverage
 

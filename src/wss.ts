@@ -31,8 +31,8 @@ const allowedOrigin = (origin: string) => {
 // Chromium gates public→loopback behind a per-origin permission (Chrome 142+, websockets
 // from 147). A blocked socket looks like "nothing is listening", so failures must name it.
 const LNA_EDITOR_HINT = 'If it stays on "Connecting", the browser may be blocking its connection to 127.0.0.1: allow local access for the editor origin in site settings ("Apps on device" in Chrome).';
-const LNA_LAUNCH_HINT = 'If it never connects: allow popups for the editor origin, and allow local access for launch.playcanvas.com in site settings ("Apps on device" in Chrome) — this editor build has the launch page dial the server directly, so it needs its own grant to reach 127.0.0.1.';
-const RELAY_LAUNCH_HINT = 'If it never connects, allow popups for the editor origin so the launch window can open; the editor relays to it, so no extra browser permission is involved.';
+// launch page has no socket of its own, so a runtime failure is only ever a blocked popup
+const LAUNCH_HINT = 'If it never connects, allow popups for the editor origin so the launch window can open; the editor relays to it, so no extra browser permission is involved.';
 
 /**
  * Metadata attached to every tool response. `status`/`message` describe the
@@ -72,20 +72,18 @@ type RawResult = {
     meta?: Record<string, unknown>;
 };
 
-/**
- * Connection roles. The editor peer handles edit-time methods (entities,
- * assets, viewport, launch control). The runtime peer is the injected launch
- * page that handles `runtime:*` methods (capture, logs, etc.).
- */
-type Role = 'editor' | 'runtime';
 type Capabilities = { protocolVersion?: number; methods?: Set<string> };
 
 class WSS {
     private _server!: WebSocketServer;
 
-    private _sockets: Record<Role, WebSocket | undefined> = { editor: undefined, runtime: undefined };
+    // the one socket; launch:*/ping and relayed runtime:* all ride it
+    private _editor: WebSocket | undefined;
 
-    private _capabilities: Record<Role, Capabilities | undefined> = { editor: undefined, runtime: undefined };
+    private _editorCaps: Capabilities | undefined;
+
+    // the launch page the editor relays for; set by its announce frame, null when it detaches
+    private _runtime: Capabilities | undefined;
 
     private _callbacks = new Map<number, (res: RawResult) => void>();
 
@@ -98,10 +96,6 @@ class WSS {
     private _port: number;
 
     private _listening = false;
-
-    // the editor's mode, not liveness: `_capabilities.runtime` tracks whether a launch page
-    // is attached. Cleared only on editor disconnect.
-    private _relay = false;
 
     private _bindTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -158,9 +152,8 @@ class WSS {
         // lives for its whole life; it must NOT be re-added per disconnect (that
         // leaks listeners and double-handles messages).
         server.on('connection', (ws) => {
-            let role: Role = 'editor';
-            if (!this._sockets.editor) {
-                this._sockets.editor = ws;
+            if (!this._editor) {
+                this._editor = ws;
                 this._editorGeneration++;
                 this._startPing();
             }
@@ -175,8 +168,8 @@ class WSS {
                     // later exits. This is what makes "latest instance wins"
                     // work without a kill/restart storm.
                     if (msg.yield === true) {
-                        if (this._sockets[role] === ws) {
-                            this._sockets[role] = undefined;
+                        if (this._editor === ws) {
+                            this._editor = undefined;
                         }
                         console.error('[WSS] Yield requested; relinquishing port to a newer instance and standing by');
                         try {
@@ -185,31 +178,20 @@ class WSS {
                         this._relinquish();
                         return;
                     }
-                    if (msg.register === 'editor' || msg.register === 'runtime') {
-                        const newRole: Role = msg.register;
-                        // Vacate the optimistic slot if we're switching roles.
-                        if (newRole !== role && this._sockets[role] === ws) {
-                            this._sockets[role] = undefined;
-                            this._capabilities[role] = undefined;
-                        }
-                        role = newRole;
-                        this._sockets[role] = ws;
-                        this._capabilities[role] = {
+                    if (msg.register === 'editor') {
+                        this._editor = ws;
+                        this._editorCaps = {
                             protocolVersion: Number.isInteger(msg.protocolVersion) ? msg.protocolVersion : undefined,
                             methods: Array.isArray(msg.methods) ? new Set(msg.methods.filter((name: unknown) => typeof name === 'string')) : undefined
                         };
-                        console.error('[WSS] Registered', role);
-                        if (role === 'editor') {
-                            this._editorGeneration++;
-                            this._startPing();
-                        }
+                        this._editorGeneration++;
+                        this._startPing();
+                        console.error('[WSS] Registered editor');
                         return;
                     }
                     // the launch page the editor relays for, or null once its window is gone
-                    if ('runtime' in msg && role === 'editor') {
-                        // only a relaying editor sends this frame at all, `null` included
-                        this._relay = true;
-                        this._capabilities.runtime = msg.runtime ? {
+                    if ('runtime' in msg && this._editor === ws) {
+                        this._runtime = msg.runtime ? {
                             protocolVersion: Number.isInteger(msg.runtime.protocolVersion) ? msg.runtime.protocolVersion : undefined,
                             methods: Array.isArray(msg.runtime.methods) ? new Set(msg.runtime.methods.filter((name: unknown) => typeof name === 'string')) : undefined
                         } : undefined;
@@ -227,36 +209,28 @@ class WSS {
                 }
             });
             ws.on('close', () => {
-                if (this._sockets[role] === ws) {
-                    this._sockets[role] = undefined;
-                    this._capabilities[role] = undefined;
-                    console.error('[WSS] Disconnected', role);
-                    if (role === 'editor') {
-                        // the relay lives in the editor page; a reloaded editor re-announces
-                        this._relay = false;
-                        this._capabilities.runtime = undefined;
-                        if (this._pingInterval) {
-                            clearInterval(this._pingInterval);
-                            this._pingInterval = null;
-                        }
+                if (this._editor === ws) {
+                    this._editor = undefined;
+                    this._editorCaps = undefined;
+                    // the relay lives in the editor page; a reloaded editor re-announces
+                    this._runtime = undefined;
+                    console.error('[WSS] Disconnected editor');
+                    if (this._pingInterval) {
+                        clearInterval(this._pingInterval);
+                        this._pingInterval = null;
                     }
                 }
             });
             // A socket 'error' with no listener is re-thrown by `ws` as an
-            // uncaught exception. With the runtime peer reconnecting frequently
-            // and abrupt tab closes, that would otherwise destabilise the whole
-            // process. Handle it and let the 'close' that follows free the slot.
+            // uncaught exception. With abrupt tab closes that would otherwise
+            // destabilise the whole process. Handle it and let the 'close' that
+            // follows free the slot.
             ws.on('error', (err: Error) => {
-                console.error('[WSS] Socket error', role, err?.message ?? err);
+                console.error('[WSS] Socket error', err?.message ?? err);
                 try {
                     ws.close();
                 } catch { /* already closing */ }
             });
-            // advertise the relay path; sent last so the error handler above covers probe
-            // sockets that connect and close immediately
-            if (ws.readyState === WebSocket.OPEN) {
-                ws.send(JSON.stringify({ hello: { protocolVersion: PROTOCOL_VERSION, relay: true } }));
-            }
         });
     }
 
@@ -266,7 +240,7 @@ class WSS {
             this._pingInterval = null;
         }
         this._pingInterval = setInterval(() => {
-            const editor = this._sockets.editor;
+            const editor = this._editor;
             // Self-heal: if there is no live editor (e.g. a peer that grabbed the
             // slot optimistically turned out to be the runtime, or the editor
             // vanished), stop the loop instead of pinging into the void every
@@ -293,14 +267,13 @@ class WSS {
             clearInterval(this._pingInterval);
             this._pingInterval = null;
         }
-        // Drop peers so the editor reconnects to the new owner.
-        (['editor', 'runtime'] as Role[]).forEach((role) => {
-            try {
-                this._sockets[role]?.close();
-            } catch { /* already closing */ }
-            this._sockets[role] = undefined;
-            this._capabilities[role] = undefined;
-        });
+        // Drop the editor so it reconnects to the new owner.
+        try {
+            this._editor?.close();
+        } catch { /* already closing */ }
+        this._editor = undefined;
+        this._editorCaps = undefined;
+        this._runtime = undefined;
         try {
             this._server.close();
         } catch { /* already closing */ }
@@ -311,15 +284,12 @@ class WSS {
     }
 
     /**
-     * Whether a live runtime (launch) peer is currently connected.
+     * Whether a relayed launch page is currently attached.
      *
-     * @returns True if the runtime socket is open.
+     * @returns True if the editor has announced a runtime peer and its socket is open.
      */
     hasRuntime(): boolean {
-        if (this._relay) {
-            return !!this._capabilities.runtime && this._sockets.editor?.readyState === WebSocket.OPEN;
-        }
-        return this._sockets.runtime?.readyState === WebSocket.OPEN;
+        return !!this._runtime && this._editor?.readyState === WebSocket.OPEN;
     }
 
     /**
@@ -368,7 +338,7 @@ class WSS {
         const start = Date.now();
         return new Promise((resolve) => {
             const check = () => {
-                if (this._editorGeneration > sinceGen && this._sockets.editor?.readyState === WebSocket.OPEN) {
+                if (this._editorGeneration > sinceGen && this._editor?.readyState === WebSocket.OPEN) {
                     resolve(true);
                     return;
                 }
@@ -383,15 +353,13 @@ class WSS {
     }
 
     private _send(name: string, ...args: unknown[]) {
-        // `runtime:*` methods go to the launch page; everything else (including
-        // `launch:*` control + `ping`) goes to the editor page.
-        const role: Role = name.startsWith('runtime:') ? 'runtime' : 'editor';
-        // relayed launch pages have no socket: their frames ride the editor's
-        const socket = role === 'runtime' && this._relay ? this._sockets.editor : this._sockets[role];
+        // runtime:* is relayed to the launch page, everything else the editor handles; one socket
+        const isRuntime = name.startsWith('runtime:');
+        const socket = this._editor;
         return new Promise<RawResult>((resolve, reject) => {
             const id = this._id++;
-            if (role === 'runtime' && !this.hasRuntime()) {
-                reject(new Error(`No running instance connected. Call launch_start first; ${this._relay ? 'the editor relays to the launched page' : 'the launched page connects back'} automatically. ${this._relay ? RELAY_LAUNCH_HINT : LNA_LAUNCH_HINT}`));
+            if (isRuntime && !this.hasRuntime()) {
+                reject(new Error(`No running instance connected. Call launch_start first; the editor relays to the launched page automatically. ${LAUNCH_HINT}`));
                 return;
             }
             if (!socket) {
@@ -403,24 +371,25 @@ class WSS {
                 return;
             }
             if (socket.readyState !== WebSocket.OPEN) {
-                reject(new Error(`${role === 'runtime' ? 'Runtime' : 'Editor'} socket not open. Reconnect (or re-run launch_start) and retry.`));
+                reject(new Error('Editor socket not open. Reconnect (or re-run launch_start) and retry.'));
                 return;
             }
-            const capabilities = this._capabilities[role];
+            const peer = isRuntime ? 'Runtime' : 'Editor';
+            const capabilities = isRuntime ? this._runtime : this._editorCaps;
             if (
                 capabilities?.protocolVersion !== undefined &&
                 capabilities.protocolVersion !== PROTOCOL_VERSION
             ) {
-                reject(new Error(`${role === 'runtime' ? 'Runtime' : 'Editor'} advertises incompatible protocol ${capabilities.protocolVersion}; expected ${PROTOCOL_VERSION}. Reload it with a compatible build and reconnect.`));
+                reject(new Error(`${peer} advertises incompatible protocol ${capabilities.protocolVersion}; expected ${PROTOCOL_VERSION}. Reload it with a compatible build and reconnect.`));
                 return;
             }
             if (capabilities?.methods && !capabilities.methods.has(name)) {
-                reject(new Error(`${role === 'runtime' ? 'Runtime' : 'Editor'} does not support '${name}'. Reload it with a compatible build and reconnect.`));
+                reject(new Error(`${peer} does not support '${name}'. Reload it with a compatible build and reconnect.`));
                 return;
             }
             const timer = setTimeout(() => {
                 this._callbacks.delete(id);
-                reject(new Error(`Timed out after ${DEFAULT_TIMEOUT}ms waiting for the ${role} to handle '${name}'. It may be busy or disconnected; verify the connection and retry, or split the request into smaller calls.`));
+                reject(new Error(`Timed out after ${DEFAULT_TIMEOUT}ms waiting for the ${isRuntime ? 'runtime' : 'editor'} to handle '${name}'. It may be busy or disconnected; verify the connection and retry, or split the request into smaller calls.`));
             }, DEFAULT_TIMEOUT);
             this._callbacks.set(id, (res: RawResult) => {
                 clearTimeout(timer);
@@ -557,14 +526,13 @@ class WSS {
             this._bindTimer = null;
         }
         this._listening = false;
-        (['editor', 'runtime'] as Role[]).forEach((role) => {
-            this._sockets[role]?.close(1000, 'FORCE');
-            this._sockets[role] = undefined;
-            this._capabilities[role] = undefined;
-        });
+        this._editor?.close(1000, 'FORCE');
+        this._editor = undefined;
+        this._editorCaps = undefined;
+        this._runtime = undefined;
         this._server.close();
         console.error('[WSS] Closed');
     }
 }
 
-export { WSS, LNA_LAUNCH_HINT };
+export { WSS, LAUNCH_HINT };

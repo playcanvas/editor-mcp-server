@@ -71,10 +71,7 @@ const connectEditor = (port: number) => new Promise<WebSocket>((resolve) => {
         resolve(ws);
     });
     ws.on('message', (data) => {
-        const { id, hello } = JSON.parse(data.toString());
-        if (hello) {
-            return;
-        }
+        const { id } = JSON.parse(data.toString());
         ws.send(JSON.stringify({ id, res: { data: 'pong' } }));
     });
 });
@@ -124,10 +121,7 @@ test('waitForEditor tracks editor connection generation', async () => {
             resolve(ws);
         });
         ws.on('message', (data) => {
-            const { id, hello } = JSON.parse(data.toString());
-            if (hello) {
-                return;
-            }
+            const { id } = JSON.parse(data.toString());
             ws.send(JSON.stringify({ id, res: { data: 'legacy pong' } }));
         });
     });
@@ -159,7 +153,6 @@ const PORT3 = 52997;
 
 test('runtime calls relay through the editor socket', async () => {
     const wss3 = new WSS(PORT3);
-    const hello: Record<string, unknown>[] = [];
 
     // an editor peer that relays for the launch page: it answers every frame, echoing the
     // method name back so we can prove which socket the call travelled on
@@ -171,16 +164,11 @@ test('runtime calls relay through the editor socket', async () => {
         });
         ws.on('message', (data) => {
             const msg = JSON.parse(data.toString());
-            if (msg.hello) {
-                hello.push(msg.hello);
-                return;
-            }
             ws.send(JSON.stringify({ id: msg.id, res: { data: msg.name } }));
         });
     });
 
     await wss3.waitForEditor(-1, 2000);
-    assert.deepEqual(hello, [{ protocolVersion: 1, relay: true }], 'the server greets peers with its relay capability');
     assert.equal(wss3.hasRuntime(), false, 'no runtime until the editor announces one');
 
     editor.send(JSON.stringify({ runtime: { protocolVersion: 1, methods: ['runtime:capture'] } }));
