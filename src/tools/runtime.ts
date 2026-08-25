@@ -1,6 +1,7 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 
+import { LAUNCH_HINT } from '../wss.ts';
 import type { WSS } from '../wss.ts';
 
 const DEFAULT_READY_TIMEOUT = 20_000;
@@ -11,8 +12,8 @@ export const register = (server: McpServer, wss: WSS) => {
         {
             description: [
                 'Start a real Launch runtime instance of the current scene (the editor\'s Launch button) so scripts, physics, animation and input actually run.',
-                'Opens the launch page in a new browser window with debug logging on; that page connects back automatically as the runtime peer.',
-                'Returns { url, sceneId, ready } where ready=true means the runtime is connected and capture_runtime / read_runtime_logs are usable.',
+                'Opens the launch page in a new browser window with debug logging on; the editor bridges it automatically.',
+                'Returns { url, sceneId, ready, adopted } where ready=true means the runtime is usable by capture_runtime / read_runtime_logs, and adopted=true means it attached to an app that was already running instead of starting a new one (which happens only when no options are passed, so pass an option to force a fresh launch).',
                 'This is the prerequisite for all runtime tools. If ready=false, the page may still be loading or popups were blocked; poll read_runtime_logs or retry.',
                 'When NOT to use: to screenshot the editor (use capture_viewport); to change the scene (edit-time tools).'
             ].join(' '),
@@ -45,7 +46,7 @@ export const register = (server: McpServer, wss: WSS) => {
                 return wss.ok(
                     'launch:start',
                     data,
-                    ready ? undefined : { hint: 'Runtime did not connect in time. The launch page may still be loading (poll read_runtime_logs), or popups are blocked for the editor origin.' }
+                    ready ? undefined : { hint: `Runtime did not connect in time. The launch page may still be loading (poll read_runtime_logs). ${LAUNCH_HINT}` }
                 );
             } catch (err) {
                 return wss.fail('launch:start', err instanceof Error ? err.message : String(err));

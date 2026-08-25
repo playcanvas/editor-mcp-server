@@ -86,6 +86,7 @@ const envelope = (result: CallToolResult) => {
 
 test('waitForEditor tracks editor connection generation', async () => {
     const wss2 = new WSS(PORT2);
+
     // wait for the server to listen
     for (let i = 0; i < 40; i++) {
         const up = await new Promise<boolean>((r) => {
@@ -147,4 +148,56 @@ test('waitForEditor tracks editor connection generation', async () => {
     legacy.close();
     incompatibleEditor.close();
     wss2.close();
+});
+
+const PORT3 = 52997;
+
+test('runtime calls relay through the editor socket', async () => {
+    const wss3 = new WSS(PORT3);
+
+    // an editor peer that relays for the launch page: it answers every frame, echoing the
+    // method name back so we can prove which socket the call travelled on
+    const editor = await new Promise<WebSocket>((resolve) => {
+        const ws = new WebSocket(`ws://127.0.0.1:${PORT3}`);
+        ws.on('open', () => {
+            ws.send(JSON.stringify({ register: 'editor', protocolVersion: 1, methods: ['ping', 'launch:start'] }));
+            resolve(ws);
+        });
+        ws.on('message', (data) => {
+            const msg = JSON.parse(data.toString());
+            ws.send(JSON.stringify({ id: msg.id, res: { data: msg.name } }));
+        });
+    });
+
+    await wss3.waitForEditor(-1, 2000);
+    assert.equal(wss3.hasRuntime(), false, 'no runtime until the editor announces one');
+
+    editor.send(JSON.stringify({ runtime: { protocolVersion: 1, methods: ['runtime:capture'] } }));
+    assert.equal(await wss3.waitForRuntime(2000), true, 'announcing a relayed launch page makes the runtime available');
+
+    const capture = envelope(await wss3.call('runtime:capture'));
+    assert.equal(capture.meta.status, 'ok');
+    assert.equal(capture.data, 'runtime:capture', 'runtime frames ride the editor socket unchanged');
+
+    const unsupported = envelope(await wss3.call('runtime:nope'));
+    assert.equal(unsupported.meta.status, 'error');
+    assert.match(unsupported.meta.message, /Runtime does not support 'runtime:nope'/);
+
+    // the launch window closed: the relay is withdrawn and runtime tools say so
+    editor.send(JSON.stringify({ runtime: null }));
+    for (let i = 0; i < 40 && wss3.hasRuntime(); i++) {
+        await new Promise(r => setTimeout(r, 25));
+    }
+    assert.equal(wss3.hasRuntime(), false, 'withdrawing the relay clears the runtime');
+    const gone = envelope(await wss3.call('runtime:capture'));
+    assert.equal(gone.meta.status, 'error');
+    assert.match(gone.meta.message, /Call launch_start first; the editor relays to the launched page/);
+    assert.doesNotMatch(gone.meta.message, /Apps on device/, 'relay mode must not blame the launch origin permission');
+
+    // edit-time calls are unaffected
+    const ping = envelope(await wss3.call('ping'));
+    assert.equal(ping.data, 'ping');
+
+    editor.close();
+    wss3.close();
 });

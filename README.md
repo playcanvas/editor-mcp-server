@@ -84,6 +84,9 @@ You can now issue commands from your MCP client.
 > [!NOTE]
 > Only one Editor instance can be connected to the MCP server at a time.
 
+> [!IMPORTANT]
+> Chromium gates a public page's connection to `127.0.0.1` behind a local access permission (Chrome 142+, extended to WebSockets in Chrome 147) granted **per origin**, so allow it when prompted. In Chrome's site settings it is `Apps on device` (loopback) — `Local network` covers LAN addresses and is not required. Only the Editor needs it: the launch page is bridged through the Editor rather than opening a socket of its own. If the Editor sits on `Connecting`, open its site settings and allow it — a blocked connection fails silently and looks exactly like a server that isn't running.
+
 ## Editor Driver Coverage
 
 All tools act on the project open in the connected Editor. The server does not discover, select, create, delete, transfer, or administer projects, and project IDs are not tool inputs.
@@ -107,7 +110,7 @@ All tools act on the project open in the connected Editor. The server does not d
 
 Asset transfers over 20 MiB use 1 MiB chunks. The server reads and writes local files incrementally, while the Editor spools uploads to browser storage and consumes downloads as streams instead of buffering the entire transfer in memory.
 
-The Runtime tools drive a real Launch instance (the Editor's Launch button) so an agent can verify that a scene actually *runs*: screenshot the running app, read its console output, query live entity state, and inject keyboard/mouse/touch input. Allow pop-ups for the editor origin so `launch_start` can open the launch window — it reuses your existing PlayCanvas login session.
+The Runtime tools drive a real Launch instance (the Editor's Launch button) so an agent can verify that a scene actually *runs*: screenshot the running app, read its console output, query live entity state, and inject keyboard/mouse/touch input. Allow pop-ups for the editor origin so `launch_start` can open the launch window — it reuses your existing PlayCanvas login session. The Editor relays `runtime:*` calls to that window, so it needs no local access permission of its own. Calling `launch_start` with no options adopts an app that is already running (`adopted: true` in the response) instead of restarting it; pass any option to force a fresh launch.
 
 Every tool returns a consistent `{ data, meta }` envelope: `meta.status` is `ok` or `error` (with an actionable message), list tools paginate via `limit`/`offset` and `meta.nextCursor`, and mutating tools return the resulting entity/asset summaries so follow-up list calls are rarely needed.
 
