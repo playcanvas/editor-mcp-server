@@ -6,7 +6,7 @@ import type { WSS } from '../wss.ts';
 
 const DEFAULT_READY_TIMEOUT = 20_000;
 
-// optional metadata merged from runtime:info; absent on runtimes that predate it
+// runtime:info fields merged into the launch_start result
 const RUNTIME_INFO_FIELDS = ['engineVersion', 'engineRevision', 'deviceType', 'sessionId'];
 
 export const register = (server: McpServer, wss: WSS) => {
@@ -17,7 +17,7 @@ export const register = (server: McpServer, wss: WSS) => {
                 'Start a real Launch runtime instance of the current scene (the editor\'s Launch button) so scripts, physics, animation and input actually run.',
                 'Opens the launch page in a new browser window with debug logging on; the editor bridges it automatically.',
                 'Returns { url, sceneId, ready, adopted, engineVersion, device, deviceType, sessionId } where ready=true means the runtime is usable by capture_runtime / read_runtime_logs, and adopted=true means it attached to an app that was already running instead of starting a new one (which happens only when no options are passed, so pass an option to force a fresh launch).',
-                'engineVersion is the exact version the app launched with (null when adopting an app of unknown origin), device is the requested override, deviceType is the backend the runtime actually created (webgpu/webgl2/webgl1), and sessionId changes on every launch so you can tell a fresh launch from a re-used one. The last four fields are omitted by older Editors/runtimes.',
+                'engineVersion is the exact version the app launched with (null when adopting an app of unknown origin), device is the requested override, deviceType is the backend the runtime actually created (webgpu/webgl2/webgl1), and sessionId changes on every launch so you can tell a fresh launch from a re-used one.',
                 'This is the prerequisite for all runtime tools. If ready=false, the page may still be loading or popups were blocked; poll read_runtime_logs or retry.',
                 'When NOT to use: to screenshot the editor (use capture_viewport); to change the scene (edit-time tools).'
             ].join(' '),
@@ -48,14 +48,10 @@ export const register = (server: McpServer, wss: WSS) => {
                 const ready = await wss.waitForRuntime(waitMs ?? DEFAULT_READY_TIMEOUT);
                 const data: Record<string, unknown> = { ...(opened?.data as object || {}), ready };
                 if (ready) {
-                    try {
-                        const info = (await wss.raw('runtime:info'))?.data as Record<string, unknown> | undefined;
-                        for (const field of RUNTIME_INFO_FIELDS) {
-                            if (info?.[field] !== undefined) {
-                                data[field] = info[field];
-                            }
-                        }
-                    } catch { /* runtime predates runtime:info; the metadata is optional */ }
+                    const info = (await wss.raw('runtime:info')).data as Record<string, unknown>;
+                    for (const field of RUNTIME_INFO_FIELDS) {
+                        data[field] = info[field];
+                    }
                 }
                 return wss.ok(
                     'launch:start',

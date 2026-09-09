@@ -147,7 +147,11 @@ test('launch_start forwards runtime launch options', async () => {
         {
             raw(name: string, ...args: unknown[]) {
                 calls.push({ name, args });
-                return Promise.resolve({ data: { url: 'https://example.com' } });
+                return Promise.resolve(
+                    name === 'runtime:info'
+                        ? { data: { engineVersion: '2.10.1', engineRevision: null, deviceType: 'webgpu', sessionId: 's1' } }
+                        : { data: { url: 'https://example.com' } }
+                );
             },
             waitForRuntime() {
                 return Promise.resolve(true);
@@ -173,7 +177,11 @@ test('launch_start forwards runtime launch options', async () => {
             name: 'launch:start',
             data: {
                 url: 'https://example.com',
-                ready: true
+                ready: true,
+                engineVersion: '2.10.1',
+                engineRevision: null,
+                deviceType: 'webgpu',
+                sessionId: 's1'
             }
         }
     );
@@ -194,9 +202,9 @@ test('launch_start forwards runtime launch options', async () => {
     }]);
 });
 
-test('launch_start merges runtime:info metadata and tolerates its absence', async () => {
+test('launch_start merges runtime:info metadata', async () => {
     const tools: Record<string, Handler> = {};
-    let info: () => Promise<unknown> = () => Promise.resolve({
+    const info = () => Promise.resolve({
         data: {
             engineVersion: '2.10.1',
             engineRevision: 'abc1234',
@@ -242,20 +250,6 @@ test('launch_start merges runtime:info metadata and tolerates its absence', asyn
             engineRevision: 'abc1234',
             deviceType: 'webgpu',
             sessionId: 'session-1'
-        }
-    });
-
-    // an older runtime that does not advertise runtime:info still launches
-    info = () => Promise.reject(new Error('Runtime does not support \'runtime:info\'.'));
-    assert.deepEqual(await tools.launch_start({ device: 'webgpu' }), {
-        name: 'launch:start',
-        data: {
-            url: 'https://example.com',
-            sceneId: 5,
-            adopted: false,
-            device: 'webgpu',
-            engineVersion: null,
-            ready: true
         }
     });
 });
