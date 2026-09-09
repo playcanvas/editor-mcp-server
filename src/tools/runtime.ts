@@ -6,6 +6,9 @@ import type { WSS } from '../wss.ts';
 
 const DEFAULT_READY_TIMEOUT = 20_000;
 
+// runtime:info fields merged into the launch_start result
+const RUNTIME_INFO_FIELDS = ['engineVersion', 'engineRevision', 'deviceType', 'sessionId'];
+
 export const register = (server: McpServer, wss: WSS) => {
     server.registerTool(
         'launch_start',
@@ -13,7 +16,8 @@ export const register = (server: McpServer, wss: WSS) => {
             description: [
                 'Start a real Launch runtime instance of the current scene (the editor\'s Launch button) so scripts, physics, animation and input actually run.',
                 'Opens the launch page in a new browser window with debug logging on; the editor bridges it automatically.',
-                'Returns { url, sceneId, ready, adopted } where ready=true means the runtime is usable by capture_runtime / read_runtime_logs, and adopted=true means it attached to an app that was already running instead of starting a new one (which happens only when no options are passed, so pass an option to force a fresh launch).',
+                'Returns { url, sceneId, ready, adopted, engineVersion, device, deviceType, sessionId } where ready=true means the runtime is usable by capture_runtime / read_runtime_logs, and adopted=true means it attached to an app that was already running instead of starting a new one (which happens only when no options are passed, so pass an option to force a fresh launch).',
+                'engineVersion is the exact version the app launched with (null when adopting an app of unknown origin), device is the requested override, deviceType is the backend the runtime actually created (webgpu/webgl2/webgl1), and sessionId changes on every launch so you can tell a fresh launch from a re-used one.',
                 'This is the prerequisite for all runtime tools. If ready=false, the page may still be loading or popups were blocked; poll read_runtime_logs or retry.',
                 'When NOT to use: to screenshot the editor (use capture_viewport); to change the scene (edit-time tools).'
             ].join(' '),
@@ -26,7 +30,7 @@ export const register = (server: McpServer, wss: WSS) => {
             },
             inputSchema: {
                 device: z.enum(['webgpu', 'webgl2', 'webgl1']).optional().describe('Graphics device to launch with (default: project setting)'),
-                engineVersion: z.string().min(1).optional(),
+                engineVersion: z.string().min(1).optional().describe('Engine channel (current | previous | releaseCandidate) or an exact available version; omit to use the Editor\'s own selection (the Launch button "Use Release Candidate" option, else the session engine-version setting). list_engine_versions reports both.'),
                 profiler: z.boolean().optional(),
                 debug: z.boolean().optional(),
                 concatenate: z.boolean().optional(),
@@ -42,7 +46,13 @@ export const register = (server: McpServer, wss: WSS) => {
                     return wss.fail('launch:start', opened.error);
                 }
                 const ready = await wss.waitForRuntime(waitMs ?? DEFAULT_READY_TIMEOUT);
-                const data = { ...(opened?.data as object || {}), ready };
+                const data: Record<string, unknown> = { ...(opened?.data as object || {}), ready };
+                if (ready) {
+                    const info = (await wss.raw('runtime:info')).data as Record<string, unknown>;
+                    for (const field of RUNTIME_INFO_FIELDS) {
+                        data[field] = info[field];
+                    }
+                }
                 return wss.ok(
                     'launch:start',
                     data,
@@ -75,11 +85,31 @@ export const register = (server: McpServer, wss: WSS) => {
     );
 
     server.registerTool(
+        'list_engine_versions',
+        {
+            description: [
+                'List the engine channels and versions the connected Editor can launch and build with, plus the version a default launch would use.',
+                'Returns { available: [{ channel, version }], launchDefault: { channel, version, source } } where source is launch-option (the Launch button\'s "Use Release Candidate"), session-setting or current.',
+                'Use it before launch_start / create_build when a specific engine version matters, e.g. to reproduce a bug on the release candidate or pin a build to the current release.'
+            ].join(' '),
+            annotations: {
+                title: 'List Engine Versions',
+                readOnlyHint: true,
+                openWorldHint: false
+            }
+        },
+        () => {
+            return wss.call('launch:versions');
+        }
+    );
+
+    server.registerTool(
         'capture_runtime',
         {
             description: [
                 'Screenshot the RUNNING Launch instance (not the editor preview) as a downscaled WebP image — the agent\'s "eye" for visually verifying play-mode behavior.',
                 'Requires launch_start first. Captures the live frame buffer, so what you see reflects scripts/physics/animation actually running.',
+                'Works on both WebGL and WebGPU backends; meta.deviceType reports which backend produced the frame.',
                 'When NOT to use: before launch_start (use capture_viewport for edit-time visuals).'
             ].join(' '),
             annotations: {
@@ -98,7 +128,7 @@ export const register = (server: McpServer, wss: WSS) => {
         {
             description: [
                 'Read console output (log/info/warn/error), uncaught exceptions and unhandled rejections from the RUNNING Launch instance — the first-line signal for runtime bugs.',
-                'Requires launch_start first. Returns the most recent entries first, paginated (meta has total/count/hasMore/nextCursor).',
+                'Requires launch_start first. Returns the most recent entries first, paginated (meta has total/count/hasMore/nextCursor). Exceptions and rejections are serialised as "name: message" plus their stack, so a thrown Error is readable without opening devtools.',
                 'Defaults to warnings + errors; set level="all" (or debug/info/warn/error as a minimum severity) to widen, and keyword to filter. An empty result is success, not an error.',
                 'When NOT to use: to read edit-time editor logs (this is the launched app only).'
             ].join(' '),
@@ -179,6 +209,7 @@ export const register = (server: McpServer, wss: WSS) => {
             description: [
                 'Dispatch keyboard / mouse / touch input to the RUNNING Launch instance so you can drive end-to-end interactions ("press W to move", "click a button", "tap the screen").',
                 'Requires launch_start first. Events run in order; coordinates are CSS pixels from the canvas top-left (match capture_runtime\'s framing). Returns { dispatched }.',
+                'Mouse and touch events are dispatched as PointerEvents plus the matching MouseEvent/TouchEvent, so both the engine\'s pointer-based input sources (camera-controls, first-person-controller) and legacy pc.Mouse / pc.TouchDevice receive them.',
                 'Patterns: key press with holdMs to move for a duration; mouse click at (x,y); a down→move…→up sequence for dragging; touch tap for mobile UI.',
                 'After injecting, use capture_runtime / read_runtime_logs / query the scene to observe the effect.',
                 'When NOT to use: to change entity data directly (use modify_entities) or before launch_start.'

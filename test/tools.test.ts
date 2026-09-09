@@ -147,7 +147,11 @@ test('launch_start forwards runtime launch options', async () => {
         {
             raw(name: string, ...args: unknown[]) {
                 calls.push({ name, args });
-                return Promise.resolve({ data: { url: 'https://example.com' } });
+                return Promise.resolve(
+                    name === 'runtime:info'
+                        ? { data: { engineVersion: '2.10.1', engineRevision: null, deviceType: 'webgpu', sessionId: 's1' } }
+                        : { data: { url: 'https://example.com' } }
+                );
             },
             waitForRuntime() {
                 return Promise.resolve(true);
@@ -173,7 +177,11 @@ test('launch_start forwards runtime launch options', async () => {
             name: 'launch:start',
             data: {
                 url: 'https://example.com',
-                ready: true
+                ready: true,
+                engineVersion: '2.10.1',
+                engineRevision: null,
+                deviceType: 'webgpu',
+                sessionId: 's1'
             }
         }
     );
@@ -188,7 +196,84 @@ test('launch_start forwards runtime launch options', async () => {
             bundles: true,
             miniStats: true
         }]
+    }, {
+        name: 'runtime:info',
+        args: []
     }]);
+});
+
+test('launch_start merges runtime:info metadata', async () => {
+    const tools: Record<string, Handler> = {};
+    const info = () => Promise.resolve({
+        data: {
+            engineVersion: '2.10.1',
+            engineRevision: 'abc1234',
+            deviceType: 'webgpu',
+            sessionId: 'session-1',
+            sceneId: 5,
+            projectId: 1,
+            url: 'https://launch.playcanvas.com/1?debug=true'
+        }
+    });
+    registerRuntime(
+        {
+            registerTool(name: string, _config: unknown, handler: Handler) {
+                tools[name] = handler;
+            }
+        } as unknown as McpServer,
+        {
+            raw(name: string) {
+                return name === 'runtime:info'
+                    ? info()
+                    : Promise.resolve({ data: { url: 'https://example.com', sceneId: 5, adopted: false, engineVersion: null, device: 'webgpu' } });
+            },
+            waitForRuntime() {
+                return Promise.resolve(true);
+            },
+            ok(name: string, data: unknown) {
+                return { name, data };
+            }
+        } as unknown as WSS
+    );
+
+    // runtime:info fields win over the editor's launch:start report, and its extra
+    // fields (sceneId/projectId/url) are not merged
+    assert.deepEqual(await tools.launch_start({ device: 'webgpu' }), {
+        name: 'launch:start',
+        data: {
+            url: 'https://example.com',
+            sceneId: 5,
+            adopted: false,
+            device: 'webgpu',
+            ready: true,
+            engineVersion: '2.10.1',
+            engineRevision: 'abc1234',
+            deviceType: 'webgpu',
+            sessionId: 'session-1'
+        }
+    });
+});
+
+test('list_engine_versions reads the editor engine selection', () => {
+    const tools: Record<string, Handler> = {};
+    const calls: { name: string; args: unknown[] }[] = [];
+    registerRuntime(
+        {
+            registerTool(name: string, _config: unknown, handler: Handler) {
+                tools[name] = handler;
+            }
+        } as unknown as McpServer,
+        {
+            call(name: string, ...args: unknown[]) {
+                calls.push({ name, args });
+                return { name, args };
+            }
+        } as unknown as WSS
+    );
+
+    assert.equal(typeof tools.list_engine_versions, 'function');
+    tools.list_engine_versions({});
+    assert.deepEqual(calls.at(-1), { name: 'launch:versions', args: [] });
 });
 
 test('sprite modification accepts tiled render mode', () => {
@@ -258,4 +343,102 @@ test('download_build streams artifacts without clobbering files', async (t) => {
     await tools.download_build({ ...options, overwrite: true });
     assert.equal(await readFile(path, 'utf8'), 'second');
     assert.deepEqual(await readdir(dir), ['build.zip']);
+});
+
+test('create_build resolves the durable build job id from the publish list', async () => {
+    const tools: Record<string, Handler> = {};
+    const calls: { name: string; args: unknown[] }[] = [];
+    registerBuild(
+        {
+            registerTool(name: string, _config: unknown, handler: Handler) {
+                tools[name] = handler;
+            }
+        } as unknown as McpServer,
+        {
+            raw(name: string, ...args: unknown[]) {
+                calls.push({ name, args });
+                return Promise.resolve(
+                    name === 'builds:create'
+                        ? { data: { id: 42, name: 'Publish', url: 'https://playcanv.as/b/hash', task: { status: 'running' } } }
+                        : { data: [{ id: 8, app_id: 41, status: 'complete' }, { id: 9, app_id: 42, status: 'running' }] }
+                );
+            },
+            fail(name: string, message: string) {
+                return { name, message };
+            },
+            ok(name: string, data: unknown, meta: unknown) {
+                return { name, data, meta };
+            }
+        } as unknown as WSS
+    );
+
+    assert.deepEqual(await tools.create_build({ name: 'Publish', sceneIds: [1] }), {
+        name: 'builds:create',
+        data: {
+            buildId: 9,
+            appId: 42,
+            status: 'running',
+            url: 'https://playcanv.as/b/hash',
+            name: 'Publish'
+        },
+        meta: undefined
+    });
+    assert.deepEqual(calls, [
+        { name: 'builds:create', args: [{ name: 'Publish', sceneIds: [1] }] },
+        { name: 'builds:list', args: [{ limit: 500, filters: { type: 'publish' } }] }
+    ]);
+});
+
+test('create_build returns the app id with a hint when no build job is listed', async (t) => {
+    t.mock.timers.enable({ apis: ['setTimeout', 'Date'] });
+    const tools: Record<string, Handler> = {};
+    let lists = 0;
+    registerBuild(
+        {
+            registerTool(name: string, _config: unknown, handler: Handler) {
+                tools[name] = handler;
+            }
+        } as unknown as McpServer,
+        {
+            raw(name: string) {
+                if (name === 'builds:create') {
+                    return Promise.resolve({ data: { id: 42, name: 'Publish', url: 'https://playcanv.as/b/hash', task: { status: 'running' } } });
+                }
+                lists++;
+                return Promise.resolve({ data: [{ id: 8, app_id: 41, status: 'complete' }] });
+            },
+            fail(name: string, message: string) {
+                return { name, message };
+            },
+            ok(name: string, data: unknown, meta: unknown) {
+                return { name, data, meta };
+            }
+        } as unknown as WSS
+    );
+
+    const pending = tools.create_build({ name: 'Publish', sceneIds: [1] }) as Promise<{
+        data: Record<string, unknown>;
+        meta: { hint?: string };
+    }>;
+
+    // drive the retry sleeps with mocked timers so the poll budget elapses instantly
+    let settled = false;
+    pending.then(() => {
+        settled = true;
+    });
+    for (let i = 0; i < 20 && !settled; i++) {
+        t.mock.timers.tick(1000);
+        await new Promise((resolve) => setImmediate(resolve));
+    }
+    const result = await pending;
+
+    assert.deepEqual(result.data, {
+        buildId: null,
+        appId: 42,
+        status: 'running',
+        url: 'https://playcanv.as/b/hash',
+        name: 'Publish'
+    });
+    assert.match(result.meta.hint!, /list_builds/);
+    assert.ok(lists > 1, `polled the publish list more than once (${lists})`);
 });

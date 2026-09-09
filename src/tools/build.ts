@@ -12,6 +12,10 @@ import type { WSS } from '../wss.ts';
 
 const BUILD_TIMEOUT_MS = 10 * 60_000;
 const POLL_MS = 2_000;
+
+// the publish job is written before POST /apps responds, so this only covers list lag
+const JOB_TIMEOUT_MS = 10_000;
+const JOB_POLL_MS = 1_000;
 const IdSchema = z.number().int().positive();
 
 type BuildStart = {
@@ -19,7 +23,8 @@ type BuildStart = {
     build_job_id?: number;
 };
 type Artifact = { type: string; url: string };
-type Build = { id?: number; job_id?: number; status?: string; message?: string; artifacts?: Artifact[] };
+type Build = { id?: number; job_id?: number; app_id?: number; status?: string; message?: string; artifacts?: Artifact[] };
+type App = { id?: number; name?: string; url?: string; task?: { status?: string } };
 
 const fields = {
     name: z.string().min(1).max(1000),
@@ -42,7 +47,7 @@ const fields = {
     optimizeSceneFormat: z.boolean().optional()
 };
 
-const sleep = () => new Promise((resolve) => setTimeout(resolve, POLL_MS));
+const sleep = (ms = POLL_MS) => new Promise((resolve) => setTimeout(resolve, ms));
 const raw = (wss: WSS, name: string, ...args: unknown[]) =>
     wss.raw(name, ...args).catch((err) => ({
         data: undefined,
@@ -78,7 +83,7 @@ export const register = (server: McpServer, wss: WSS) => {
         'get_build',
         {
             description:
-                'Get a publish or download build job by id from the designated project.',
+                'Get a publish or download build job by id from the designated project. buildId is the durable build JOB id from list_builds/create_build, not the app id.',
             annotations: {
                 title: 'Get Build',
                 readOnlyHint: true,
@@ -93,7 +98,7 @@ export const register = (server: McpServer, wss: WSS) => {
         'create_build',
         {
             description:
-                'Create a published PlayCanvas build for scenes in the designated project. Returns the created durable build job.',
+                'Create a published PlayCanvas build for scenes in the designated project. Returns { buildId, appId, status, url, name }: buildId is the durable build JOB id from list_builds/create_build (the id get_build/set_primary_build/delete_build take), appId is the published app id, and url is the playable app URL. Publishing continues in the background, so poll get_build(buildId) for completion. buildId is null only when the job is not listed yet — meta.hint then tells you to find it with list_builds.',
             annotations: {
                 title: 'Create Build',
                 readOnlyHint: false,
@@ -109,7 +114,46 @@ export const register = (server: McpServer, wss: WSS) => {
                 imageS3Key: z.string().min(1).optional()
             }
         },
-        (options) => wss.call('builds:create', options)
+        async (options) => {
+            const created = await raw(wss, 'builds:create', options);
+            if (created.error) {
+                return wss.fail('builds:create', created.error);
+            }
+            const app = (created.data ?? {}) as App;
+            const appId = app.id === undefined ? null : Number(app.id);
+
+            // builds:create returns the App row, whose id is the APP id; the durable build
+            // job id every other build tool takes comes from the publish list, by app_id
+            const deadline = Date.now() + JOB_TIMEOUT_MS;
+            let job: Build | undefined;
+            while (appId !== null && !job && Date.now() < deadline) {
+                const listed = await raw(wss, 'builds:list', {
+                    limit: 500,
+                    filters: { type: 'publish' }
+                });
+                if (listed.error) {
+                    return wss.fail('builds:create', listed.error);
+                }
+                job = (listed.data as Build[] | undefined)?.find((build) => Number(build.app_id) === appId);
+                if (!job) {
+                    await sleep(JOB_POLL_MS);
+                }
+            }
+            const data = {
+                buildId: job?.id === undefined ? null : Number(job.id),
+                appId,
+                status: job?.status ?? app.task?.status ?? null,
+                url: app.url ?? job?.artifacts?.find((item) => item.url)?.url ?? null,
+                name: app.name ?? null
+            };
+            return wss.ok(
+                'builds:create',
+                data,
+                data.buildId === null
+                    ? { hint: 'The build started but its durable build job is not listed yet. Use list_builds (type=publish) to find the job whose app_id matches appId, then pass its id to get_build.' }
+                    : undefined
+            );
+        }
     );
 
     server.registerTool(
@@ -234,7 +278,8 @@ export const register = (server: McpServer, wss: WSS) => {
     server.registerTool(
         'set_primary_build',
         {
-            description: 'Set a completed publish build as the project primary build.',
+            description:
+                'Set a completed publish build as the project primary build. buildId is the durable build JOB id from list_builds/create_build, not the app id.',
             annotations: {
                 title: 'Set Primary Build',
                 readOnlyHint: false,
@@ -251,7 +296,7 @@ export const register = (server: McpServer, wss: WSS) => {
         'delete_build',
         {
             description:
-                'Permanently delete a build job and its linked artifact from the designated project.',
+                'Permanently delete a build job and its linked artifact from the designated project. buildId is the durable build JOB id from list_builds/create_build, not the app id.',
             annotations: {
                 title: 'Delete Build',
                 readOnlyHint: false,
