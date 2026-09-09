@@ -23,7 +23,7 @@ export const register = (server: McpServer, wss: WSS) => {
             description: [
                 'Modify project-wide settings such as physics engine, rendering device (WebGL2/WebGPU), layers, loading screen, script loading order, input, and resolution.',
                 'Pass a partial object of setting path/value pairs (nested objects or dot-paths, e.g. { enableWebGpu: true, "layers.0.name": "World" }); only the provided fields change. Returns the full resulting project settings snapshot.',
-                'Physics: use3dPhysics and useLegacyAmmoPhysics are legacy asm.js Ammo loader flags and must stay false when the Ammo WASM module asset is imported (the Editor rejects that combination) — the legacy loader runs after the module and overwrites its global Ammo. Enable physics with the Editor IMPORT AMMO button, not these settings.',
+                'Physics: use3dPhysics and useLegacyAmmoPhysics are legacy asm.js Ammo loader flags and are not supported; setting either to true is rejected (clearing them is allowed). Enable physics with the Editor IMPORT AMMO button, which imports the Ammo WASM module asset.',
                 'When NOT to use: to change per-scene settings like fog or gravity (use modify_scene_settings) or a single entity (use modify_entities).'
             ].join(' '),
             annotations: {
