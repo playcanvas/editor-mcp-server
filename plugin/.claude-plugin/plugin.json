@@ -1,0 +1,16 @@
+{
+  "name": "playcanvas-editor",
+  "version": "0.7.1",
+  "description": "Connect the PlayCanvas Editor to Claude through a local MCP server",
+  "author": {
+    "name": "PlayCanvas",
+    "url": "https://playcanvas.com"
+  },
+  "homepage": "https://playcanvas.com/products/editor",
+  "repository": "https://github.com/playcanvas/editor-mcp-server",
+  "documentationUrl": "https://github.com/playcanvas/editor-mcp-server#readme",
+  "supportUrl": "https://github.com/playcanvas/editor-mcp-server/issues",
+  "privacyPolicyUrl": "https://playcanvas.com/privacy",
+  "license": "MIT",
+  "keywords": ["playcanvas", "editor", "mcp", "3d", "game-engine"]
+}
