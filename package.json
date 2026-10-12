@@ -20,7 +20,7 @@
   "author": "PlayCanvas <support@playcanvas.com>",
   "type": "module",
   "bin": {
-    "mcp-server": "cli.mjs"
+    "playcanvas-editor-mcp": "cli.mjs"
   },
   "files": [
     "dist"
