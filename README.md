@@ -1,30 +1,40 @@
 # PlayCanvas Editor MCP Server
 
-[![Version](https://img.shields.io/npm/v/@playcanvas/editor-mcp-server?label=version)](https://www.npmjs.com/package/@playcanvas/editor-mcp-server)
+[![npm](https://img.shields.io/npm/dm/@playcanvas/editor-mcp-server?label=npm)](https://www.npmjs.com/package/@playcanvas/editor-mcp-server)
+[![Version](https://img.shields.io/github/v/release/playcanvas/editor-mcp-server?include_prereleases&label=version)](https://github.com/playcanvas/editor-mcp-server/releases)
 [![CI](https://github.com/playcanvas/editor-mcp-server/actions/workflows/ci.yml/badge.svg)](https://github.com/playcanvas/editor-mcp-server/actions/workflows/ci.yml)
 [![License](https://img.shields.io/github/license/playcanvas/editor-mcp-server)](LICENSE)
+[![Context](https://img.shields.io/badge/context-~42k_tokens_of_tool_definitions-blue)](#context-cost)
 [![Discord](https://img.shields.io/badge/Discord-5865F2?style=flat&logo=discord&logoColor=white&color=black)](https://discord.gg/RSaMRzg)
 [![Reddit](https://img.shields.io/badge/Reddit-FF4500?style=flat&logo=reddit&logoColor=white&color=black)](https://www.reddit.com/r/PlayCanvas)
 [![X](https://img.shields.io/badge/X-000000?style=flat&logo=x&logoColor=white&color=black)](https://x.com/playcanvas)
 
-| [User Manual](https://developer.playcanvas.com/user-manual/editor) | [API Reference](https://api.playcanvas.com/editor) | [Blog](https://blog.playcanvas.com) | [Forum](https://forum.playcanvas.com) |
+| [npm](https://www.npmjs.com/package/@playcanvas/editor-mcp-server) | [Developer Site](https://developer.playcanvas.com/) | [Editor Manual](https://developer.playcanvas.com/user-manual/editor/) | [API Reference](https://api.playcanvas.com/editor/) | [Blog](https://blog.playcanvas.com/) | [Forum](https://forum.playcanvas.com/) |
 
-An MCP server for automating the [PlayCanvas Editor](https://playcanvas.com/products/editor) with an
-LLM. The MCP client is built into the Editor, so no browser extension is needed. Install the server
-into your MCP client of choice (Claude Code, Codex, Claude Desktop, Cursor, …) and connect the Editor
-to it.
+An MCP server that lets AI agents automate the
+[PlayCanvas Editor](https://playcanvas.com/products/editor). The MCP client is built into the
+Editor, so no browser extension is needed. Install the server into your MCP client (Claude Code,
+Codex, Claude Desktop, Cursor, …) and connect the Editor to it.
 
 <img width="1864" alt="PlayCanvas Editor driven by an MCP client" src="https://github.com/user-attachments/assets/393ffe73-40eb-4e1b-9442-2295bbb63326" />
 
 ## Install
 
+Add the server to your MCP client. For Claude Code:
+
+```bash
+claude mcp add playcanvas -- npx -y @playcanvas/editor-mcp-server
+```
+
 Requires [Node.js](https://nodejs.org/) 22.18+. The server is published to npm as
 [`@playcanvas/editor-mcp-server`](https://www.npmjs.com/package/@playcanvas/editor-mcp-server), a
-self-contained, zero-dependency bundle, so every client below runs it with `npx`. Nothing to clone or
-build.
+self-contained bundle with no runtime dependencies, so every client runs it with `npx`. Nothing to
+clone or build.
 
-Add the server to one client configuration per agent. Only one server can own the Editor port, so two
+Choose one installation route for each agent. Only one server can own the Editor port, so two
 configurations for the same agent start two servers that take turns owning it.
+
+### MCP clients
 
 <details>
 <summary><strong>Claude Code</strong></summary>
@@ -93,31 +103,41 @@ same JSON as for Claude Desktop.
 
 </details>
 
-### Custom port
-
-The server listens for the Editor on WebSocket port `52000` by default. To change it, append
-`--port <number>` to the `npx` args and set the same port in the Editor's MCP popover.
-
-## Connecting the Editor
+### Connect the Editor
 
 1. Open your project in the PlayCanvas Editor.
 2. Click the MCP button at the bottom of the toolbar (below the Publish button).
 3. Check that the port matches your MCP config (default `52000`) and click `CONNECT`.
 
-You can now issue commands from your MCP client. Only one Editor instance can be connected to the
-server at a time.
+Only one Editor instance can be connected to the server at a time.
 
-> [!IMPORTANT]
-> Chromium gates a public page's connection to `127.0.0.1` behind a local access permission (Chrome
-> 142+, extended to WebSockets in Chrome 147) granted **per origin**, so allow it when prompted. In
-> Chrome's site settings it is `Apps on device` (loopback). `Local network` covers LAN addresses and
-> is not required. Only the Editor needs it: the launch page is bridged through the Editor rather than
-> opening a socket of its own. If the Editor sits on `Connecting`, open its site settings and allow
-> it. A blocked connection fails silently and looks exactly like a server that isn't running.
+Chromium gates a public page's connection to `127.0.0.1` behind a local access permission (Chrome
+142+, extended to WebSockets in Chrome 147) granted **per origin**, so allow it when prompted. In
+Chrome's site settings it is `Apps on device` (loopback). `Local network` covers LAN addresses and is
+not required. Only the Editor needs it: the launch page is bridged through the Editor rather than
+opening a socket of its own. If the Editor sits on `Connecting`, open its site settings and allow
+it. A blocked connection fails silently and looks exactly like a server that isn't running.
+
+### Custom port
+
+The server listens for the Editor on WebSocket port `52000` by default. To change it, append
+`--port <number>` to the `npx` args and set the same port in the Editor's MCP popover.
+
+## Why PlayCanvas Editor MCP Server
+
+- Work in the Editor you already have open. The MCP client is built in, so there is no extension or
+  separate browser to drive.
+- Cover entities, scripts, assets, templates, animation, scenes, settings, builds, Store imports and
+  version control from one server.
+- Verify that a scene actually runs: launch it, screenshot the running app, read its logs, query live
+  state, and inject keyboard, mouse and touch input.
+- Get a consistent `{ data, meta }` envelope from every tool, with actionable errors, pagination and
+  the resulting summaries from mutating calls.
+- Stream asset uploads and downloads of up to 512 MiB in 1 MiB chunks.
 
 ## Usage
 
-Ask your agent for the outcome you want in the project open in the Editor. For example:
+Connect the Editor, then ask your agent for the outcome you want in the open project. For example:
 
 ```text
 Add a spinning cube with a rotate script to the current scene, launch it, and capture a screenshot
@@ -129,10 +149,7 @@ Create a branch, import a chair from the PlayCanvas Store, place it beside the t
 checkpoint so I can diff the change.
 ```
 
-## Editor driver coverage
-
-All tools act on the project open in the connected Editor. The server does not discover, select,
-create, delete, transfer, or administer projects, and project IDs are not tool inputs.
+## Tools
 
 | Category | Driver coverage | Tools |
 | --- | --- | --- |
@@ -173,6 +190,17 @@ Every tool returns a consistent `{ data, meta }` envelope: `meta.status` is `ok`
 actionable message), list tools paginate via `limit`/`offset` and `meta.nextCursor`, and mutating
 tools return the resulting entity/asset summaries so follow-up list calls are rarely needed.
 
+All tools act on the project open in the connected Editor. The server does not discover, select,
+create, delete, transfer, or administer projects, and project IDs are not tool inputs.
+
+## Context cost
+
+The server exposes 125 tools whose definitions total about 42,000 tokens, an average of about 340
+per tool. Clients that load every MCP tool at session start pay that up front. Claude Code's
+[MCP tool search](https://code.claude.com/docs/en/mcp) is on by default and loads only tool names at
+start, about 1,000 tokens here, then each definition when the agent needs it. Estimates assume 4
+characters per token.
+
 ## Data and network use
 
 The server runs on your machine and has no telemetry:
@@ -188,10 +216,9 @@ The server runs on your machine and has no telemetry:
   Editor reports. Store, Sketchfab and My Assets tools run through the connected Editor.
 - `npx` downloads the package from your npm registry on first run and caches it.
 
-## Development
+## Contributing
 
-To hack on the server itself, ensure you have [Node.js](https://nodejs.org/) 22.18 or later
-installed. Follow these steps:
+To work on the server itself, install [Node.js](https://nodejs.org/) 22.18 or later, then:
 
 1. Clone the repository:
 
@@ -216,7 +243,8 @@ installed. Follow these steps:
    `"args": ["/path/to/editor-mcp-server/src/server.ts"]`.
 
 `npm run debug` starts the server under the MCP Inspector and `npm run build` produces the
-self-contained bundle that gets published.
+self-contained bundle that gets published. Report bugs and feature requests in
+[GitHub Issues](https://github.com/playcanvas/editor-mcp-server/issues).
 
 ## License
 
