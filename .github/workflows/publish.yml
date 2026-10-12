@@ -1,16 +1,25 @@
 name: Publish
 
 on:
-    push:
-        tags:
-            - 'v[0-9]+.[0-9]+.[0-9]+'
-            - 'v[0-9]+.[0-9]+.[0-9]+-beta.[0-9]+'
+    workflow_dispatch:
+        inputs:
+            type:
+                description: Version increment
+                type: choice
+                options:
+                    - patch
+                    - minor
+                    - major
+                    - premajor
+                    - prerelease
+
+concurrency: publish
 
 jobs:
     publish:
         name: Publish
         runs-on: ubuntu-latest
-        if: ${{ github.repository_owner == 'playcanvas' }}
+        if: ${{ github.repository_owner == 'playcanvas' && github.ref == 'refs/heads/main' }}
         permissions:
             contents: write
             id-token: write
@@ -25,13 +34,30 @@ jobs:
                   cache: 'npm'
                   registry-url: 'https://registry.npmjs.org/'
 
-            - name: Parse tag name
-              run: |
-                  TAG_NAME=${GITHUB_REF#refs/tags/}
-                  echo "TAG=${TAG_NAME}" >> $GITHUB_ENV
-
             - name: Install Dependencies
               run: npm ci
+
+            - name: Bump version
+              id: version
+              env:
+                  TYPE: ${{ inputs.type }}
+              run: |
+                  git config user.name 'github-actions[bot]'
+                  git config user.email '41898208+github-actions[bot]@users.noreply.github.com'
+                  npm version "$TYPE" --preid=beta --no-git-tag-version
+                  VERSION=$(node -p 'require("./package.json").version')
+
+                  # betas leave the plugin pinned to the last stable release
+                  if [[ "$VERSION" == *-* ]]; then
+                      PRERELEASE=true
+                  else
+                      PRERELEASE=false
+                      node scripts/sync-plugin-version.mjs
+                  fi
+                  git commit -am "$VERSION"
+                  git tag -a "v$VERSION" -m "$VERSION"
+                  echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
+                  echo "prerelease=$PRERELEASE" >> "$GITHUB_OUTPUT"
 
             - name: Build PlayCanvas Editor MCP Server
               run: npm run build
@@ -41,19 +67,20 @@ jobs:
             - name: Run Publint
               run: npm run publint
 
+            # publish before pushing so a failed publish never leaves main on an unpublished version
             - name: Publish to npm
-              run: |
-                  if [[ "${{ env.TAG }}" =~ "beta" ]]; then
-                    tag=beta
-                  else
-                    tag=latest
-                  fi
-                  npm publish --tag $tag --provenance
+              env:
+                  PRERELEASE: ${{ steps.version.outputs.prerelease }}
+              run: npm publish --tag "$([[ "$PRERELEASE" == true ]] && echo beta || echo latest)" --provenance
+
+            - name: Push release commit and tag
+              env:
+                  TAG: ${{ steps.version.outputs.tag }}
+              run: git push --atomic origin HEAD:main "$TAG"
 
             - name: Create GitHub Release
               uses: softprops/action-gh-release@v3
               with:
+                  tag_name: ${{ steps.version.outputs.tag }}
                   generate_release_notes: true
-                  prerelease: ${{ contains(github.ref, 'beta') }}
-              env:
-                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  prerelease: ${{ steps.version.outputs.prerelease == 'true' }}
