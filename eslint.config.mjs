@@ -10,7 +10,10 @@ export default [
         files: ['**/*.ts'],
         rules: {
             'jsdoc/require-param-type': 'off',
-            'jsdoc/require-returns-type': 'off'
+            'jsdoc/require-returns-type': 'off',
+
+            // sdk 1.29+ maps `./*` types to `*.js.d.ts`, which it doesn't ship; node, tsc and esbuild still resolve these
+            'import-x/no-unresolved': ['error', { ignore: ['^@modelcontextprotocol/sdk/'] }]
         }
     }
 ];

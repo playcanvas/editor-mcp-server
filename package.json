@@ -37,17 +37,17 @@
     "watch": "node --watch src/server.ts"
   },
   "devDependencies": {
-    "@modelcontextprotocol/inspector": "^0.22.0",
-    "@modelcontextprotocol/sdk": "1.25.2",
+    "@modelcontextprotocol/inspector": "0.22.0",
+    "@modelcontextprotocol/sdk": "1.32.1",
     "@playcanvas/eslint-config": "3.0.0-beta.8",
-    "@types/node": "^22.18.0",
-    "@types/ws": "^8.18.1",
-    "esbuild": "^0.25.0",
-    "eslint": "^9.39.2",
-    "publint": "^0.3.16",
-    "typescript": "^5.9.3",
-    "ws": "^8.19.0",
-    "zod": "^3.23.8"
+    "@types/node": "22.20.5",
+    "@types/ws": "8.18.2",
+    "esbuild": "0.25.12",
+    "eslint": "9.39.5",
+    "publint": "0.3.25",
+    "typescript": "5.9.3",
+    "ws": "8.22.0",
+    "zod": "3.25.76"
   },
   "engines": {
     "node": ">=22.18.0"
