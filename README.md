@@ -19,15 +19,6 @@ Requires [Node.js](https://nodejs.org/) 22.18+. The server is published to npm a
 
 ### Claude Code
 
-Install the `playcanvas-editor` plugin, which runs the server pinned to a released version (see [`plugin/`](plugin)):
-
-```sh
-claude plugin marketplace add playcanvas/editor-mcp-server
-claude plugin install playcanvas-editor@playcanvas-editor-mcp-server
-```
-
-Or add the server yourself. Don't do both, or two servers compete for the port:
-
 ```sh
 claude mcp add playcanvas -- npx -y @playcanvas/editor-mcp-server
 ```

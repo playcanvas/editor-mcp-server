@@ -2,6 +2,8 @@
 
 A Claude plugin that connects the [PlayCanvas Editor](https://playcanvas.com/products/editor) to Claude through a local MCP server, so Claude can read and edit the project open in your browser: entities, assets, scripts, scenes, settings, builds and more.
 
+It works on a project that is already open in the Editor. It can't create, open, or manage projects.
+
 ## What it runs
 
 When the plugin is enabled, Claude Code starts one MCP server with:
@@ -25,10 +27,10 @@ If you already added the server by hand, for example with `claude mcp add playca
 claude mcp remove playcanvas
 ```
 
-Then install the plugin in Claude Code:
+The plugin isn't published to a marketplace yet. To try it from a checkout of this repository:
 
 ```sh
-/plugin install playcanvas-editor --marketplace playcanvas/editor-mcp-server
+claude --plugin-dir plugin
 ```
 
 The plugin always uses port `52000`. To use a different port, skip the plugin and add the server by hand with `--port <number>`, as the [main README](https://github.com/playcanvas/editor-mcp-server#custom-port) describes.
