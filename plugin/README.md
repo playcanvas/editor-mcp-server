@@ -33,7 +33,7 @@ The plugin isn't published to a marketplace yet. To try it from a checkout of th
 claude --plugin-dir plugin
 ```
 
-The plugin always uses port `52000`. To use a different port, skip the plugin and add the server by hand with `--port <number>`, as the [main README](https://github.com/playcanvas/editor-mcp-server#custom-port) describes.
+The plugin always uses port `52000`. To use a different port, skip the plugin and add the server by hand with `--port <number>`, as the [main README](https://github.com/playcanvas/editor-mcp-server#install) describes.
 
 ## Connecting the Editor
 
