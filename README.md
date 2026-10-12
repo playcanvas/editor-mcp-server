@@ -39,12 +39,8 @@ configurations for the same agent start two servers that take turns owning it.
 <details>
 <summary><strong>Claude Code</strong></summary>
 
-```bash
-claude mcp add playcanvas -- npx -y @playcanvas/editor-mcp-server
-```
-
-To share the server with everyone working on a repo, commit a `.mcp.json` to the project root
-instead:
+Use the command above, or share the server with everyone working on a repo by committing a
+`.mcp.json` to the project root:
 
 ```json
 {
@@ -111,12 +107,8 @@ same JSON as for Claude Desktop.
 
 Only one Editor instance can be connected to the server at a time.
 
-Chromium gates a public page's connection to `127.0.0.1` behind a local access permission (Chrome
-142+, extended to WebSockets in Chrome 147) granted **per origin**, so allow it when prompted. In
-Chrome's site settings it is `Apps on device` (loopback). `Local network` covers LAN addresses and is
-not required. Only the Editor needs it: the launch page is bridged through the Editor rather than
-opening a socket of its own. If the Editor sits on `Connecting`, open its site settings and allow
-it. A blocked connection fails silently and looks exactly like a server that isn't running.
+Chrome asks before a page can connect to `127.0.0.1`. Allow it for the Editor when prompted
+(`Apps on device` in site settings). If the Editor stays on `Connecting`, that permission is blocked.
 
 ### Custom port
 
@@ -151,47 +143,28 @@ checkpoint so I can diff the change.
 
 ## Tools
 
-| Category | Driver coverage | Tools |
-| --- | --- | --- |
-| Entity | Exact reads, filtered lists, resolution, search, script lookup, creation, schema-safe batch edits, duplication, hierarchy changes, deletion and component lifecycle | `list_entities`, `get_entity`, `resolve_entities`, `search_entities`, `find_entities_by_script`, `create_entities`, `modify_entities`, `duplicate_entities`, `reparent_entity`, `delete_entities`, `add_components`, `remove_components` |
-| Scripts | Asset text reads and writes, parsing, attachment, attributes, ordering and removal | `get_asset_text`, `set_asset_text`, `set_script_text`, `script_parse`, `add_script_component_script`, `attach_script`, `add_entity_scripts`, `remove_entity_scripts`, `move_entity_script` |
-| Assets | Exact reads, reference graphs, native creation, streamed upload and atomic download up to 512 MiB, schema-safe edits, moves, duplication, source replacement, reimport, deletion and materials | `list_assets`, `get_asset`, `get_asset_references`, `create_assets`, `upload_assets`, `modify_assets`, `move_assets`, `duplicate_assets`, `replace_asset`, `reimport_assets`, `download_asset`, `delete_assets`, `set_material_diffuse`, `set_material_properties` |
-| Templates | Instantiation and instance override inspection, application, reversion and unlinking | `instantiate_template_assets`, `get_template_overrides`, `apply_template_overrides`, `revert_template_overrides`, `unlink_template_instances` |
-| Animation | Animation state graph reads and edits, mapping-safe state renames and animation events | `get_anim_state_graph`, `modify_anim_state_graph`, `get_animation_events`, `modify_animation_events` |
-| Processing | Lightmaps, model unwrap and cancellation, texture conversion, atlases, cubemaps, fonts, metadata, compressed variants, prefiltering, sprites and bundles | `bake_lightmaps`, `unwrap_model_asset`, `cancel_model_unwrap`, `convert_texture_asset`, `create_texture_atlas`, `create_cubemap_from_texture`, `process_font_asset`, `generate_texture_metadata`, `process_texture_variants`, `prefilter_cubemap`, `clear_cubemap_prefilter`, `modify_sprite_asset`, `modify_bundle_asset` |
-| Scene | Exact reads, listing, loading, creation, duplication, rename, deletion and scene settings | `list_scenes`, `get_scene`, `load_scene`, `create_scene`, `duplicate_scene`, `rename_scene`, `delete_scene`, `query_scene_settings`, `modify_scene_settings` |
-| Settings | Scoped project, private, user, session and scene settings reads and edits | `query_settings`, `modify_settings`, `query_project_settings`, `modify_project_settings` |
-| Viewport | Camera and viewport state, visibility, capture and focus | `query_viewport_state`, `set_viewport_state`, `query_viewport_visibility`, `set_viewport_visibility`, `capture_viewport`, `focus_viewport`, `focus_camera` |
-| Editor | Selection, edit-time logs, transform gizmo state, undo and redo | `get_selection`, `set_selection`, `clear_selection`, `read_editor_logs`, `set_transform_gizmo`, `undo`, `redo` |
-| Builds | Listing, exact reads, creation options, streamed downloads, primary build selection and deletion | `list_builds`, `get_build`, `create_build`, `download_build`, `set_primary_build`, `delete_build` |
-| Store | PlayCanvas Store search and import, licenses, Sketchfab search and import, and My Assets search and import | `store_search`, `store_get`, `store_download`, `list_store_licenses`, `sketchfab_search`, `sketchfab_get`, `sketchfab_import`, `my_assets_search`, `my_assets_import` |
-| Runtime | Launch lifecycle and options, engine version discovery, screenshots, logs, live state inspection and keyboard, mouse and touch input | `launch_start`, `launch_stop`, `list_engine_versions`, `capture_runtime`, `read_runtime_logs`, `query_runtime_state`, `inject_input` |
-| VCS | Branches, checkpoints, restore and hard reset, merges, conflict resolution and checkpoint diffs | `vcs_status`, `list_branches`, `create_branch`, `switch_branch`, `close_branch`, `open_branch`, `delete_branch`, `list_checkpoints`, `create_checkpoint`, `get_checkpoint`, `restore_checkpoint`, `hard_reset_checkpoint`, `start_merge`, `get_merge`, `resolve_conflicts`, `get_conflict_file`, `apply_merge`, `cancel_merge`, `diff_checkpoints` |
+| Category | Coverage |
+| --- | --- |
+| Entity | Exact reads, filtered lists, resolution, search, script lookup, creation, schema-safe batch edits, duplication, hierarchy changes, deletion and component lifecycle |
+| Scripts | Asset text reads and writes, parsing, attachment, attributes, ordering and removal |
+| Assets | Exact reads, reference graphs, native creation, streamed upload and atomic download up to 512 MiB, schema-safe edits, moves, duplication, source replacement, reimport, deletion and materials |
+| Templates | Instantiation and instance override inspection, application, reversion and unlinking |
+| Animation | Animation state graph reads and edits, mapping-safe state renames and animation events |
+| Processing | Lightmaps, model unwrap and cancellation, texture conversion, atlases, cubemaps, fonts, metadata, compressed variants, prefiltering, sprites and bundles |
+| Scene | Exact reads, listing, loading, creation, duplication, rename, deletion and scene settings |
+| Settings | Scoped project, private, user, session and scene settings reads and edits |
+| Viewport | Camera and viewport state, visibility, capture and focus |
+| Editor | Selection, edit-time logs, transform gizmo state, undo and redo |
+| Builds | Listing, exact reads, creation options, streamed downloads, primary build selection and deletion |
+| Store | PlayCanvas Store search and import, licenses, Sketchfab search and import, and My Assets search and import |
+| Runtime | Launch lifecycle and options, engine version discovery, screenshots, logs, live state inspection and keyboard, mouse and touch input |
+| VCS | Branches, checkpoints, restore and hard reset, merges, conflict resolution and checkpoint diffs |
 
-Asset transfers over 20 MiB use 1 MiB chunks. The server reads and writes local files incrementally,
-while the Editor spools uploads to browser storage and consumes downloads as streams instead of
-buffering the entire transfer in memory.
-
-The Runtime tools drive a real Launch instance (the Editor's Launch button) so an agent can verify
-that a scene actually *runs*: screenshot the running app, read its console output, query live entity
-state, and inject keyboard/mouse/touch input. Allow pop-ups for the editor origin so `launch_start`
-can open the launch window. It reuses your existing PlayCanvas login session. The Editor relays
-`runtime:*` calls to that window, so it needs no local access permission of its own. Calling
-`launch_start` with no options adopts an app that is already running (`adopted: true` in the
-response) instead of restarting it; pass any option to force a fresh launch. It also reports the
-engine and graphics backend it ran with (`engineVersion`, `deviceType`) and a `sessionId` that
-changes on every launch; omitting `engineVersion` uses the Editor's own selection, and
-`list_engine_versions` reports the available channels and that default for both `launch_start` and
-`create_build`. `create_build` normalises its result to `{ buildId, appId, status, url, name }`, so
-the durable build job id that `get_build`, `set_primary_build` and `delete_build` take is returned
-directly instead of the app id.
-
-Every tool returns a consistent `{ data, meta }` envelope: `meta.status` is `ok` or `error` (with an
-actionable message), list tools paginate via `limit`/`offset` and `meta.nextCursor`, and mutating
-tools return the resulting entity/asset summaries so follow-up list calls are rarely needed.
+Runtime tools drive a real Launch instance. Allow pop-ups for the Editor so `launch_start` can open
+the launch window, which reuses your PlayCanvas login.
 
 All tools act on the project open in the connected Editor. The server does not discover, select,
-create, delete, transfer, or administer projects, and project IDs are not tool inputs.
+create, delete, transfer, or administer projects. Your MCP client lists all 125 tools.
 
 ## Context cost
 
@@ -220,30 +193,17 @@ The server runs on your machine and has no telemetry:
 
 To work on the server itself, install [Node.js](https://nodejs.org/) 22.18 or later, then:
 
-1. Clone the repository:
+```bash
+git clone https://github.com/playcanvas/editor-mcp-server.git
+cd editor-mcp-server
+npm install
+npm run watch
+```
 
-    ```bash
-    git clone https://github.com/playcanvas/editor-mcp-server.git
-    cd editor-mcp-server
-    ```
-
-2. Install dependencies:
-
-    ```bash
-    npm install
-    ```
-
-3. Start the server (Node runs the TypeScript source directly, no build step):
-
-    ```bash
-    npm run watch
-    ```
-
-4. Point your MCP client at the checkout instead of the npm package with `"command": "node"` and
-   `"args": ["/path/to/editor-mcp-server/src/server.ts"]`.
-
+Node runs the TypeScript source directly, so there is no build step. Point your MCP client at the
+checkout with `"command": "node"` and `"args": ["/path/to/editor-mcp-server/src/server.ts"]`.
 `npm run debug` starts the server under the MCP Inspector and `npm run build` produces the
-self-contained bundle that gets published. Report bugs and feature requests in
+published bundle. Report bugs and feature requests in
 [GitHub Issues](https://github.com/playcanvas/editor-mcp-server/issues).
 
 ## License
