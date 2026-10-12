@@ -66,3 +66,21 @@ jobs:
 
             - name: Run Tests
               run: npm test
+
+    plugin:
+        name: Plugin
+        runs-on: ubuntu-latest
+        steps:
+            - name: Check out code
+              uses: actions/checkout@v7
+
+            - name: Set up Node.js
+              uses: actions/setup-node@v7
+              with:
+                  node-version: 24.x
+
+            - name: Validate Claude plugin
+              run: npx -y @anthropic-ai/claude-code@2.1.296 plugin validate plugin --strict
+
+            - name: Check plugin version pin
+              run: node scripts/check-plugin-pin.mjs
