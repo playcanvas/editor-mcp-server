@@ -83,4 +83,4 @@ jobs:
               run: npx -y @anthropic-ai/claude-code@2.1.296 plugin validate plugin --strict
 
             - name: Check plugin version pin
-              run: node scripts/check-plugin-pin.mjs
+              run: node scripts/sync-plugin-version.mjs --check
