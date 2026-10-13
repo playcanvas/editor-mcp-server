@@ -4,7 +4,7 @@
 [![Version](https://img.shields.io/github/v/release/playcanvas/editor-mcp-server?include_prereleases&label=version)](https://github.com/playcanvas/editor-mcp-server/releases)
 [![CI](https://github.com/playcanvas/editor-mcp-server/actions/workflows/ci.yml/badge.svg)](https://github.com/playcanvas/editor-mcp-server/actions/workflows/ci.yml)
 [![License](https://img.shields.io/github/license/playcanvas/editor-mcp-server)](LICENSE)
-[![Context](https://img.shields.io/badge/context-~42k_tokens_of_tool_definitions-blue)](#context-cost)
+[![Context](https://img.shields.io/badge/context-~43k_tokens_of_tool_definitions-blue)](#context-cost)
 [![Discord](https://img.shields.io/badge/Discord-5865F2?style=flat&logo=discord&logoColor=white&color=black)](https://discord.gg/RSaMRzg)
 [![Reddit](https://img.shields.io/badge/Reddit-FF4500?style=flat&logo=reddit&logoColor=white&color=black)](https://www.reddit.com/r/PlayCanvas)
 [![X](https://img.shields.io/badge/X-000000?style=flat&logo=x&logoColor=white&color=black)](https://x.com/playcanvas)
@@ -60,7 +60,8 @@ On Windows, insert `cmd /c` before `npx`. If the first run times out while `npx`
 
 </details>
 
-Then open your project in the Editor, click the MCP button below Publish, and click `CONNECT`. Allow
+Then open your project in the Editor, click the MCP button below Publish, and click `CONNECT`. To
+start with no project open, use the MCP button next to `NEW PROJECT` on `playcanvas.com/editor`. Allow
 Chrome's `Apps on device` permission when prompted; if the Editor stays on `Connecting`, it is
 blocked. The default port is `52000`; to change it, pass `--port <number>` to the server and set the
 same port in the Editor.
@@ -78,6 +79,7 @@ of the running app to confirm it turns.
 
 | Category | Coverage |
 | --- | --- |
+| Projects | Listing, exact reads, creation, name, description and visibility edits, and opening a project in the connected Editor |
 | Entity | Exact reads, filtered lists, resolution, search, script lookup, creation, schema-safe batch edits, duplication, hierarchy changes, deletion and component lifecycle |
 | Scripts | Asset text reads and writes, parsing, attachment, attributes, ordering and removal |
 | Assets | Exact reads, reference graphs, native creation, streamed upload and atomic download up to 512 MiB, schema-safe edits, moves, duplication, source replacement, reimport, deletion and materials |
@@ -93,13 +95,14 @@ of the running app to confirm it turns.
 | Runtime | Launch lifecycle and options, engine version discovery, screenshots, logs, live state inspection and keyboard, mouse and touch input |
 | VCS | Branches, checkpoints, restore and hard reset, merges, conflict resolution and checkpoint diffs |
 
-Tools act on the project open in the connected Editor, one Editor at a time. The server does not
-create, open, or manage projects. Runtime tools open a Launch window, so allow pop-ups for the
-Editor.
+Tools act on the project open in the connected Editor, one Editor at a time. Project tools also
+work from the project manager at `playcanvas.com/editor` with no project open; opening a project
+reloads the tab into it and reconnects automatically. Projects can't be deleted. Runtime tools open
+a Launch window, so allow pop-ups for the Editor.
 
 ## Context cost
 
-The 125 tool definitions total about 42,000 tokens (4 characters per token). Claude Code's
+The 130 tool definitions total about 43,000 tokens (4 characters per token). Claude Code's
 [MCP tool search](https://code.claude.com/docs/en/mcp) is on by default and loads only tool names at
 start, about 1,000 tokens.
 
