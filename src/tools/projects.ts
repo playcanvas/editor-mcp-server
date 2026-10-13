@@ -74,7 +74,7 @@ export const register = (server: McpServer, wss: WSS, reloadWaitMs = RELOAD_WAIT
         'create_project',
         {
             description: [
-                'Create a new blank project on your account (or an organization you belong to, via owner) and return its summary.',
+                'Create a new blank project on your account (or an organization you belong to, via its username in owner) and return its summary.',
                 'Only name, description, private and owner can be set. Set open:true to also open it in the Editor (RELOADS the tab, waits for the reconnect, returns get_project).',
                 'If the backend is still setting the project up, meta.initializing is true and it is not opened; call open_project shortly after.',
                 'When NOT to use: to rename or change an existing project (use update_project).'
@@ -84,7 +84,7 @@ export const register = (server: McpServer, wss: WSS, reloadWaitMs = RELOAD_WAIT
                 name: z.string().min(1).describe('Project name'),
                 description: z.string().optional().describe('Project description'),
                 private: z.boolean().optional().describe('Make the project private (depends on your plan)'),
-                owner: ProjectIdSchema.optional().describe('User or organization id to own the project (defaults to you)'),
+                owner: z.string().min(1).optional().describe('Username of the user or organization to own the project (defaults to you)'),
                 open: z.boolean().optional().describe('Open the new project in the Editor once it is ready')
             }
         },
