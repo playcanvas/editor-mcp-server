@@ -3,25 +3,9 @@ import { z } from 'zod';
 
 import type { WSS } from '../wss.ts';
 
-// how long to wait for the editor to reload and reconnect after a branch-changing op.
-// the reconnect fires on the reloaded page's DOMContentLoaded (before assets stream in),
-// so this scales with page render/network, not project size.
-const RELOAD_WAIT_MS = 60_000;
+import { withReload } from './reload.ts';
 
-// fire a branch-changing method, wait for the editor to reload+reconnect, then
-// return fresh status — so the agent sees one clean call across the reload
-const withReload = async (wss: WSS, method: string, ...args: unknown[]) => {
-    const gen = wss.editorGeneration;
-    const res = await wss.call(method, ...args);
-    if (res.isError) {
-        return res;
-    }
-    const back = await wss.waitForEditor(gen, RELOAD_WAIT_MS);
-    if (!back) {
-        return wss.fail(method, 'Operation issued but the editor did not reconnect in time. Check the editor is open and connected, then call vcs_status.');
-    }
-    return wss.call('vcs:status');
-};
+const STATUS = { method: 'vcs:status', tool: 'vcs_status' };
 
 export const register = (server: McpServer, wss: WSS) => {
     server.registerTool(
@@ -71,7 +55,7 @@ export const register = (server: McpServer, wss: WSS) => {
                 sourceCheckpointId: z.string().optional().describe('Checkpoint on the source branch to fork from (defaults to its latest)')
             }
         },
-        ({ name, sourceBranchId, sourceCheckpointId }) => withReload(wss, 'vcs:branch:create', { name, sourceBranchId, sourceCheckpointId })
+        ({ name, sourceBranchId, sourceCheckpointId }) => withReload(wss, STATUS, 'vcs:branch:create', [{ name, sourceBranchId, sourceCheckpointId }])
     );
 
     server.registerTool(
@@ -87,7 +71,7 @@ export const register = (server: McpServer, wss: WSS) => {
                 branchId: z.string().describe('Id of the branch to switch to (the "id" field from list_branches)')
             }
         },
-        ({ branchId }) => withReload(wss, 'vcs:branch:checkout', branchId)
+        ({ branchId }) => withReload(wss, STATUS, 'vcs:branch:checkout', [branchId])
     );
 
     server.registerTool(
@@ -139,7 +123,7 @@ export const register = (server: McpServer, wss: WSS) => {
                 branchId: z.string().optional().describe('Branch to restore on (defaults to the current branch)')
             }
         },
-        ({ checkpointId, branchId }) => withReload(wss, 'vcs:checkpoint:restore', { checkpointId, branchId })
+        ({ checkpointId, branchId }) => withReload(wss, STATUS, 'vcs:checkpoint:restore', [{ checkpointId, branchId }])
     );
 
     server.registerTool(
@@ -156,7 +140,7 @@ export const register = (server: McpServer, wss: WSS) => {
                 branchId: z.string().optional().describe('Branch to hard reset (defaults to the current branch)')
             }
         },
-        ({ checkpointId, branchId }) => withReload(wss, 'vcs:checkpoint:hardreset', { checkpointId, branchId })
+        ({ checkpointId, branchId }) => withReload(wss, STATUS, 'vcs:checkpoint:hardreset', [{ checkpointId, branchId }])
     );
 
     server.registerTool(
@@ -304,7 +288,7 @@ export const register = (server: McpServer, wss: WSS) => {
             }
         },
         ({ mergeId, finalize }) => finalize
-            ? withReload(wss, 'vcs:merge:apply', { mergeId, finalize: true })
+            ? withReload(wss, STATUS, 'vcs:merge:apply', [{ mergeId, finalize: true }])
             : wss.call('vcs:merge:apply', { mergeId, finalize: false })
     );
 

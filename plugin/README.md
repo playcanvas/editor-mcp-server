@@ -2,7 +2,7 @@
 
 A Claude plugin that connects the [PlayCanvas Editor](https://playcanvas.com/products/editor) to Claude through a local MCP server, so Claude can read and edit the project open in your browser: entities, assets, scripts, scenes, settings, builds and more.
 
-It works on a project that is already open in the Editor. It can't create, open, or manage projects.
+It works on the project open in the Editor, and can also list, create, rename and open your projects from the Editor's project manager. It can't delete projects.
 
 ## What it runs
 
@@ -16,6 +16,7 @@ npx -y @playcanvas/editor-mcp-server@0.7.1
 - The server talks to Claude over stdio and listens for the Editor on a WebSocket at `127.0.0.1:52000`. It is not reachable from your network, and browser pages can connect only from `playcanvas.com` or localhost origins.
 - Only one server can own the port. On startup, if another process is already listening on it, the server asks it to hand over and stops it if it doesn't.
 - The server reads and writes local files only when a tool asks it to, such as uploading an asset from disk or saving a downloaded asset or build. Build downloads fetch the build archive from the URL the Editor reports.
+- Project tools run inside the connected Editor tab with your signed-in session, the same way the Editor's own project manager does. They can create projects on your account (or an organization you belong to) and change a project's name, description or visibility. Opening a project reloads the tab into it.
 
 The plugin contains no other code and sends nothing anywhere else.
 
@@ -37,8 +38,8 @@ The plugin always uses port `52000`. To use a different port, skip the plugin an
 
 ## Connecting the Editor
 
-1. Open your project in the PlayCanvas Editor.
-2. Click the MCP button at the bottom of the toolbar (below the Publish button).
+1. Open your project in the PlayCanvas Editor, or open the project manager at `playcanvas.com/editor` to start with no project.
+2. Click the MCP button: at the bottom of the toolbar (below the Publish button) in a project, or next to `NEW PROJECT` in the project manager.
 3. Check that the port is `52000` and click `CONNECT`.
 
 Chromium asks for permission before a page can connect to `127.0.0.1`. Allow it for the Editor when prompted (`Apps on device` in site settings). A blocked connection leaves the Editor on `Connecting`.

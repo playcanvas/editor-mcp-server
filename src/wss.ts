@@ -31,6 +31,9 @@ const LNA_EDITOR_HINT = 'If it stays on "Connecting", the browser may be blockin
 // launch page has no socket of its own, so a runtime failure is only ever a blocked popup
 const LAUNCH_HINT = 'If it never connects, allow popups for the editor origin so the launch window can open; the editor relays to it, so no extra browser permission is involved.';
 
+// the blank /editor page only handles project tools
+const NO_PROJECT_HINT = 'No project is open in the Editor. Call list_projects or create_project, then open_project, and retry.';
+
 /**
  * Metadata attached to every tool response. `status`/`message` describe the
  * outcome; the pagination fields describe a list slice. Everything lives under
@@ -69,7 +72,8 @@ type RawResult = {
     meta?: Record<string, unknown>;
 };
 
-type Capabilities = { protocolVersion?: number; methods?: Set<string> };
+// project is null when the editor is on the blank /editor page (no project open)
+type Capabilities = { protocolVersion?: number; methods?: Set<string>; project?: number | null };
 
 class WSS {
     private _server!: WebSocketServer;
@@ -179,7 +183,8 @@ class WSS {
                         this._editor = ws;
                         this._editorCaps = {
                             protocolVersion: Number.isInteger(msg.protocolVersion) ? msg.protocolVersion : undefined,
-                            methods: Array.isArray(msg.methods) ? new Set(msg.methods.filter((name: unknown) => typeof name === 'string')) : undefined
+                            methods: Array.isArray(msg.methods) ? new Set(msg.methods.filter((name: unknown) => typeof name === 'string')) : undefined,
+                            project: Number.isInteger(msg.project) || msg.project === null ? msg.project : undefined
                         };
                         this._editorGeneration++;
                         this._startPing();
@@ -383,6 +388,10 @@ class WSS {
                 return;
             }
             if (capabilities?.methods && !capabilities.methods.has(name)) {
+                if (!isRuntime && capabilities.project === null) {
+                    reject(new Error(NO_PROJECT_HINT));
+                    return;
+                }
                 reject(new Error(`${peer} does not support '${name}'. Reload it with a compatible build and reconnect.`));
                 return;
             }
