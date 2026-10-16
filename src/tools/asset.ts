@@ -1,6 +1,5 @@
-import { randomUUID } from 'node:crypto';
-import { link, open, readFile, rename, stat, unlink } from 'node:fs/promises';
-import { basename, dirname, join, resolve } from 'node:path';
+import { open, readFile, stat } from 'node:fs/promises';
+import { basename, resolve } from 'node:path';
 
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
@@ -24,10 +23,8 @@ import {
     TextCreateSchema
 } from './schema/asset.ts';
 import { AssetIdSchema, AssetRefSchema, EntityIdSchema } from './schema/common.ts';
+import { MAX_CHUNK_BYTES, MAX_FILE_BYTES, MAX_TRANSFER_BYTES, message, readTransfer, settle } from './transfer.ts';
 
-const MAX_FILE_BYTES = 20 * 1024 * 1024;
-const MAX_CHUNK_BYTES = 1024 * 1024;
-const MAX_TRANSFER_BYTES = 512 * 1024 * 1024;
 const AssetPipelineSchema = z.object({
     pow2: z.boolean(),
     searchRelatedAssets: z.boolean(),
@@ -84,11 +81,6 @@ const AssetEditSchema = z.union([
         to: z.number().int().min(0)
     }).strict()
 ]);
-
-const settle = <T>(promise: Promise<T>) =>
-    promise.then((data) => [null, data] as const, (error) => [error, null] as const);
-
-const message = (error: unknown) => error instanceof Error ? error.message : String(error);
 
 const upload = async (wss: WSS, item: Record<string, unknown>, path: string, size: number) => {
     if (size <= MAX_FILE_BYTES) {
@@ -452,116 +444,8 @@ export const register = (server: McpServer, wss: WSS) => {
             }
         },
         async ({ assetId, path, overwrite }) => {
-            const output = resolve(path);
-            if (!overwrite && await stat(output).then(() => true, () => false)) {
-                return wss.fail('files:download:start', `File already exists: ${output}. Set overwrite=true to replace it.`);
-            }
-            const temp = join(dirname(output), `.${basename(output)}.${randomUUID()}.tmp`);
-            const [openError, file] = await settle(open(temp, 'wx'));
-            if (openError || !file) {
-                return wss.fail('files:download:start', message(openError));
-            }
-
-            let failure: unknown;
-            let id: string | undefined;
-            let filename: string | undefined;
-            let mime: string | undefined;
-            let size = 0;
-            const [startError, start] = await settle(wss.raw('files:download:start', assetId, MAX_FILE_BYTES));
-            if (startError || start?.error) {
-                failure = startError || new Error(start?.error);
-            } else {
-                const data = start?.data as {
-                    transferId?: string;
-                    size?: number;
-                    filename?: string;
-                    mime?: string;
-                    base64?: string;
-                };
-                id = data.transferId;
-                filename = data.filename;
-                mime = data.mime;
-                size = data.size ?? -1;
-                if (!Number.isInteger(size) || size < 0 || size > MAX_TRANSFER_BYTES) {
-                    failure = new Error('Editor returned an invalid or oversized download transfer.');
-                } else if (typeof data.base64 === 'string') {
-                    if (
-                        data.base64.length > Math.ceil(MAX_FILE_BYTES / 3) * 4 ||
-                        data.base64.length % 4 !== 0 ||
-                        !/^[a-z\d+/]*={0,2}$/i.test(data.base64)
-                    ) {
-                        failure = new Error('Editor returned invalid inline asset data.');
-                    } else {
-                        const bytes = Buffer.from(data.base64, 'base64');
-                        if (bytes.length !== size) {
-                            failure = new Error('Editor returned an invalid inline asset length.');
-                        } else {
-                            const [writeError, result] = await settle(file.write(bytes, 0, bytes.length, 0));
-                            failure = writeError || (result?.bytesWritten !== bytes.length
-                                ? new Error('Failed to write the complete asset.')
-                                : null);
-                        }
-                    }
-                } else if (!id) {
-                    failure = new Error('Editor returned an invalid download transfer.');
-                } else {
-                    let offset = 0;
-                    while (!failure && offset < size) {
-                        const [readError, raw] = await settle(
-                            wss.raw('files:download:read', id, offset, Math.min(MAX_CHUNK_BYTES, size - offset))
-                        );
-                        if (readError || raw?.error) {
-                            failure = readError || new Error(raw?.error);
-                            break;
-                        }
-                        const chunk = raw?.data as { offset?: number; base64?: string };
-                        if (
-                            typeof chunk?.base64 !== 'string' ||
-                            chunk.base64.length > Math.ceil(MAX_CHUNK_BYTES / 3) * 4 ||
-                            chunk.base64.length % 4 !== 0 ||
-                            !/^[a-z\d+/]*={0,2}$/i.test(chunk.base64)
-                        ) {
-                            failure = new Error(`Editor returned an invalid download chunk at byte ${offset}.`);
-                            break;
-                        }
-                        const bytes = Buffer.from(chunk.base64, 'base64');
-                        if (!bytes.length || bytes.length > MAX_CHUNK_BYTES || chunk.offset !== offset + bytes.length) {
-                            failure = new Error(`Editor returned an invalid download offset at byte ${offset}.`);
-                            break;
-                        }
-                        const [writeError, result] = await settle(file.write(bytes, 0, bytes.length, offset));
-                        if (writeError || result?.bytesWritten !== bytes.length) {
-                            failure = writeError || new Error(`Failed to write the download chunk at byte ${offset}.`);
-                            break;
-                        }
-                        offset += bytes.length;
-                    }
-                    if (!failure) {
-                        const [finishError, finish] = await settle(wss.raw('files:transfer:finish', id));
-                        failure = finishError || (finish?.error ? new Error(finish.error) : null);
-                    }
-                }
-            }
-
-            const [closeError] = await settle(file.close());
-            failure ||= closeError;
-            if (failure) {
-                if (id) {
-                    await settle(wss.raw('files:transfer:cancel', id));
-                }
-                await settle(unlink(temp));
-                return wss.fail('files:download:start', message(failure));
-            }
-
-            const [moveError] = overwrite ? await settle(rename(temp, output)) : await settle(link(temp, output));
-            if (moveError) {
-                await settle(unlink(temp));
-                return wss.fail('files:download:start', message(moveError));
-            }
-            if (!overwrite) {
-                await settle(unlink(temp));
-            }
-            return wss.ok('files:download:start', { path: output, filename, mime, bytes: size });
+            const [error, result] = await readTransfer(wss, { method: 'files:download:start', args: [assetId, MAX_FILE_BYTES] }, path, overwrite);
+            return error === null ? wss.ok('files:download:start', result) : wss.fail('files:download:start', error);
         }
     );
 
