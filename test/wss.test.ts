@@ -1,5 +1,6 @@
 import assert from 'node:assert';
 import { after, test } from 'node:test';
+import type { TestContext } from 'node:test';
 
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import { WebSocket } from 'ws';
@@ -42,9 +43,14 @@ test('origin validation on websocket upgrade', async () => {
     // allowed: non-browser local clients (no Origin, e.g. the yield handshake)
     assert.equal(await attempt(), true, 'no Origin should be allowed');
 
-    // allowed: the editor and launch pages
+    // allowed: the editor
     assert.equal(await attempt('https://playcanvas.com'), true, 'playcanvas.com should be allowed');
-    assert.equal(await attempt('https://launch.playcanvas.com'), true, 'launch.playcanvas.com should be allowed');
+
+    // rejected: other subdomains, which serve project code (the editor relays for launch pages)
+    assert.equal(await attempt('https://launch.playcanvas.com'), false, 'launch.playcanvas.com must be rejected');
+    assert.equal(await attempt('https://sub.launch.playcanvas.com'), false, 'nested subdomains must be rejected');
+    assert.equal(await attempt('http://playcanvas.com'), false, 'plain http editor origin must be rejected');
+    assert.equal(await attempt('null'), false, 'opaque origin must be rejected');
 
     // allowed: local editor dev builds
     assert.equal(await attempt('http://localhost:3000'), true, 'localhost dev origin should be allowed');
@@ -200,4 +206,67 @@ test('runtime calls relay through the editor socket', async () => {
 
     editor.close();
     wss3.close();
+});
+
+const PORT4 = 52992;
+
+// open a socket that answers every frame with `data`, optionally registering as the editor
+const peer = (port: number, data: string, origin?: string, register = true) => new Promise<WebSocket>((resolve) => {
+    const ws = new WebSocket(`ws://127.0.0.1:${port}`, origin ? { origin } : {});
+    ws.on('open', () => {
+        if (register) {
+            ws.send(JSON.stringify({ register: 'editor', protocolVersion: 1, methods: ['ping'] }));
+        }
+        resolve(ws);
+    });
+    ws.on('message', (raw) => {
+        const { id } = JSON.parse(raw.toString());
+        ws.send(JSON.stringify({ id, res: { data } }));
+    });
+});
+
+const listening = async (port: number) => {
+    for (let i = 0; i < 40; i++) {
+        const up = await new Promise<boolean>((r) => {
+            const ws = new WebSocket(`ws://127.0.0.1:${port}`);
+            ws.on('open', () => { ws.close(); r(true); });
+            ws.on('error', () => r(false));
+        });
+        if (up) return;
+        await new Promise(r => setTimeout(r, 50));
+    }
+};
+
+// an editor plus a second, unregistered page socket, both from the editor origin
+const pair = async (t: TestContext, port: number) => {
+    const wss = new WSS(port);
+    await listening(port);
+    const gen = wss.editorGeneration;
+    const editor = await peer(port, 'editor', 'https://playcanvas.com');
+    await wss.waitForEditor(gen, 2000);
+    const other = await peer(port, 'forged', 'https://playcanvas.com', false);
+    t.after(() => {
+        editor.close();
+        other.close();
+        wss.close();
+    });
+    return { wss, other };
+};
+
+test('only the socket a request went to can answer it', async (t) => {
+    const { wss, other } = await pair(t, PORT4);
+
+    // the other socket races forged answers for the next request ids
+    const pending = wss.call('ping');
+    for (let id = 0; id < 50; id++) {
+        other.send(JSON.stringify({ id, res: { data: 'forged' } }));
+    }
+    assert.equal(envelope(await pending).data, 'editor', 'answers from another socket are ignored');
+});
+
+test('a page cannot ask the server to give up its port', async (t) => {
+    const { wss, other } = await pair(t, PORT4 - 1);
+    other.send(JSON.stringify({ yield: true }));
+    await new Promise(r => setTimeout(r, 200));
+    assert.equal(envelope(await wss.call('ping')).data, 'editor', 'yield from a page with an Origin is ignored');
 });

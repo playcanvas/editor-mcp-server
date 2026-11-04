@@ -11,10 +11,11 @@ const PROTOCOL_VERSION = 1;
 const BIND_RETRY_DELAY = 3_000;
 
 // browsers don't apply CORS to websockets, so any open webpage can hit ws://localhost:<port>
-// (MCP spec DNS-rebinding warning). only playcanvas.com and local dev builds may connect;
-// no-Origin clients (non-browser local processes, e.g. the yield handshake) are allowed too.
+// (MCP spec DNS-rebinding warning). only the editor origin and local dev builds may connect;
+// other playcanvas.com subdomains (e.g. launch pages running project code) may not. no-Origin
+// clients (non-browser local processes, e.g. the yield handshake) are allowed too.
 // add exact extra origins via MCP_ALLOWED_ORIGINS (comma-separated).
-const ALLOWED_ORIGINS = /^https:\/\/(?:[\w-]+\.)*playcanvas\.com$|^https?:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?$/;
+const ALLOWED_ORIGINS = /^https:\/\/playcanvas\.com$|^https?:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?$/;
 
 const allowedOrigin = (origin: string) => {
     if (ALLOWED_ORIGINS.test(origin)) {
@@ -86,7 +87,8 @@ class WSS {
     // the launch page the editor relays for; set by its announce frame, null when it detaches
     private _runtime: Capabilities | undefined;
 
-    private _callbacks = new Map<number, (res: RawResult) => void>();
+    // keyed by request id; only the socket the request went to may answer it
+    private _callbacks = new Map<number, { socket: WebSocket; cb: (res: RawResult) => void }>();
 
     private _id = 0;
 
@@ -153,7 +155,10 @@ class WSS {
 
         // attached once per server instance and kept for its life; re-adding it per
         // disconnect would leak listeners and double-handle messages.
-        server.on('connection', (ws) => {
+        server.on('connection', (ws, req) => {
+
+            // browsers always send an Origin, so only local processes arrive without one
+            const local = !req.headers.origin;
             if (!this._editor) {
                 this._editor = ws;
                 this._editorGeneration++;
@@ -168,7 +173,7 @@ class WSS {
                     // controls the editor. we release it (without exiting, so our client
                     // doesn't restart us) and stand by to retake it if that instance exits —
                     // "latest wins" without a kill/restart storm.
-                    if (msg.yield === true) {
+                    if (msg.yield === true && local) {
                         if (this._editor === ws) {
                             this._editor = undefined;
                         }
@@ -202,9 +207,9 @@ class WSS {
                         return;
                     }
                     const { id, res } = msg;
-                    const cb = this._callbacks.get(id);
-                    if (cb) {
-                        cb(res);
+                    const pending = this._callbacks.get(id);
+                    if (pending?.socket === ws) {
+                        pending.cb(res);
                         this._callbacks.delete(id);
                     }
                 } catch (e) {
@@ -399,9 +404,12 @@ class WSS {
                 this._callbacks.delete(id);
                 reject(new Error(`Timed out after ${DEFAULT_TIMEOUT}ms waiting for the ${isRuntime ? 'runtime' : 'editor'} to handle '${name}'. It may be busy or disconnected; verify the connection and retry, or split the request into smaller calls.`));
             }, DEFAULT_TIMEOUT);
-            this._callbacks.set(id, (res: RawResult) => {
-                clearTimeout(timer);
-                resolve(res);
+            this._callbacks.set(id, {
+                socket,
+                cb: (res: RawResult) => {
+                    clearTimeout(timer);
+                    resolve(res);
+                }
             });
             try {
                 socket.send(JSON.stringify({ id, name, args }));
