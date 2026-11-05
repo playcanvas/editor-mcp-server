@@ -10,6 +10,8 @@ import { z } from 'zod';
 
 import type { WSS } from '../wss.ts';
 
+import { MAX_FILE_BYTES, readTransfer } from './transfer.ts';
+
 const BUILD_TIMEOUT_MS = 10 * 60_000;
 const POLL_MS = 2_000;
 
@@ -231,6 +233,12 @@ export const register = (server: McpServer, wss: WSS) => {
                     'builds:download',
                     `Build ${id} completed without a download artifact.`
                 );
+            }
+
+            // non-http artifact urls only resolve inside the editor page, so read them over the connection
+            if (!/^https?:\/\//.test(artifact.url)) {
+                const [error, saved] = await readTransfer(wss, { method: 'builds:artifact:start', args: [id, MAX_FILE_BYTES] }, outputPath, overwrite);
+                return error === null ? wss.ok('builds:download', { buildId: Number(id), path: saved.path, bytes: saved.bytes }) : wss.fail('builds:download', error);
             }
             const response = await fetch(artifact.url).catch((err) =>
                 err instanceof Error ? err : new Error(String(err))
