@@ -75,6 +75,8 @@ Add a spinning cube with a rotate script to the current scene, launch it, and ca
 of the running app to confirm it turns.
 ```
 
+Coding agents: start from the [Editor guides index](https://developer.playcanvas.com/user-manual/editor/llms.txt) and the [Editor API index](https://api.playcanvas.com/editor/llms.txt), which link a Markdown version of every page.
+
 ## Tools
 
 | Category | Coverage |
